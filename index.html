@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f1923">
+<title>🚛 運転日報</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1923;
+    --surface: #1a2535;
+    --surface2: #243044;
+    --accent: #f5a623;
+    --accent2: #e8601c;
+    --text: #f0ece4;
+    --muted: #8a9bb5;
+    --border: #2e3f58;
+    --green: #2ecc71;
+    --red: #e74c3c;
+    --radius: 14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    min-height: 100dvh;
+    padding-bottom: 80px;
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #0f1923 0%, #1a2535 100%);
+    border-bottom: 2px solid var(--accent);
+    padding: 16px 20px 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .header h1 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 2px;
+  }
+  .header-date {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 72px;
+    z-index: 99;
+  }
+  .tab {
+    flex: 1;
+    padding: 12px 4px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* Pages */
+  .page { display: none; padding: 16px; }
+  .page.active { display: block; }
+
+  /* Section */
+  .section {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 14px;
+    border: 1px solid var(--border);
+  }
+  .section-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  /* Job Type Buttons */
+  .job-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .job-btn {
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 13px;
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .job-btn .emoji { font-size: 28px; display: block; margin-bottom: 6px; }
+  .job-btn.selected {
+    border-color: var(--accent);
+    background: rgba(245,166,35,0.12);
+    color: var(--accent);
+  }
+  .job-btn:active { transform: scale(0.96); }
+
+  /* Time inputs */
+  .time-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .input-group { display: flex; flex-direction: column; gap: 6px; }
+  .input-label { font-size: 11px; color: var(--muted); letter-spacing: 0.5px; }
+  .input-field {
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-size: 16px;
+    font-family: 'Oswald', sans-serif;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .input-field:focus { border-color: var(--accent); }
+  .input-field[type="number"] { -moz-appearance: textfield; }
+  .input-field[type="number"]::-webkit-outer-spin-button,
+  .input-field[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  /* Time picker buttons */
+  .time-btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .time-btn {
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 0;
+    width: 40px;
+    text-align: center;
+    font-family: 'Oswald', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .time-btn.selected {
+    background: rgba(245,166,35,0.2);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .time-btn:active { transform: scale(0.93); }
+
+  .input-field option { background: var(--surface2); color: var(--text); }
+
+  /* Money inputs */
+  .money-input-wrap {
+    position: relative;
+  }
+  .money-input-wrap .yen {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  /* Overtime toggle */
+  .overtime-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .toggle {
+    width: 46px;
+    height: 26px;
+    background: var(--border);
+    border-radius: 13px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .toggle.on { background: var(--accent); }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: #fff;
+    border-radius: 50%;
+    top: 3px;
+    left: 3px;
+    transition: left 0.2s;
+  }
+  .toggle.on::after { left: 23px; }
+
+  /* Save button */
+  .save-btn {
+    width: 100%;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    border: none;
+    border-radius: var(--radius);
+    padding: 16px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    color: #fff;
+    cursor: pointer;
+    margin-top: 4px;
+    transition: opacity 0.2s, transform 0.1s;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+  .save-btn:active { transform: scale(0.98); opacity: 0.9; }
+
+  /* Calendar */
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+    margin-bottom: 14px;
+  }
+  .cal-head {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 6px 0;
+  }
+  .cal-cell {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 4px 3px;
+    min-height: 64px;
+    font-size: 10px;
+    vertical-align: top;
+  }
+  .cal-cell.empty { background: transparent; border-color: transparent; }
+  .cal-cell.has-data {
+    border-color: var(--accent);
+    background: rgba(245,166,35,0.07);
+    cursor: pointer;
+  }
+  .cal-cell.has-data:active { background: rgba(245,166,35,0.2); }
+  .cal-day {
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+  .cal-emoji { font-size: 12px; margin-top: 2px; }
+  .cal-time { font-size: 9px; color: var(--muted); margin-top: 1px; }
+  .cal-memo { font-size: 8px; color: var(--muted); margin-top: 2px; line-height: 1.3; word-break: break-all; }
+
+  /* Records list */
+  .record-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .record-card:active { border-color: var(--accent); }
+  .record-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .record-date {
+    font-family: 'Oswald', sans-serif;
+    font-size: 16px;
+    color: var(--accent);
+  }
+  .record-jobs { font-size: 20px; }
+  .record-row {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--muted);
+    flex-wrap: wrap;
+  }
+  .record-val { color: var(--text); font-weight: 500; }
+  .record-money {
+    display: flex;
+    gap: 12px;
+    margin-top: 6px;
+    font-size: 13px;
+  }
+  .badge {
+    background: rgba(245,166,35,0.15);
+    color: var(--accent);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 12px;
+  }
+  .badge.green { background: rgba(46,204,113,0.12); color: var(--green); }
+
+  /* Stats */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    text-align: center;
+  }
+  .stat-label { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+  .stat-value {
+    font-family: 'Oswald', sans-serif;
+    font-size: 22px;
+    color: var(--accent);
+  }
+  .stat-unit { font-size: 11px; color: var(--muted); }
+
+  /* Month selector */
+  .month-selector {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    border: 1px solid var(--border);
+  }
+  .month-btn {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+  .month-label {
+    font-family: 'Oswald', sans-serif;
+    font-size: 18px;
+    color: var(--text);
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--green);
+    color: #fff;
+    padding: 10px 24px;
+    border-radius: 24px;
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 999;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Date picker style */
+  .date-input-wrap {
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .date-input-wrap:focus-within { border-color: var(--accent); }
+  .date-input-wrap input[type="date"] {
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 15px;
+    font-family: 'Noto Sans JP', sans-serif;
+    outline: none;
+    flex: 1;
+    cursor: pointer;
+  }
+  .date-input-wrap input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.7);
+  }
+
+  /* Empty state */
+  .empty {
+    text-align: center;
+    color: var(--muted);
+    padding: 40px 20px;
+    font-size: 14px;
+  }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+
+  /* Delete button in modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 200;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border-radius: 20px 20px 0 0;
+    padding: 20px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    border-top: 2px solid var(--accent);
+  }
+  .modal-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 18px;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+  .modal-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .modal-row:last-of-type { border-bottom: none; }
+  .modal-row-label { color: var(--muted); }
+  .modal-btns {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-top: 16px;
+  }
+  .modal-edit {
+    background: rgba(245,166,35,0.15);
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    padding: 12px;
+    color: var(--accent);
+    font-size: 14px;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .modal-close {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    color: var(--text);
+    font-size: 14px;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .modal-delete {
+    background: rgba(231,76,60,0.15);
+    border: 1px solid var(--red);
+    border-radius: 10px;
+    padding: 12px;
+    color: var(--red);
+    font-size: 14px;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  /* Allowance buttons */
+  .allow-btn {
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--text);
+  }
+  .allow-btn.selected {
+    border-color: var(--accent);
+    background: rgba(245,166,35,0.12);
+  }
+  .allow-btn:active { transform: scale(0.97); }
+
+  /* Overtime time input */
+  .overtime-input-wrap { display: none; }
+  .overtime-input-wrap.visible { display: block; }
+
+  /* Export area */
+  .export-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .export-title { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+  .export-text {
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 12px;
+    color: var(--text);
+    white-space: pre-wrap;
+    line-height: 1.8;
+    max-height: 200px;
+    overflow-y: auto;
+    font-family: monospace;
+  }
+  .copy-btn {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    color: var(--text);
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 10px;
+    font-family: 'Noto Sans JP', sans-serif;
+    transition: background 0.2s;
+  }
+  .copy-btn:active { background: var(--border); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <h1>🚛 運転日報</h1>
+  </div>
+  <div class="header-date" id="headerDate"></div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('input')">📝 入力</div>
+  <div class="tab" onclick="showTab('records')">📋 記録</div>
+  <div class="tab" onclick="showTab('stats')">📊 集計</div>
+</div>
+
+<!-- 入力ページ -->
+<div class="page active" id="page-input">
+
+  <div class="section">
+    <div class="section-title">📅 日付</div>
+    <div class="date-input-wrap">
+      <input type="date" id="inputDate">
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">仕事の種類（複数選択OK）</div>
+    <div class="job-grid">
+      <div class="job-btn" data-job="地場" onclick="toggleJob(this)">
+        <span class="emoji">🚛</span>地場
+      </div>
+      <div class="job-btn" data-job="長距離" onclick="toggleJob(this)">
+        <span class="emoji">🛌</span>長距離
+      </div>
+      <div class="job-btn" data-job="毒手当" onclick="toggleJob(this)">
+        <span class="emoji">☠️</span>毒
+      </div>
+      <div class="job-btn" data-job="毒×2" onclick="toggleJob(this)">
+        <span class="emoji">☠️☠️</span>毒×2
+      </div>
+      <div class="job-btn" data-job="トレーラー" onclick="toggleJob(this)">
+        <span class="emoji">🚜</span>トレーラー
+      </div>
+      <div class="job-btn" data-job="半日有給" onclick="toggleJob(this)">
+        <span class="emoji">🌴</span>半日有給
+      </div>
+    </div>
+    <div style="margin-top:12px;">
+      <div class="input-label" style="margin-bottom:6px;">仕事内容メモ</div>
+      <textarea class="input-field" id="jobMemo" rows="2" placeholder="例：○○工場→△△倉庫、積み下ろし2回 など" style="resize:none; line-height:1.6; font-family:'Noto Sans JP',sans-serif; font-size:14px;"></textarea>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">🕐 時間</div>
+
+    <!-- 出勤時間 -->
+    <div style="margin-bottom:14px;">
+      <div class="input-label" style="margin-bottom:8px;">出勤時間　<span id="startTimeDisplay" style="color:var(--accent); font-family:'Oswald',sans-serif; font-size:16px;">--:--</span></div>
+      <div class="input-label" style="margin-bottom:5px; font-size:10px;">時間</div>
+      <div class="time-btn-row" id="startHourBtns"></div>
+      <div class="input-label" style="margin:8px 0 5px; font-size:10px;">分</div>
+      <div class="time-btn-row" id="startMinBtns">
+        <div class="time-btn" onclick="setMin('start',0)">00</div>
+        <div class="time-btn" onclick="setMin('start',30)">30</div>
+      </div>
+    </div>
+
+    <!-- 退勤時間 -->
+    <div style="margin-bottom:10px;">
+      <div class="input-label" style="margin-bottom:8px;">退勤時間　<span id="endTimeDisplay" style="color:var(--accent); font-family:'Oswald',sans-serif; font-size:16px;">--:--</span></div>
+      <div class="input-label" style="margin-bottom:5px; font-size:10px;">時間</div>
+      <div class="time-btn-row" id="endHourBtns"></div>
+      <div class="input-label" style="margin:8px 0 5px; font-size:10px;">分</div>
+      <div class="time-btn-row">
+        <div class="time-btn" onclick="setMin('end',0)">00</div>
+        <div class="time-btn" onclick="setMin('end',15)">15</div>
+        <div class="time-btn" onclick="setMin('end',30)">30</div>
+        <div class="time-btn" onclick="setMin('end',45)">45</div>
+      </div>
+    </div>
+
+    <!-- 隠しフィールド（値保持用） -->
+    <input type="hidden" id="startTime">
+    <input type="hidden" id="endTime">
+
+    <div style="margin-top:10px;">
+      <div class="input-group">
+        <div class="input-label">残業時間（時間）　<span style="font-size:10px; color:var(--muted);">なければ空白でOK</span></div>
+        <input class="input-field" type="number" id="overtimeHours" placeholder="例: 2.5" step="0.25" min="0" enterkeyhint="next" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('longDistancePay').focus();document.getElementById('longDistancePay').scrollIntoView({behavior:'smooth',block:'center'});}">
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">🛣️ 走行距離</div>
+    <div class="input-group">
+      <div class="input-label">本日の走行距離（km）</div>
+      <input class="input-field" type="number" id="distance" placeholder="例: 350" enterkeyhint="next" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('overtimeHours').focus();}">
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">💰 金額・手当</div>
+    <div style="display:flex; flex-direction:column; gap:14px;">
+
+      <div class="input-group">
+        <div class="input-label">🛌 長距離手当（円）</div>
+        <div class="money-input-wrap">
+          <input class="input-field" type="number" id="longDistancePay" placeholder="0" style="padding-right:32px;" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('saveBtn').scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('saveBtn').focus();}">
+          <span class="yen">円</span>
+        </div>
+      </div>
+
+      <div>
+        <div class="input-label" style="margin-bottom:8px;">☠️ 毒手当（1回 2,500円）</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+          <div class="allow-btn" id="toxicBtn1" onclick="selectToxic(1)">
+            <span style="font-size:20px;">☠️</span>
+            <div style="font-size:13px; font-weight:600; margin-top:4px;">×1</div>
+            <div style="font-size:11px; color:var(--muted);">2,500円</div>
+          </div>
+          <div class="allow-btn" id="toxicBtn2" onclick="selectToxic(2)">
+            <span style="font-size:20px;">☠️☠️</span>
+            <div style="font-size:13px; font-weight:600; margin-top:4px;">×2</div>
+            <div style="font-size:11px; color:var(--muted);">5,000円</div>
+          </div>
+        </div>
+        <div style="font-size:11px; color:var(--muted); margin-top:6px; text-align:right;" id="toxicDisplay">未選択</div>
+      </div>
+
+      <div>
+        <div class="input-label" style="margin-bottom:8px;">🚜 トレーラー手当（3,000円）</div>
+        <div class="allow-btn" id="trailerBtn" onclick="toggleTrailer()" style="display:flex; align-items:center; gap:12px; text-align:left; padding:12px 16px;">
+          <span style="font-size:24px;">🚜</span>
+          <div>
+            <div style="font-size:13px; font-weight:600;">トレーラー手当</div>
+            <div style="font-size:11px; color:var(--muted);">3,000円</div>
+          </div>
+          <div style="margin-left:auto; font-size:11px;" id="trailerStatus">タップでON</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <button class="save-btn" id="saveBtn" onclick="saveRecord()">💾 保存する</button>
+</div>
+
+<!-- 記録ページ -->
+<div class="page" id="page-records">
+  <div class="month-selector">
+    <button class="month-btn" onclick="changeMonth(-1)">‹</button>
+    <div class="month-label" id="recordsMonthLabel"></div>
+    <button class="month-btn" onclick="changeMonth(1)">›</button>
+  </div>
+  <div style="padding:0 0 12px;">
+    <input class="input-field" type="text" id="searchBox" placeholder="🔍 仕事内容を検索..." oninput="renderRecords()" style="font-size:14px; font-family:'Noto Sans JP',sans-serif;">
+  </div>
+  <div id="recordsList"></div>
+</div>
+
+<!-- 集計ページ -->
+<div class="page" id="page-stats">
+  <div class="month-selector">
+    <button class="month-btn" onclick="changeStatsMonth(-1)">‹</button>
+    <div class="month-label" id="statsMonthLabel"></div>
+    <button class="month-btn" onclick="changeStatsMonth(1)">›</button>
+  </div>
+  <div class="stats-grid" id="statsGrid"></div>
+
+  <div class="export-section">
+    <div class="export-title">📱 機種変更・バックアップ</div>
+    <div style="font-size:12px; color:var(--muted); margin-bottom:10px;">データをファイルに保存して新しいスマホに引き継げます</div>
+    <button class="copy-btn" onclick="backupData()" style="background:rgba(46,204,113,0.15); border-color:var(--green); color:var(--green); margin-bottom:8px;">💾 データをバックアップ（書き出し）</button>
+    <div style="font-size:12px; color:var(--muted); margin-bottom:6px;">新しいスマホで復元する場合👇</div>
+    <label class="copy-btn" style="display:block; text-align:center; background:rgba(52,152,219,0.15); border-color:#3498db; color:#3498db; cursor:pointer;">
+      📂 バックアップから復元
+      <input type="file" id="restoreFile" accept=".json" style="display:none;" onchange="restoreData(this)">
+    </label>
+  </div>
+
+  <div class="export-section">
+    <div class="export-title">📋 スプレッドシート用コピー（タブ区切り）</div>
+    <div class="export-text" id="exportText"></div>
+    <button class="copy-btn" onclick="copyExport()">📋 クリップボードにコピー</button>
+  </div>
+
+  <div class="export-section">
+    <div class="export-title">🔧 データ修正</div>
+    <div style="font-size:12px; color:var(--muted); margin-bottom:10px;">残業時間が正しく集計されない場合はこちらを実行してください</div>
+    <button class="copy-btn" onclick="fixAllRecords()" style="background:rgba(245,166,35,0.15); border-color:var(--accent); color:var(--accent);">🔧 全データを修正する</button>
+  </div>
+</div>
+
+<!-- 詳細モーダル -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle"></div>
+    <div id="modalContent"></div>
+    <div class="modal-btns">
+      <button class="modal-close" onclick="closeModalDirect()">閉じる</button>
+      <button class="modal-edit" onclick="editFromModal()">✏️ 編集</button>
+      <button class="modal-delete" onclick="deleteRecord()">🗑️ 削除</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const JOB_EMOJI = { '地場': '🚛', '長距離': '🛌', '毒手当': '☠️', '毒×2': '☠️☠️', 'トレーラー': '🚜', '半日有給': '🌴' };
+  let selectedJobs = [];
+  let overtimeOn = false;
+  let toxicCount = 0;
+  let trailerOn = false;
+  let editingId = null;  // 編集中のレコードID
+  let currentMonth = new Date().getMonth();
+  let currentYear = new Date().getFullYear();
+  let statsMonth = new Date().getMonth();
+  let statsYear = new Date().getFullYear();
+  let activeModal = null;
+
+  // Time picker state
+  const timeState = {
+    start: { h: null, m: null },
+    end:   { h: null, m: null }
+  };
+
+  function buildHourBtns(which) {
+    const container = document.getElementById(which + 'HourBtns');
+    const mainRange = which === 'start' ? [4,5,6,7,8] : [14,15,16,17,18];
+    // メインの時間帯
+    mainRange.forEach(h => {
+      const btn = document.createElement('div');
+      btn.className = 'time-btn';
+      btn.textContent = h;
+      btn.id = `${which}H${h}`;
+      btn.onclick = () => setHour(which, h);
+      container.appendChild(btn);
+    });
+    // 区切り
+    const sep = document.createElement('div');
+    sep.style.cssText = 'width:100%; font-size:10px; color:var(--muted); margin:4px 0 2px;';
+    sep.textContent = 'その他';
+    container.appendChild(sep);
+    // その他の時間
+    for (let h = 0; h < 24; h++) {
+      if (mainRange.includes(h)) continue;
+      const btn = document.createElement('div');
+      btn.className = 'time-btn';
+      btn.textContent = h;
+      btn.id = `${which}H${h}`;
+      btn.style.opacity = '0.5';
+      btn.style.fontSize = '12px';
+      btn.style.padding = '5px 0';
+      btn.onclick = () => setHour(which, h);
+      container.appendChild(btn);
+    }
+  }
+
+  function setHour(which, h) {
+    timeState[which].h = h;
+    document.querySelectorAll(`#${which}HourBtns .time-btn`).forEach(b => b.classList.remove('selected'));
+    document.getElementById(`${which}H${h}`).classList.add('selected');
+    updateTimeValue(which);
+    // 時間を選んだら分ボタンまでスクロール
+    const minSection = which === 'start'
+      ? document.getElementById('startMinBtns')
+      : document.querySelectorAll('#page-input .time-btn-row')[3];
+    if (minSection) {
+      setTimeout(() => minSection.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+    }
+  }
+
+  function setMin(which, m) {
+    timeState[which].m = m;
+    if (which === 'start') {
+      const minIdx = [0, 30].indexOf(m);
+      const section = document.getElementById('startMinBtns');
+      section.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
+      if (section.querySelectorAll('.time-btn')[minIdx]) {
+        section.querySelectorAll('.time-btn')[minIdx].classList.add('selected');
+      }
+    } else {
+      const minIdx = [0,15,30,45].indexOf(m);
+      // time-btn-row: [0]出勤時間, [1]出勤分, [2]退勤時間, [3]退勤分
+      const rows = document.querySelectorAll('#page-input .time-btn-row');
+      const section = rows[3];
+      section.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
+      if (section.querySelectorAll('.time-btn')[minIdx]) {
+        section.querySelectorAll('.time-btn')[minIdx].classList.add('selected');
+      }
+    }
+    updateTimeValue(which);
+  }
+
+  function updateTimeValue(which) {
+    const s = timeState[which];
+    if (s.h !== null && s.m !== null) {
+      const val = `${String(s.h).padStart(2,'0')}:${String(s.m).padStart(2,'0')}`;
+      document.getElementById(which + 'Time').value = val;
+      document.getElementById(which + 'TimeDisplay').textContent = val;
+    } else if (s.h !== null) {
+      document.getElementById(which + 'TimeDisplay').textContent = `${String(s.h).padStart(2,'0')}:--`;
+    }
+  }
+
+  function setTimePicker(which, val) {
+    if (!val) return;
+    const [hh, mm] = val.split(':').map(Number);
+    timeState[which].h = hh;
+    timeState[which].m = mm;
+    document.querySelectorAll(`#${which}HourBtns .time-btn`).forEach(b => b.classList.remove('selected'));
+    const hBtn = document.getElementById(`${which}H${hh}`);
+    if (hBtn) hBtn.classList.add('selected');
+    if (which === 'start') {
+      const minIdx = [0, 30].indexOf(mm);
+      const section = document.getElementById('startMinBtns');
+      section.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
+      if (minIdx >= 0 && section.querySelectorAll('.time-btn')[minIdx]) {
+        section.querySelectorAll('.time-btn')[minIdx].classList.add('selected');
+      }
+    } else {
+      const minIdx = [0,15,30,45].indexOf(mm);
+      const rows = document.querySelectorAll('#page-input .time-btn-row');
+      const section = rows[3];
+      section.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
+      if (minIdx >= 0 && section.querySelectorAll('.time-btn')[minIdx]) {
+        section.querySelectorAll('.time-btn')[minIdx].classList.add('selected');
+      }
+    }
+    updateTimeValue(which);
+  }
+
+  function clearTimePicker(which) {
+    timeState[which] = { h: null, m: null };
+    document.querySelectorAll(`#${which}HourBtns .time-btn`).forEach(b => b.classList.remove('selected'));
+    if (which === 'start') {
+      document.getElementById('startMinBtns').querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
+    } else {
+      const rows = document.querySelectorAll('#page-input .time-btn-row');
+      rows[3].querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
+    }
+    document.getElementById(which + 'TimeDisplay').textContent = '--:--';
+    document.getElementById(which + 'Time').value = '';
+  }
+
+  function selectToxic(n) {
+    if (toxicCount === n) {
+      toxicCount = 0;
+      document.getElementById('toxicBtn1').classList.remove('selected');
+      document.getElementById('toxicBtn2').classList.remove('selected');
+      document.getElementById('toxicDisplay').textContent = '未選択';
+    } else {
+      toxicCount = n;
+      document.getElementById('toxicBtn1').classList.toggle('selected', n === 1);
+      document.getElementById('toxicBtn2').classList.toggle('selected', n === 2);
+      document.getElementById('toxicDisplay').textContent = `☠️×${n} = ${(n*2500).toLocaleString()}円`;
+    }
+  }
+
+  function toggleTrailer() {
+    trailerOn = !trailerOn;
+    const btn = document.getElementById('trailerBtn');
+    const status = document.getElementById('trailerStatus');
+    btn.classList.toggle('selected', trailerOn);
+    status.textContent = trailerOn ? '✅ 3,000円' : 'タップでON';
+    status.style.color = trailerOn ? 'var(--accent)' : 'var(--muted)';
+  }
+
+  // Init - 日付をセット（changeイベントを発火させない）
+  function getLocalDateStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  const today = new Date();
+  const todayStr = getLocalDateStr();
+  document.getElementById('inputDate').value = todayStr;
+  document.getElementById('headerDate').textContent =
+    today.toLocaleDateString('ja-JP', { year:'numeric', month:'long', day:'numeric', weekday:'short' });
+
+  function getRecords() {
+    return JSON.parse(localStorage.getItem('truckRecords') || '[]');
+  }
+  function saveRecords(r) {
+    localStorage.setItem('truckRecords', JSON.stringify(r));
+  }
+
+  function showTab(tab) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('page-' + tab).classList.add('active');
+    const idx = ['input','records','stats'].indexOf(tab);
+    document.querySelectorAll('.tab')[idx].classList.add('active');
+    if (tab === 'records') renderRecords();
+    if (tab === 'stats') renderStats();
+  }
+
+  function toggleJob(el) {
+    const job = el.dataset.job;
+    if (selectedJobs.includes(job)) {
+      selectedJobs = selectedJobs.filter(j => j !== job);
+      el.classList.remove('selected');
+    } else {
+      selectedJobs.push(job);
+      el.classList.add('selected');
+    }
+  }
+
+  function toggleOvertime() {
+    overtimeOn = !overtimeOn;
+  }
+
+  function saveRecord() {
+    const date = document.getElementById('inputDate').value;
+    if (!date) { showToast('❗ 日付を入力してください', true); return; }
+
+    const record = {
+      id: editingId || Date.now(),
+      date,
+      jobs: [...selectedJobs],
+      startTime: document.getElementById('startTime').value,
+      endTime: document.getElementById('endTime').value,
+      overtime: parseFloat(document.getElementById('overtimeHours').value) || 0,
+      distance: parseFloat(document.getElementById('distance').value) || 0,
+      longDistancePay: parseInt(document.getElementById('longDistancePay').value) || 0,
+      toxicCount: toxicCount,
+      toxicPay: toxicCount * 2500,
+      trailerOn: trailerOn,
+      trailerPay: trailerOn ? 3000 : 0,
+      otherPay: 0,
+      jobMemo: document.getElementById('jobMemo').value,
+      memo: '',
+    };
+
+    let records = getRecords();
+    if (editingId) {
+      // 既存レコードを上書き
+      records = records.map(r => String(r.id) === String(editingId) ? record : r);
+      showToast('✅ 更新しました！');
+    } else {
+      records.unshift(record);
+      showToast('✅ 保存しました！');
+    }
+    saveRecords(records);
+    resetForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function calcWorkHours(start, end) {
+    if (!start || !end) return null;
+    const [sh, sm] = start.split(':').map(Number);
+    const [eh, em] = end.split(':').map(Number);
+    let mins = (eh * 60 + em) - (sh * 60 + sm);
+    if (mins < 0) mins += 24 * 60;
+    return (mins / 60).toFixed(1);
+  }
+
+  function calcDistPay(km) {
+    if (!km || km <= 0) return 0;
+    if (km <= 800) return Math.round(km * 8);
+    return Math.round(800 * 8 + (km - 800) * 18);
+  }
+
+  // 日本の祝日
+  const HOLIDAYS = new Set([
+    // 2024
+    '2024-01-01','2024-01-08','2024-02-11','2024-02-12','2024-02-23','2024-03-20',
+    '2024-04-29','2024-05-03','2024-05-04','2024-05-05','2024-05-06',
+    '2024-07-15','2024-08-11','2024-08-12','2024-09-16','2024-09-22','2024-09-23',
+    '2024-10-14','2024-11-03','2024-11-04','2024-11-23','2024-12-23',
+    // 2025
+    '2025-01-01','2025-01-13','2025-02-11','2025-02-23','2025-02-24','2025-03-20',
+    '2025-04-29','2025-05-03','2025-05-04','2025-05-05','2025-05-06',
+    '2025-07-21','2025-08-11','2025-09-15','2025-09-22','2025-09-23',
+    '2025-10-13','2025-11-03','2025-11-23','2025-11-24',
+    // 2026
+    '2026-01-01','2026-01-12','2026-02-11','2026-02-23','2026-03-20',
+    '2026-04-29','2026-05-03','2026-05-04','2026-05-05','2026-05-06',
+    '2026-07-20','2026-08-11','2026-09-21','2026-09-22','2026-09-23',
+    '2026-10-12','2026-11-03','2026-11-23',
+  ]);
+
+  function getDateColor(dateStr, dayOfWeek) {
+    if (HOLIDAYS.has(dateStr) || dayOfWeek === 0) return 'color:#e74c3c';
+    if (dayOfWeek === 6) return 'color:#3498db';
+    return '';
+  }
+
+  function renderRecords() {
+    const monthStr = `${currentYear}-${String(currentMonth + 1).padStart(2,'0')}`;
+    document.getElementById('recordsMonthLabel').textContent =
+      `${currentYear}年${currentMonth + 1}月`;
+
+    const searchWord = (document.getElementById('searchBox')?.value || '').trim().toLowerCase();
+    const list = document.getElementById('recordsList');
+
+    // 検索中はリスト表示
+    if (searchWord) {
+      const results = getRecords().filter(r =>
+        (r.jobMemo || '').toLowerCase().includes(searchWord) ||
+        (r.jobs || []).join('').toLowerCase().includes(searchWord)
+      ).sort((a, b) => b.date.localeCompare(a.date));
+
+      if (results.length === 0) {
+        list.innerHTML = `<div class="empty"><div class="empty-icon">🔍</div>「${searchWord}」の記録はありません</div>`;
+        return;
+      }
+      list.innerHTML = results.map(r => {
+        const d = new Date(r.date);
+        const weekDay = ['日','月','火','水','木','金','土'][d.getDay()];
+        const dateColor = getDateColor(r.date, d.getDay());
+        const jobEmojis = r.jobs.map(j => JOB_EMOJI[j]||'').join('');
+        const tc = r.toxicCount || 0;
+        const tp = r.toxicPay || (tc * 2500);
+        const distPay = calcDistPay(r.distance);
+        const totalPay = tp + (r.trailerPay||0) + distPay;
+        return `<div class="record-card" onclick="showModal(${r.id})">
+          <div class="record-top">
+            <div class="record-date" style="${dateColor}">${r.date.replace(/-/g,'/')}（${weekDay}）</div>
+            <div class="record-jobs">${jobEmojis || '—'}</div>
+          </div>
+          ${r.jobMemo ? `<div style="font-size:12px; color:var(--muted); margin-top:4px;">📝 ${r.jobMemo}</div>` : ''}
+          ${totalPay > 0 ? `<div class="record-money"><span class="badge">💰 ${totalPay.toLocaleString()}円</span></div>` : ''}
+        </div>`;
+      }).join('');
+      return;
+    }
+
+    // 通常時はカレンダー表示
+    const allRecords = getRecords().filter(r => r.date.startsWith(monthStr));
+    const recordMap = {};
+    allRecords.forEach(r => { recordMap[r.date] = r; });
+
+    // カレンダー生成
+    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const weekDays = ['日','月','火','水','木','金','土'];
+
+    let html = '<div class="cal-grid">';
+    // ヘッダー
+    weekDays.forEach((d, i) => {
+      const c = i === 0 ? 'color:#e74c3c' : i === 6 ? 'color:#3498db' : 'color:var(--muted)';
+      html += `<div class="cal-head" style="${c}">${d}</div>`;
+    });
+    // 空白
+    for (let i = 0; i < firstDay; i++) html += '<div class="cal-cell empty"></div>';
+    // 日付
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const dow = new Date(currentYear, currentMonth, d).getDay();
+      const isHoliday = HOLIDAYS.has(dateStr);
+      const r = recordMap[dateStr];
+      const dateColor = getDateColor(dateStr, dow);
+      const hasData = !!r;
+      const jobEmojis = r ? r.jobs.map(j => JOB_EMOJI[j]||'').join('') : '';
+      const distPay = r ? calcDistPay(r.distance) : 0;
+      const tp = r ? (r.toxicPay || ((r.toxicCount||0)*2500)) : 0;
+      const totalPay = r ? tp + (r.trailerPay||0) + distPay : 0;
+
+      html += `<div class="cal-cell ${hasData ? 'has-data' : ''}" ${hasData ? `onclick="showModal(${r.id})"` : ''}>
+        <div class="cal-day" style="${dateColor}">${d}${isHoliday ? '🎌' : ''}</div>
+        ${hasData ? `
+          <div class="cal-emoji">${jobEmojis || '—'}</div>
+          ${r.startTime ? `<div class="cal-time">${r.startTime}</div>` : ''}
+          ${r.jobMemo ? `<div class="cal-memo">${r.jobMemo}</div>` : ''}
+        ` : ''}
+      </div>`;
+    }
+    html += '</div>';
+    list.innerHTML = html;
+  }
+
+  function changeMonth(d) {
+    currentMonth += d;
+    if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+    if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+    renderRecords();
+  }
+
+  function changeStatsMonth(d) {
+    statsMonth += d;
+    if (statsMonth > 11) { statsMonth = 0; statsYear++; }
+    if (statsMonth < 0) { statsMonth = 11; statsYear--; }
+    renderStats();
+  }
+
+  function renderStats() {
+    // Remove previous breakdown if exists
+    const prev = document.getElementById('statsBreakdown');
+    if (prev) prev.remove();
+
+    const monthStr = `${statsYear}-${String(statsMonth + 1).padStart(2,'0')}`;
+    document.getElementById('statsMonthLabel').textContent = `${statsYear}年${statsMonth + 1}月`;
+
+    const records = getRecords().filter(r => r.date.startsWith(monthStr));
+
+    let totalDays = records.length;
+    let totalKm = 0, totalOvertime = 0, totalPay = 0, totalWork = 0;
+    let totalLongDist = 0, totalToxic = 0, totalTrailer = 0, totalOther = 0;
+    let toxicDays1 = 0, toxicDays2 = 0, trailerDays = 0;
+
+    records.forEach(r => {
+      totalKm += r.distance || 0;
+      totalOvertime += parseFloat(r.overtime) || 0;
+      const tp = r.toxicPay || ((r.toxicCount || 0) * 2500);
+      const trp = r.trailerPay || 0;
+      const distPay = calcDistPay(r.distance);
+      const lp = r.longDistancePay || 0;
+      totalToxic += tp;
+      totalTrailer += trp;
+      totalOther += distPay;
+      totalLongDist += lp;
+      totalPay += tp + trp + distPay;
+      if (r.toxicCount === 1) toxicDays1++;
+      if (r.toxicCount === 2) toxicDays2++;
+      if (r.trailerOn) trailerDays++;
+      const wh = calcWorkHours(r.startTime, r.endTime);
+      if (wh) totalWork += parseFloat(wh);
+    });
+    const totalDistPay = totalOther;
+
+    const grid = document.getElementById('statsGrid');
+    grid.innerHTML = `
+      <div class="stat-card"><div class="stat-label">出勤日数</div><div class="stat-value">${totalDays}<span class="stat-unit"> 日</span></div></div>
+      <div class="stat-card"><div class="stat-label">総走行距離</div><div class="stat-value">${totalKm.toLocaleString()}<span class="stat-unit"> km</span></div></div>
+      <div class="stat-card"><div class="stat-label">総残業時間</div><div class="stat-value">${totalOvertime % 1 === 0 ? totalOvertime : totalOvertime.toFixed(2).replace(/\.?0+$/, '')}<span class="stat-unit"> h</span></div></div>
+      <div class="stat-card"><div class="stat-label">💰 ワンマン手当</div><div class="stat-value" style="font-size:17px;">${totalPay.toLocaleString()}<span class="stat-unit"> 円</span></div></div>
+      <div class="stat-card" style="grid-column:span 2;"><div class="stat-label">🛌 長距離手当合計</div><div class="stat-value">${totalLongDist.toLocaleString()}<span class="stat-unit"> 円</span></div></div>
+    `;
+
+    // 手当内訳
+    let breakdownHtml = '<div id="statsBreakdown" class="section" style="margin-bottom:14px;"><div class="section-title">ワンマン手当 内訳</div>';
+    if (totalToxic > 0) {
+      breakdownHtml += `<div class="modal-row"><span class="modal-row-label">☠️ 毒手当</span><span>${totalToxic.toLocaleString()} 円</span></div>`;
+      if (toxicDays1 > 0) breakdownHtml += `<div class="modal-row" style="padding-left:16px;"><span class="modal-row-label" style="font-size:11px;">　×1（2,500円）× ${toxicDays1}日</span><span style="font-size:12px;">${(toxicDays1*2500).toLocaleString()} 円</span></div>`;
+      if (toxicDays2 > 0) breakdownHtml += `<div class="modal-row" style="padding-left:16px;"><span class="modal-row-label" style="font-size:11px;">　×2（5,000円）× ${toxicDays2}日</span><span style="font-size:12px;">${(toxicDays2*5000).toLocaleString()} 円</span></div>`;
+    }
+    if (totalTrailer > 0) {
+      breakdownHtml += `<div class="modal-row"><span class="modal-row-label">🚜 トレーラー手当</span><span>${totalTrailer.toLocaleString()} 円</span></div>`;
+      breakdownHtml += `<div class="modal-row" style="padding-left:16px;"><span class="modal-row-label" style="font-size:11px;">　3,000円 × ${trailerDays}日</span><span style="font-size:12px;">${(trailerDays*3000).toLocaleString()} 円</span></div>`;
+    }
+    if (totalDistPay > 0) {
+      const rateNote = totalKm <= 800 ? `${totalKm.toLocaleString()} km × 8円` : `800km×8円 + ${(totalKm-800).toLocaleString()}km×18円`;
+      breakdownHtml += `<div class="modal-row"><span class="modal-row-label">🛣️ 走行距離手当</span><span>${totalDistPay.toLocaleString()} 円</span></div>`;
+      breakdownHtml += `<div class="modal-row" style="padding-left:16px;"><span class="modal-row-label" style="font-size:11px;">　${rateNote}</span><span style="font-size:12px;">${totalDistPay.toLocaleString()} 円</span></div>`;
+    }
+    breakdownHtml += `<div class="modal-row" style="font-weight:700; margin-top:4px;"><span class="modal-row-label">💰 ワンマン手当合計</span><span style="color:var(--accent)">${totalPay.toLocaleString()} 円</span></div>`;
+    breakdownHtml += '</div>';
+    document.getElementById('statsGrid').insertAdjacentHTML('afterend', breakdownHtml);
+
+    // Export
+    const header = '日付\t仕事\t出勤\t退勤\t実働時間\t残業\t走行km\t長距離手当\t毒手当（回数）\t毒手当（円）\tトレーラー手当\tその他手当\t合計手当\tメモ';
+    const rows = records.map(r => {
+      const wh = calcWorkHours(r.startTime, r.endTime) || '';
+      const tc = r.toxicCount || 0;
+      const tp = r.toxicPay || (tc * 2500);
+      const trp = r.trailerPay || 0;
+      const total = (r.longDistancePay||0) + tp + trp + (r.otherPay||0);
+      return [
+        r.date, r.jobs.map(j=>`${JOB_EMOJI[j]}${j}`).join('|'),
+        r.startTime, r.endTime, wh ? wh+'h' : '',
+        r.overtime > 0 ? r.overtime+'h' : '',
+        r.distance || '',
+        r.longDistancePay || '',
+        tc > 0 ? `×${tc}` : '',
+        tp || '',
+        trp || '',
+        r.otherPay || '',
+        total || '',
+        r.memo || ''
+      ].join('\t');
+    });
+    document.getElementById('exportText').textContent = [header, ...rows].join('\n');
+  }
+
+  function backupData() {
+    const records = getRecords();
+    const json = JSON.stringify(records, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const date = getLocalDateStr();
+    a.href = url;
+    a.download = `truck-log-backup-${date}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('💾 バックアップしました！');
+  }
+
+  function restoreData(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const records = JSON.parse(e.target.result);
+        if (!Array.isArray(records)) throw new Error();
+        saveRecords(records);
+        renderRecords();
+        renderStats();
+        showToast(`✅ ${records.length}件のデータを復元しました！`);
+      } catch {
+        showToast('❌ ファイルが正しくありません', true);
+      }
+      input.value = '';
+    };
+    reader.readAsText(file);
+  }
+
+  function fixAllRecords() {
+    let records = getRecords();
+    records = records.map(r => ({
+      ...r,
+      overtime: parseFloat(r.overtime) || 0,
+      distance: parseFloat(r.distance) || 0,
+      longDistancePay: parseInt(r.longDistancePay) || 0,
+      toxicCount: parseInt(r.toxicCount) || 0,
+      toxicPay: parseInt(r.toxicPay) || 0,
+      trailerPay: parseInt(r.trailerPay) || 0,
+      otherPay: parseInt(r.otherPay) || 0,
+    }));
+    saveRecords(records);
+    renderStats();
+    showToast('✅ 全データを修正しました！');
+  }
+
+  function copyExport() {
+    const text = document.getElementById('exportText').textContent;
+    navigator.clipboard.writeText(text).then(() => showToast('📋 コピーしました！'));
+  }
+
+  function showModal(id) {
+    const r = getRecords().find(rec => String(rec.id) === String(id));
+    if (!r) return;
+    activeModal = r.id;
+    const d = new Date(r.date);
+    const weekDay = ['日','月','火','水','木','金','土'][d.getDay()];
+    document.getElementById('modalTitle').textContent =
+      `${r.date.replace(/-/g,'/')}（${weekDay}） ${r.jobs.map(j=>JOB_EMOJI[j]||'').join('')}`;
+
+    const workH = calcWorkHours(r.startTime, r.endTime);
+    const tc = r.toxicCount || 0;
+    const tp = r.toxicPay || (tc * 2500);
+    const trp = r.trailerPay || 0;
+    const distPay = calcDistPay(r.distance);
+    const totalPay = tp + trp + distPay;
+
+    let html = '';
+    if (r.startTime) html += `<div class="modal-row"><span class="modal-row-label">出勤</span><span>${r.startTime}</span></div>`;
+    if (r.endTime) html += `<div class="modal-row"><span class="modal-row-label">退勤</span><span>${r.endTime}</span></div>`;
+    if (workH) html += `<div class="modal-row"><span class="modal-row-label">実働</span><span>${workH}時間</span></div>`;
+    if (r.overtime > 0) html += `<div class="modal-row"><span class="modal-row-label">残業</span><span>${r.overtime}時間</span></div>`;
+    if (r.distance > 0) html += `<div class="modal-row"><span class="modal-row-label">走行距離</span><span>${r.distance.toLocaleString()} km</span></div>`;
+    if (r.longDistancePay > 0) html += `<div class="modal-row"><span class="modal-row-label">🛌 長距離手当</span><span>${r.longDistancePay.toLocaleString()} 円</span></div>`;
+    if (tp > 0) html += `<div class="modal-row"><span class="modal-row-label">☠️ 毒手当（×${tc}）</span><span>${tp.toLocaleString()} 円</span></div>`;
+    if (trp > 0) html += `<div class="modal-row"><span class="modal-row-label">🚜 トレーラー手当</span><span>${trp.toLocaleString()} 円</span></div>`;
+    if (distPay > 0) {
+      const rateNote = (r.distance||0) <= 800 ? `${r.distance}km × 8円` : `800km×8円 + ${r.distance-800}km×18円`;
+      html += `<div class="modal-row"><span class="modal-row-label">🛣️ 走行距離手当</span><span>${distPay.toLocaleString()} 円</span></div>`;
+      html += `<div class="modal-row" style="padding-left:16px;"><span class="modal-row-label" style="font-size:11px;">　${rateNote}</span></div>`;
+    }
+    if (r.otherPay > 0) html += `<div class="modal-row"><span class="modal-row-label">その他手当</span><span>${r.otherPay.toLocaleString()} 円</span></div>`;
+    if (totalPay > 0) html += `<div class="modal-row" style="font-weight:700;"><span class="modal-row-label">💰 ワンマン手当</span><span style="color:var(--accent)">${totalPay.toLocaleString()} 円</span></div>`;
+    if (r.jobMemo) html += `<div class="modal-row"><span class="modal-row-label">📝 仕事内容</span><span style="text-align:right; max-width:65%;">${r.jobMemo}</span></div>`;
+    if (r.memo) html += `<div class="modal-row"><span class="modal-row-label">メモ</span><span>${r.memo}</span></div>`;
+
+    document.getElementById('modalContent').innerHTML = html;
+    document.getElementById('modalOverlay').classList.add('open');
+  }
+
+  function editFromModal() {
+    const r = getRecords().find(rec => String(rec.id) === String(activeModal));
+    if (!r) return;
+    closeModalDirect();
+    showTab('input');
+    document.getElementById('inputDate').value = r.date;
+    loadRecordToForm(r);
+  }
+
+  function closeModal(e) {
+    if (e.target === document.getElementById('modalOverlay')) closeModalDirect();
+  }
+  function closeModalDirect() {
+    document.getElementById('modalOverlay').classList.remove('open');
+    activeModal = null;
+    deleteConfirmMode = false;
+  }
+
+  let deleteConfirmMode = false;
+
+  function deleteRecord() {
+    if (activeModal === null) return;
+    if (!deleteConfirmMode) {
+      deleteConfirmMode = true;
+      const btn = document.querySelector('.modal-delete');
+      btn.textContent = '⚠️ もう一度タップで削除';
+      btn.style.background = 'rgba(231,76,60,0.4)';
+      setTimeout(() => {
+        deleteConfirmMode = false;
+        if (btn) { btn.textContent = '🗑️ 削除'; btn.style.background = 'rgba(231,76,60,0.15)'; }
+      }, 3000);
+      return;
+    }
+    deleteConfirmMode = false;
+    const records = getRecords().filter(r => String(r.id) !== String(activeModal));
+    saveRecords(records);
+    closeModalDirect();
+    renderRecords();
+    showToast('🗑️ 削除しました');
+  }
+
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.background = isError ? 'var(--red)' : 'var(--green)';
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  // 日付変更時：編集中でなければ既存データを読み込む
+  function onDateChange() {
+    if (editingId) return;
+    const date = this.value;
+    const existing = getRecords().find(r => r.date === date);
+    if (existing) {
+      loadRecordToForm(existing);
+    } else {
+      resetForm(false);
+    }
+  }
+
+  // Init render
+  buildHourBtns('start');
+  buildHourBtns('end');
+
+  document.getElementById('inputDate').addEventListener('change', onDateChange);
+
+  function loadRecordToForm(r) {
+    editingId = r.id;
+
+    // 仕事の種類
+    selectedJobs = [...(r.jobs || [])];
+    document.querySelectorAll('.job-btn').forEach(b => {
+      b.classList.toggle('selected', selectedJobs.includes(b.dataset.job));
+    });
+
+    // 時間
+    setTimePicker('start', r.startTime || '');
+    setTimePicker('end', r.endTime || '');
+
+    // 残業
+    overtimeOn = r.overtime > 0;
+    document.getElementById('overtimeHours').value = r.overtime > 0 ? r.overtime : '';
+
+    // 距離・金額
+    document.getElementById('distance').value = r.distance || '';
+    document.getElementById('longDistancePay').value = r.longDistancePay || '';
+
+    // 毒手当
+    toxicCount = r.toxicCount || 0;
+    document.getElementById('toxicBtn1').classList.toggle('selected', toxicCount === 1);
+    document.getElementById('toxicBtn2').classList.toggle('selected', toxicCount === 2);
+    document.getElementById('toxicDisplay').textContent = toxicCount > 0
+      ? `☠️×${toxicCount} = ${(toxicCount*2500).toLocaleString()}円` : '未選択';
+
+    // トレーラー
+    trailerOn = r.trailerOn || false;
+    document.getElementById('trailerBtn').classList.toggle('selected', trailerOn);
+    document.getElementById('trailerStatus').textContent = trailerOn ? '✅ 3,000円' : 'タップでON';
+    document.getElementById('trailerStatus').style.color = trailerOn ? 'var(--accent)' : 'var(--muted)';
+
+    // メモ
+    document.getElementById('jobMemo').value = r.jobMemo || '';
+
+    // 保存ボタンを「更新」表示に
+    document.querySelector('.save-btn').textContent = '✏️ 更新する';
+    showToast('📋 入力済みデータを読み込みました');
+  }
+
+  function resetForm(resetDate = true) {
+    editingId = null;
+    selectedJobs = [];
+    toxicCount = 0;
+    trailerOn = false;
+    document.querySelectorAll('.job-btn').forEach(b => b.classList.remove('selected'));
+    document.querySelectorAll('.allow-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById('toxicDisplay').textContent = '未選択';
+    document.getElementById('trailerStatus').textContent = 'タップでON';
+    document.getElementById('trailerStatus').style.color = 'var(--muted)';
+    ['overtimeHours','distance','longDistancePay','jobMemo'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    clearTimePicker('start');
+    clearTimePicker('end');
+    overtimeOn = false;
+    if (resetDate) {
+      // changeイベントを発火させずに日付をリセット
+      const dateInput = document.getElementById('inputDate');
+      dateInput.removeEventListener('change', onDateChange);
+      dateInput.value = getLocalDateStr();
+      dateInput.addEventListener('change', onDateChange);
+    }
+    document.querySelector('.save-btn').textContent = '💾 保存する';
+  }
+
+  // スワイプ対応
+  let swipeStartX = 0;
+  let swipeStartY = 0;
+
+  function addSwipe(el, onLeft, onRight) {
+    el.addEventListener('touchstart', e => {
+      swipeStartX = e.touches[0].clientX;
+      swipeStartY = e.touches[0].clientY;
+    }, { passive: true });
+    el.addEventListener('touchend', e => {
+      const dx = e.changedTouches[0].clientX - swipeStartX;
+      const dy = e.changedTouches[0].clientY - swipeStartY;
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+        if (dx < 0) onLeft();
+        else onRight();
+      }
+    }, { passive: true });
+  }
+
+  addSwipe(document.getElementById('page-records'),
+    () => changeMonth(1),
+    () => changeMonth(-1)
+  );
+  addSwipe(document.getElementById('page-stats'),
+    () => changeStatsMonth(1),
+    () => changeStatsMonth(-1)
+  );
+
+  renderRecords();
+  renderStats();
+</script>
+</body>
+</html>
