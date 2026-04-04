@@ -41,6 +41,8 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
 .allow-btn{background:var(--surface2);border:2px solid var(--border);border-radius:var(--radius);padding:12px 10px;text-align:center;cursor:pointer;transition:all 0.15s;color:var(--text);}
 .allow-btn.selected{border-color:var(--accent);background:rgba(245,166,35,0.12);}
 .allow-btn:active{transform:scale(0.97);}
+.memo-btn{background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:6px 12px;font-size:13px;color:var(--text);cursor:pointer;font-family:'Noto Sans JP',sans-serif;transition:all 0.15s;}
+.memo-btn:active{background:rgba(245,166,35,0.15);border-color:var(--accent);color:var(--accent);}
 .save-btn{width:100%;background:linear-gradient(135deg,var(--accent2),var(--accent));border:none;border-radius:var(--radius);padding:16px;font-family:'Oswald',sans-serif;font-size:18px;font-weight:600;letter-spacing:2px;color:#fff;cursor:pointer;margin-top:4px;transition:opacity 0.2s,transform 0.1s;text-shadow:0 1px 2px rgba(0,0,0,0.3);}
 .save-btn:active{transform:scale(0.98);opacity:0.9;}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:14px;}
@@ -120,6 +122,11 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
     </div>
     <div style="margin-top:12px;">
       <div class="input-label" style="margin-bottom:6px;">仕事内容メモ</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+        <div class="memo-btn" onclick="addMemo('ガス')">⛽ ガス</div>
+        <div class="memo-btn" onclick="addMemo('エステル')">🧪 エステル</div>
+        <div class="memo-btn" onclick="addMemo('塩素搭載')">⚗️ 塩素搭載</div>
+      </div>
       <textarea class="input-field" id="jobMemo" rows="2" placeholder="例：○○工場→△△倉庫 など" style="resize:none;line-height:1.6;font-family:'Noto Sans JP',sans-serif;font-size:14px;"></textarea>
     </div>
   </div>
@@ -290,6 +297,7 @@ function showTab(tab){
   if(tab==='stats')renderStats();
 }
 
+function addMemo(text){var el=document.getElementById('jobMemo');el.value=(el.value?el.value+'　':'')+text;}
 function toggleJob(el){var j=el.dataset.job;if(selectedJobs.includes(j)){selectedJobs=selectedJobs.filter(function(x){return x!==j;});el.classList.remove('selected');}else{selectedJobs.push(j);el.classList.add('selected');}}
 function selectToxic(n){if(toxicCount===n){toxicCount=0;document.getElementById('toxicBtn1').classList.remove('selected');document.getElementById('toxicBtn2').classList.remove('selected');document.getElementById('toxicDisplay').textContent='未選択';}else{toxicCount=n;document.getElementById('toxicBtn1').classList.toggle('selected',n===1);document.getElementById('toxicBtn2').classList.toggle('selected',n===2);document.getElementById('toxicDisplay').textContent='☠️×'+n+' = '+(n*2500).toLocaleString()+'円';}}
 function toggleTrailer(){trailerOn=!trailerOn;document.getElementById('trailerBtn').classList.toggle('selected',trailerOn);document.getElementById('trailerStatus').textContent=trailerOn?'✅ 3,000円':'タップでON';document.getElementById('trailerStatus').style.color=trailerOn?'var(--accent)':'var(--muted)';}
