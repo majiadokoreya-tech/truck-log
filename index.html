@@ -179,7 +179,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
       <div class="input-group">
         <div class="input-label">🛌 長距離手当（円）</div>
         <div class="money-input-wrap">
-          <input class="input-field" type="number" id="longDistancePay" placeholder="0" style="padding-right:32px;" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('saveBtn').focus();document.getElementById('saveBtn').scrollIntoView({behavior:'smooth',block:'center'});}">
+          <input class="input-field" type="number" id="longDistancePay" placeholder="0" style="padding-right:32px;" enterkeyhint="done" onblur="document.getElementById('saveBtn').scrollIntoView({behavior:'smooth',block:'center'});" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('saveBtn').focus();document.getElementById('saveBtn').scrollIntoView({behavior:'smooth',block:'center'});}">
           <span class="yen">円</span>
         </div>
       </div>
