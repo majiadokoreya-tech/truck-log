@@ -179,9 +179,10 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
       <div class="input-group">
         <div class="input-label">🛌 長距離手当（円）</div>
         <div class="money-input-wrap">
-          <input class="input-field" type="number" id="longDistancePay" placeholder="0" style="padding-right:32px;" enterkeyhint="done" onblur="document.getElementById('saveBtn').scrollIntoView({behavior:'smooth',block:'center'});" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('saveBtn').focus();document.getElementById('saveBtn').scrollIntoView({behavior:'smooth',block:'center'});}">
+          <input class="input-field" type="number" id="longDistancePay" placeholder="0" style="padding-right:32px;" enterkeyhint="done">
           <span class="yen">円</span>
         </div>
+        <button onclick="saveRecord()" style="margin-top:8px;width:100%;background:rgba(245,166,35,0.15);border:1.5px solid var(--accent);border-radius:10px;padding:10px;color:var(--accent);font-size:14px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;">💾 このまま保存する</button>
       </div>
       <div>
         <div class="input-label" style="margin-bottom:8px;">☠️ 毒手当（1回 2,500円）</div>
