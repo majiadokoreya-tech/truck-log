@@ -1,0 +1,1 @@
+{"name":"運転日報","short_name":"運転日報","description":"トラック運転手向け運転日報アプリ","display":"standalone","orientation":"portrait","background_color":"#0f1923","theme_color":"#0f1923","start_url":"./index.html","scope":"./","icons":[{"src":"https://raw.githubusercontent.com/twitter/twemoji/master/assets/72x72/1f69b.png","sizes":"72x72","type":"image/png"}]}
