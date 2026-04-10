@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
@@ -80,8 +80,8 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
 .date-input-wrap input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(0.7);}
 .empty{text-align:center;color:var(--muted);padding:40px 20px;font-size:14px;}
 .empty-icon{font-size:48px;margin-bottom:12px;}
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;align-items:flex-end;justify-content:center;}
-.modal-overlay.open{display:flex;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;align-items:flex-end;justify-content:center;pointer-events:none;}
+.modal-overlay.open{display:flex;pointer-events:auto;}
 .modal{background:var(--surface);border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:80vh;overflow-y:auto;border-top:2px solid var(--accent);}
 .modal-title{font-family:'Oswald',sans-serif;font-size:18px;color:var(--accent);margin-bottom:16px;}
 .modal-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px;}
@@ -582,5 +582,4 @@ function closeModal(e){if(e.target===document.getElementById('modalOverlay'))clo
 function closeModalDirect(){document.getElementById('modalOverlay').classList.remove('open');activeModal=null;deleteConfirmMode=false;}
 function editFromModal(){var r=getRecords().find(function(rec){return String(rec.id)===String(activeModal);});if(!r)return;closeModalDirect();showTab('input');document.getElementById('inputDate').value=r.date;loadRecordToForm(r);}
 function deleteRecord(){
-  if(activeModal===null)return;
-  if(!deleteConfirm
+  if(a
