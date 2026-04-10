@@ -116,12 +116,13 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
   <div class="section">
     <div class="section-title">仕事の種類（複数選択OK）</div>
     <div class="job-grid">
-      <div class="job-btn" data-job="地場" onclick="toggleJob(this)"><span class="emoji">🚛</span>地場</div>
+      <div class="job-btn" data-job="地場" onclick="toggleJob(this)" style="grid-column:span 2;font-size:16px;padding:18px 10px;"><span class="emoji" style="font-size:36px;">🚛</span>地場</div>
       <div class="job-btn" data-job="長距離" onclick="toggleJob(this)"><span class="emoji">🛌</span>長距離</div>
       <div class="job-btn" data-job="毒手当" onclick="toggleJob(this)"><span class="emoji">☠️</span>毒</div>
       <div class="job-btn" data-job="毒×2" onclick="toggleJob(this)"><span class="emoji">☠️☠️</span>毒×2</div>
       <div class="job-btn" data-job="トレーラー" onclick="toggleJob(this)"><span class="emoji">🚜</span>トレーラー</div>
-      <div class="job-btn" data-job="半日有給" onclick="toggleJob(this)"><span class="emoji">🌴</span>半日有給</div>
+      <div class="job-btn" data-job="半日有給" onclick="toggleJob(this)" style="padding:8px 6px;font-size:11px;"><span class="emoji" style="font-size:20px;">🌴</span>半日有給</div>
+      <div class="job-btn" data-job="休み" onclick="toggleJob(this)" style="padding:8px 6px;font-size:11px;"><span class="emoji" style="font-size:20px;">🕺</span>休み</div>
     </div>
     <div style="margin-top:12px;">
       <div class="input-label" style="margin-bottom:6px;">仕事内容メモ</div>
@@ -288,7 +289,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
 <div class="toast" id="toast"></div>
 
 <script>
-var JOB_EMOJI={'地場':'🚛','長距離':'🛌','毒手当':'☠️','毒×2':'☠️☠️','トレーラー':'🚜','半日有給':'🌴'};
+var JOB_EMOJI={'地場':'🚛','長距離':'🛌','毒手当':'☠️','毒×2':'☠️☠️','トレーラー':'🚜','半日有給':'🌴','休み':'🕺'};
 var HOLIDAYS=new Set(['2024-01-01','2024-01-08','2024-02-11','2024-02-12','2024-02-23','2024-03-20','2024-04-29','2024-05-03','2024-05-04','2024-05-05','2024-05-06','2024-07-15','2024-08-11','2024-08-12','2024-09-16','2024-09-22','2024-09-23','2024-10-14','2024-11-03','2024-11-04','2024-11-23','2025-01-01','2025-01-13','2025-02-11','2025-02-23','2025-02-24','2025-03-20','2025-04-29','2025-05-03','2025-05-04','2025-05-05','2025-05-06','2025-07-21','2025-08-11','2025-09-15','2025-09-22','2025-09-23','2025-10-13','2025-11-03','2025-11-23','2025-11-24','2026-01-01','2026-01-12','2026-02-11','2026-02-23','2026-03-20','2026-04-29','2026-05-03','2026-05-04','2026-05-05','2026-05-06','2026-07-20','2026-08-11','2026-09-21','2026-09-22','2026-09-23','2026-10-12','2026-11-03','2026-11-23']);
 var selectedJobs=[],toxicCount=0,trailerOn=false,editingId=null;
 var currentMonth=new Date().getMonth(),currentYear=new Date().getFullYear();
@@ -523,7 +524,7 @@ function renderStats(){
   var prev=document.getElementById('statsBreakdown');if(prev)prev.remove();
   var ms=statsYear+'-'+String(statsMonth+1).padStart(2,'0');
   document.getElementById('statsMonthLabel').textContent=statsYear+'年'+(statsMonth+1)+'月';
-  var records=getRecords().filter(function(r){return r.date.startsWith(ms);});
+  var records=getRecords().filter(function(r){return r.date.startsWith(ms) && !(r.jobs||[]).includes('休み');});
   var totalDays=records.length,totalKm=0,totalOT=0,totalPay=0,totalLD=0,totalTox=0,totalTr=0,totalDP=0;
   var t1=0,t2=0,trDays=0;
   records.forEach(function(r){
@@ -543,7 +544,7 @@ function renderStats(){
   var bd='<div id="statsBreakdown" class="section" style="margin-bottom:14px;"><div class="section-title">ワンマン手当 内訳</div>';
   if(totalTox>0){bd+='<div class="modal-row"><span class="modal-row-label">☠️ 毒手当</span><span>'+totalTox.toLocaleString()+' 円</span></div>';if(t1>0)bd+='<div class="modal-row" style="padding-left:16px;"><span class="modal-row-label" style="font-size:11px;">　×1（2,500円）× '+t1+'日</span><span style="font-size:12px;">'+(t1*2500).toLocaleString()+' 円</span></div>';if(t2>0)bd+='<div class="modal-row" style="padding-left:16px;"><span class="modal-row-label" style="font-size:11px;">　×2（5,000円）× '+t2+'日</span><span style="font-size:12px;">'+(t2*5000).toLocaleString()+' 円</span></div>';}
   if(totalTr>0){bd+='<div class="modal-row"><span class="modal-row-label">🚜 トレーラー手当</span><span>'+totalTr.toLocaleString()+' 円</span></div>';bd+='<div class="modal-row" style="padding-left:16px;"><span class="modal-row-label" style="font-size:11px;">　3,000円 × '+trDays+'日</span><span style="font-size:12px;">'+(trDays*3000).toLocaleString()+' 円</span></div>';}
-  if(totalDP>0){var rn=totalKm<=800?totalKm.toLocaleString()+'km × 8円':'800km×8円 + '+(totalKm-800).toLocaleString()+'km×18円';bd+='<div class="modal-row"><span class="modal-row-label">🛣️ 走行距離手当</span><span>'+totalDP.toLocaleString()+' 円</span></div><div class="modal-row" style="padding-left:16px;"><span class="modal-row-label" style="font-size:11px;">　'+rn+'</span></div>';}
+  if(totalDP>0){bd+='<div class="modal-row"><span class="modal-row-label">🛣️ 走行距離手当</span><span>'+totalDP.toLocaleString()+' 円</span></div><div class="modal-row" style="padding-left:16px;"><span class="modal-row-label" style="font-size:11px;">　各日の走行距離で計算（〜800km×8円、超過×18円）</span></div>';}
   bd+='<div class="modal-row" style="font-weight:700;margin-top:4px;"><span class="modal-row-label">💰 ワンマン手当合計</span><span style="color:var(--accent)">'+totalPay.toLocaleString()+' 円</span></div></div>';
   document.getElementById('statsGrid').insertAdjacentHTML('afterend',bd);
   var header='日付\t仕事\t出勤\t退勤\t実働\t残業\t走行km\t長距離手当\t毒手当\tトレーラー手当\tワンマン手当\tメモ';
@@ -579,343 +580,4 @@ function showModal(id){
 }
 function closeModal(e){if(e.target===document.getElementById('modalOverlay'))closeModalDirect();}
 function closeModalDirect(){document.getElementById('modalOverlay').classList.remove('open');activeModal=null;deleteConfirmMode=false;}
-function editFromModal(){var r=getRecords().find(function(rec){return String(rec.id)===String(activeModal);});if(!r)return;closeModalDirect();showTab('input');document.getElementById('inputDate').value=r.date;loadRecordToForm(r);}
-function deleteRecord(){
-  if(activeModal===null)return;
-  if(!deleteConfirmMode){deleteConfirmMode=true;var btn=document.querySelector('.modal-delete');btn.textContent='⚠️ もう一度タップで削除';btn.style.background='rgba(231,76,60,0.4)';setTimeout(function(){deleteConfirmMode=false;if(btn){btn.textContent='🗑️ 削除';btn.style.background='rgba(231,76,60,0.15)';}},3000);return;}
-  deleteConfirmMode=false;
-  var records=getRecords().filter(function(r){return String(r.id)!==String(activeModal);});
-  saveRecords(records);closeModalDirect();renderRecords();showToast('🗑️ 削除しました');
-}
-
-var swX=0,swY=0;
-function addSwipe(el,onL,onR){el.addEventListener('touchstart',function(e){swX=e.touches[0].clientX;swY=e.touches[0].clientY;},{passive:true});el.addEventListener('touchend',function(e){var dx=e.changedTouches[0].clientX-swX,dy=e.changedTouches[0].clientY-swY;if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>50){if(dx<0)onL();else onR();}},{passive:true});}
-
-// ===== 運行料金表 =====
-var FARE_DATA = [
-  // エステル
-  {cat:'エステル',name:'BASFジャパン㈱ 磯原',start:'13:00',end:'20:30',pay:23000},
-  {cat:'エステル',name:'CHEMIPAZ㈱ 静岡',start:'18:30',end:'15:00',pay:9800},
-  {cat:'エステル',name:'CHEMIPAZ㈱ 播磨',start:'17:30',end:'16:00',pay:13200},
-  {cat:'エステル',name:'CHEMIPAZ㈱ 龍ケ崎',start:'14:30',end:'19:30',pay:21400},
-  {cat:'エステル',name:'DIC㈱ 堺',start:'19:00',end:'15:00',pay:8200},
-  {cat:'エステル',name:'DIC㈱ 千葉',start:'15:00',end:'18:30',pay:18600},
-  {cat:'エステル',name:'DIC㈱ 北陸',start:'18:00',end:'15:30',pay:11600},
-  {cat:'エステル',name:'JSR㈱ 鹿島',start:'14:00',end:'20:00',pay:22200},
-  {cat:'エステル',name:'KJケミカルズ㈱ 八代',start:'10:00',end:'2:00',pay:36600},
-  {cat:'エステル',name:'MTアクアポリマー㈱ 茂原',start:'14:30',end:'19:30',pay:21400},
-  {cat:'エステル',name:'NUC 川崎',start:'16:30',end:'17:00',pay:16400},
-  {cat:'エステル',name:'アイカ工業㈱ 丹皮',start:'17:30',end:'16:00',pay:13200},
-  {cat:'エステル',name:'旭化成㈱ 川崎',start:'16:30',end:'17:00',pay:16400},
-  {cat:'エステル',name:'旭化成㈱ 川崎（夜）',start:'16:30',end:'17:00',pay:16400},
-  {cat:'エステル',name:'旭化成㈱ 千葉',start:'14:30',end:'18:00',pay:18000},
-  {cat:'エステル',name:'旭化成㈱ 水島',start:'16:30',end:'17:30',pay:17200},
-  {cat:'エステル',name:'旭化成㈱ 和歌山',start:'17:30',end:'16:00',pay:13200},
-  {cat:'エステル',name:'旭硝子㈱ 千葉',start:'15:00',end:'19:00',pay:19400},
-  {cat:'エステル',name:'荒川化学工業㈱ 水島',start:'16:30',end:'17:00',pay:16400},
-  {cat:'エステル',name:'宇都宮化工㈱ 宇都宮',start:'13:30',end:'20:30',pay:22800},
-  {cat:'エステル',name:'大分キャノンマテリアル㈱ 大分（2マン）',start:'10:30',end:'1:30',pay:34200},
-  {cat:'エステル',name:'大分ケミカル㈱（2マン）',start:'10:30',end:'1:30',pay:34400},
-  {cat:'エステル',name:'大阪有機化学工業㈱ 大阪',start:'19:00',end:'14:30',pay:7400},
-  {cat:'エステル',name:'大阪有機化学工業㈱ 金沢',start:'18:00',end:'15:30',pay:11600},
-  {cat:'エステル',name:'大塚アグリテクノ㈱ 鳴門',start:'16:30',end:'17:30',pay:17200},
-  {cat:'エステル',name:'花王㈱ 鹿島',start:'14:00',end:'19:30',pay:21400},
-  {cat:'エステル',name:'花王㈱ 和歌山',start:'18:00',end:'15:30',pay:11600},
-  {cat:'エステル',name:'カネカ 高砂',start:'17:30',end:'16:30',pay:14000},
-  {cat:'エステル',name:'関西ペイント㈱ 鹿沼',start:'14:00',end:'20:00',pay:22200},
-  {cat:'エステル',name:'関西ペイント㈱ 平塚',start:'17:00',end:'16:30',pay:14600},
-  {cat:'エステル',name:'北日本ディック㈱（2マン）',start:'12:30',end:'23:00',pay:28400},
-  {cat:'エステル',name:'キャノン㈱ 岩間',start:'14:30',end:'19:30',pay:21400},
-  {cat:'エステル',name:'キャノン㈱ 取手',start:'15:00',end:'19:00',pay:20600},
-  {cat:'エステル',name:'倉敷紡績㈱ 徳島工場',start:'16:30',end:'16:30',pay:17200},
-  {cat:'エステル',name:'倉本産業㈱',start:'15:00',end:'18:30',pay:18800},
-  {cat:'エステル',name:'クラレ 新潟',start:'12:00',end:'20:30',pay:23000},
-  {cat:'エステル',name:'高圧ガス工業㈱ 佐倉',start:'15:00',end:'18:30',pay:18800},
-  {cat:'エステル',name:'高圧ガス工業㈱ 竜野',start:'17:00',end:'16:30',pay:14800},
-  {cat:'エステル',name:'互応化学工業㈱ 福井',start:'18:30',end:'15:30',pay:10800},
-  {cat:'エステル',name:'コニカミノルタサプライズ',start:'15:30',end:'16:00',pay:14800},
-  {cat:'エステル',name:'コニカミノルタサプライズ 辰野（BA）',start:'16:30',end:'15:00',pay:13200},
-  {cat:'エステル',name:'コニカミノルタサプライズ 辰野（HA）',start:'18:30',end:'15:00',pay:9200},
-  {cat:'エステル',name:'サイデン化学㈱ 浦和',start:'16:00',end:'17:30',pay:17200},
-  {cat:'エステル',name:'サイデン化学㈱ 東京',start:'16:00',end:'17:30',pay:17200},
-  {cat:'エステル',name:'信越化学工業㈱ 直江津',start:'14:30',end:'18:00',pay:18000},
-  {cat:'エステル',name:'新中村化学工業㈱ 福井',start:'18:30',end:'15:30',pay:10600},
-  {cat:'エステル',name:'新中村化学工業㈱ 本社',start:'18:30',end:'15:30',pay:10800},
-  {cat:'エステル',name:'住友化学㈱ 愛媛',start:'14:30',end:'19:00',pay:20600},
-  {cat:'エステル',name:'住友化学㈱ 千葉',start:'14:30',end:'18:00',pay:18000},
-  {cat:'エステル',name:'綜研化学㈱ 狭山',start:'16:30',end:'17:30',pay:17200},
-  {cat:'エステル',name:'大成ファインケミカル㈱',start:'14:00',end:'19:30',pay:21400},
-  {cat:'エステル',name:'大成ファインケミカル㈱ 東京',start:'15:30',end:'18:30',pay:19000},
-  {cat:'エステル',name:'ダイセル新井ケミカル㈱（HA）',start:'16:30',end:'17:30',pay:17200},
-  {cat:'エステル',name:'ダイセル新井ケミカル㈱（HA他）',start:'14:30',end:'17:30',pay:17200},
-  {cat:'エステル',name:'大同化成工業㈱',start:'15:30',end:'19:00',pay:19600},
-  {cat:'エステル',name:'大同化成工業㈱ 福井',start:'18:30',end:'15:30',pay:10600},
-  {cat:'エステル',name:'帝人㈱三島事業所',start:'18:30',end:'15:30',pay:10800},
-  {cat:'エステル',name:'デクセリアルズ㈱ 鹿沼第二',start:'14:00',end:'20:00',pay:22200},
-  {cat:'エステル',name:'デンカ㈱ 千葉',start:'15:00',end:'19:00',pay:19400},
-  {cat:'エステル',name:'東亜合成㈱ 坂出',start:'16:00',end:'17:30',pay:17200},
-  {cat:'エステル',name:'東亜合成㈱ 高岡',start:'17:00',end:'15:30',pay:13200},
-  {cat:'エステル',name:'東亜合成㈱ 高岡（冬）',start:'17:00',end:'16:30',pay:14800},
-  {cat:'エステル',name:'東亜合成㈱ 広野',start:'12:30',end:'21:30',pay:24600},
-  {cat:'エステル',name:'東亜合成㈱ 広野（メタ引取あり）',start:'12:30',end:'22:30',pay:26400},
-  {cat:'エステル',name:'東亜合成㈱ 広野（メタ引取あり）セミトレ',start:'12:30',end:'23:30',pay:28400},
-  {cat:'エステル',name:'トウペ製造 倉敷',start:'16:30',end:'17:30',pay:17000},
-  {cat:'エステル',name:'東レ・ファインケミカル㈱ 千葉',start:'15:00',end:'19:00',pay:20400},
-  // エステル2ページ目
-  {cat:'エステル',name:'トーヨーケム㈱ 川越',start:'16:00',end:'17:30',pay:17200},
-  {cat:'エステル',name:'トーヨーケム㈱ 西神',start:'18:00',end:'16:00',pay:12400},
-  {cat:'エステル',name:'日信化学工業㈱ 武生',start:'19:30',end:'14:30',pay:6600},
-  {cat:'エステル',name:'日本シンコー㈱ 丸岡',start:'19:00',end:'14:30',pay:7400},
-  {cat:'エステル',name:'日東電工㈱ 尾道',start:'15:30',end:'18:00',pay:18000},
-  {cat:'エステル',name:'日東電工㈱ 関東',start:'15:00',end:'19:00',pay:19600},
-  {cat:'エステル',name:'日東電工㈱ 東北（2マン）',start:'11:00',end:'0:30',pay:31400},
-  {cat:'エステル',name:'日本エイアンドエル㈱ 愛媛',start:'14:30',end:'19:00',pay:20600},
-  {cat:'エステル',name:'日本エクスラン工業㈱ 西大寺',start:'17:00',end:'17:00',pay:15600},
-  {cat:'エステル',name:'日本カーバイド工業㈱ 魚津（HA）',start:'17:30',end:'16:00',pay:13200},
-  {cat:'エステル',name:'日本カーバイド工業㈱ 魚津（HA他）',start:'16:30',end:'16:00',pay:14800},
-  {cat:'エステル',name:'日本カーバイド工業㈱ 魚津（冬）',start:'16:30',end:'17:00',pay:16400},
-  {cat:'エステル',name:'日本カーバイド工業㈱ 早月',start:'17:30',end:'16:00',pay:13200},
-  {cat:'エステル',name:'日本カーバイド工業㈱ 早月（冬）',start:'16:30',end:'17:00',pay:16400},
-  {cat:'エステル',name:'日本化薬㈱ 福山',start:'16:00',end:'18:00',pay:18000},
-  {cat:'エステル',name:'日本触媒 川崎',start:'16:30',end:'17:30',pay:17200},
-  {cat:'エステル',name:'日本製紙㈱ 岩国',start:'14:00',end:'20:00',pay:22200},
-  {cat:'エステル',name:'日本ゼオン徳島',start:'12:30',end:'21:30',pay:24600},
-  {cat:'エステル',name:'日本ゼオン㈱ 川崎',start:'16:30',end:'17:00',pay:16400},
-  {cat:'エステル',name:'日本乳化剤㈱ 川崎',start:'16:30',end:'17:00',pay:16400},
-  {cat:'エステル',name:'日本ペイント㈱ 岡山',start:'17:30',end:'16:30',pay:14000},
-  {cat:'エステル',name:'日本ペイント㈱ 千葉',start:'14:30',end:'19:00',pay:20600},
-  {cat:'エステル',name:'日本ペイント㈱ 栃木',start:'13:30',end:'20:30',pay:22800},
-  {cat:'エステル',name:'根上工業㈱',start:'18:30',end:'15:30',pay:10800},
-  {cat:'エステル',name:'ハイモ㈱ 神奈川',start:'17:00',end:'16:30',pay:14600},
-  {cat:'エステル',name:'ハイモ㈱ 山口',start:'13:00',end:'21:00',pay:23800},
-  {cat:'エステル',name:'ハニー化成',start:'18:30',end:'15:30',pay:10800},
-  {cat:'エステル',name:'日立化成㈱ 鹿島',start:'14:00',end:'20:00',pay:22200},
-  {cat:'エステル',name:'日立化成㈱ 山崎',start:'13:30',end:'20:00',pay:22200},
-  {cat:'エステル',name:'日油㈱ 尼崎',start:'18:30',end:'15:00',pay:10000},
-  {cat:'エステル',name:'保土谷ロジスティクス㈱ 郡山',start:'12:00',end:'22:00',pay:25400},
-  {cat:'エステル',name:'保土谷ロジスティクス㈱ 郡山（2マン）',start:'15:00',end:'22:00',pay:25400},
-  {cat:'エステル',name:'三井化学㈱ 茂原',start:'14:30',end:'19:30',pay:21400},
-  {cat:'エステル',name:'三井ダウケミカル㈱ 大竹',start:'14:00',end:'20:00',pay:22200},
-  {cat:'エステル',name:'三菱ケミカル㈱ 富山',start:'16:30',end:'16:00',pay:14800},
-  {cat:'エステル',name:'三菱ケミカル㈱ 富山（冬）',start:'16:30',end:'17:00',pay:16400},
-  {cat:'エステル',name:'三菱ケミカル㈱ 広島',start:'14:00',end:'20:00',pay:22200},
-  {cat:'エステル',name:'山形スリーエム㈱ 東根（2マン）',start:'11:30',end:'0:30',pay:31400},
-  {cat:'エステル',name:'山南合成㈱ 福井',start:'18:30',end:'15:30',pay:10600},
-  {cat:'エステル',name:'ヤヨイ化学工業㈱ 射水（EA）（BA）',start:'17:00',end:'16:00',pay:14000},
-  {cat:'エステル',name:'ヤヨイ化学工業㈱ 射水（HA）',start:'18:00',end:'16:00',pay:12400},
-  {cat:'エステル',name:'ヤヨイ化学工業㈱ 射水（冬）',start:'17:30',end:'17:00',pay:15600},
-  {cat:'エステル',name:'ユニマテック㈱ 第1',start:'13:00',end:'20:30',pay:23000},
-  {cat:'エステル',name:'横浜ポリマー研究所 山梨（BA）',start:'16:00',end:'16:00',pay:14800},
-  {cat:'エステル',name:'横浜ポリマー研究所 山梨（HA）',start:'18:00',end:'16:00',pay:12400},
-  {cat:'エステル',name:'ライオン化学㈱ 鹿島',start:'14:00',end:'20:00',pay:22200},
-  {cat:'エステル',name:'レゾナック 伊勢崎',start:'15:00',end:'18:30',pay:18800},
-  {cat:'エステル',name:'レゾナック 川崎',start:'16:30',end:'17:00',pay:16400},
-  {cat:'エステル',name:'レゾナック 龍野',start:'17:00',end:'16:30',pay:14800},
-  {cat:'エステル',name:'ロックペイント㈱ 福崎',start:'17:30',end:'16:00',pay:13200},
-  // 引取り
-  {cat:'エステル引取',name:'関東SP 東洋合成工業㈱',start:'15:30',end:'18:00',pay:18200},
-  {cat:'エステル引取',name:'関東SP 丸善㈱',start:'15:00',end:'19:00',pay:20400},
-  {cat:'エステル引取',name:'関西SP 関西化成品輸送㈱',start:'19:00',end:'15:00',pay:8200},
-  {cat:'エステル引取',name:'㈱日本触媒 吹田',start:'17:00',end:'17:00',pay:15400},
-  {cat:'エステル引取',name:'㈱日本触媒 姫路',start:'17:00',end:'17:00',pay:15400},
-  // ポリマー
-  {cat:'ポリマー',name:'アクアスエンジ㈱ つくば',start:'14:30',end:'18:30',pay:18800},
-  {cat:'ポリマー',name:'旭化成ケミカルズ㈱ 川崎',start:'16:30',end:'16:00',pay:14800},
-  {cat:'ポリマー',name:'旭化成ケミカルズ㈱ 水島',start:'16:30',end:'16:30',pay:15600},
-  {cat:'ポリマー',name:'王子製紙㈱ 富岡',start:'15:30',end:'17:30',pay:17200},
-  {cat:'ポリマー',name:'北広ケミカル㈱ 南',start:'18:00',end:'15:30',pay:11600},
-  {cat:'ポリマー',name:'クリタケミカル製造㈱ 猿島（本社）T-50',start:'14:30',end:'18:30',pay:18800},
-  {cat:'ポリマー',name:'クリタケミカル製造㈱ 赤穂 T-50',start:'16:30',end:'16:00',pay:14800},
-  {cat:'ポリマー',name:'クリタケミカル製造㈱ 赤穂 A-6051',start:'16:30',end:'16:00',pay:14800},
-  {cat:'ポリマー',name:'クリタケミカル製造㈱ 猿島（本社）A-6051',start:'14:30',end:'19:00',pay:18800},
-  {cat:'ポリマー',name:'中越パルプ工業㈱ 高岡',start:'18:00',end:'14:30',pay:9200},
-  {cat:'ポリマー',name:'中越パルプ工業㈱ 高岡（冬）',start:'17:00',end:'15:30',pay:13200},
-  {cat:'ポリマー',name:'テイカ㈱ 岡山',start:'17:00',end:'16:30',pay:14800},
-  {cat:'ポリマー',name:'東亜合成㈱ 広野',start:'12:30',end:'20:30',pay:23000},
-  {cat:'ポリマー',name:'日本エイアンドエル㈱ 愛媛',start:'14:30',end:'19:00',pay:20600},
-  {cat:'ポリマー',name:'日本エイアンドエル㈱ 千葉',start:'14:30',end:'17:00',pay:16400},
-  {cat:'ポリマー',name:'日本製紙㈱ 石巻（2マン）',start:'11:00',end:'23:30',pay:29400},
-  {cat:'ポリマー',name:'日本製紙㈱ 岩国',start:'14:00',end:'20:00',pay:22200},
-  {cat:'ポリマー',name:'㈱ADEKA 富士',start:'18:30',end:'14:00',pay:7400},
-  {cat:'ポリマー',name:'㈱イメリス・ミネラルズ・ジャパン',start:'18:30',end:'14:30',pay:8400},
-  {cat:'ポリマー',name:'㈱イゼット',start:'18:30',end:'15:00',pay:9000},
-  {cat:'ポリマー',name:'㈱イゼット（冬）',start:'17:30',end:'16:00',pay:13200},
-  {cat:'ポリマー',name:'㈱エヌ・エス・カラーテクノ 北陸',start:'19:30',end:'14:30',pay:6600},
-  {cat:'ポリマー',name:'㈱片山化学工業研究所 綾部',start:'17:00',end:'16:00',pay:14000},
-  {cat:'ポリマー',name:'㈱キング・ライン',start:'18:00',end:'15:00',pay:10800},
-  {cat:'ポリマー',name:'㈱小松プロセス',start:'18:30',end:'15:00',pay:9000},
-  {cat:'ポリマー',name:'㈱にイタカ つくば',start:'14:30',end:'18:30',pay:19800},
-  {cat:'ポリマー',name:'㈱ファイマテック 富士',start:'18:30',end:'14:30',pay:8400},
-  {cat:'ポリマー',name:'㈱フローリック 東松山',start:'16:00',end:'18:00',pay:18000},
-  {cat:'ポリマー',name:'㈱フローリック 厚木',start:'17:30',end:'16:30',pay:13800},
-  {cat:'ポリマー',name:'旭ファイバーグラス 湘南',start:'',end:'',pay:14600},
-  {cat:'ポリマー',name:'苛性カリ 東京化成品センター',start:'16:30',end:'17:00',pay:16400},
-  {cat:'ポリマー',name:'濃硫酸 田中化学研究所 福井工場',start:'18:30',end:'15:30',pay:10600},
-  {cat:'ポリマー',name:'濃硫酸 GSユアサ 群馬',start:'12:30',end:'19:00',pay:21600},
-  // ガス
-  {cat:'ガス',name:'アライドマテリアル → CLO',start:'17:30',end:'16:30',pay:14000},
-  {cat:'ガス',name:'アライドマテリアル → CLO（冬）',start:'17:00',end:'17:00',pay:16400},
-  {cat:'ガス',name:'アライドマテリアル → NSC（冬）',start:'17:00',end:'17:00',pay:15600},
-  {cat:'ガス',name:'尾鷲東邦石油 → CLO',start:'18:00',end:'16:00',pay:12400},
-  {cat:'ガス',name:'神岡鉱業',start:'18:00',end:'15:30',pay:10000},
-  {cat:'ガス',name:'神岡鉱業 → CLO',start:'18:00',end:'16:30',pay:13200},
-  {cat:'ガス',name:'神岡鉱業 → NSC',start:'18:00',end:'16:30',pay:13200},
-  {cat:'ガス',name:'神岡セラミック → CLO',start:'18:00',end:'16:30',pay:13200},
-  {cat:'ガス',name:'神岡セラミック → NSC',start:'18:00',end:'16:30',pay:13200},
-  {cat:'ガス',name:'北酸高圧ガス（高岡）→ CLO',start:'18:00',end:'14:30',pay:9800},
-  {cat:'ガス',name:'小糸 → CLO',start:'18:00',end:'14:00',pay:8000},
-  {cat:'ガス',name:'小糸 → HAS',start:'18:00',end:'14:00',pay:8000},
-  {cat:'ガス',name:'小糸 → HAS → 兼房 → CLO',start:'18:00',end:'19:00',pay:15400},
-  {cat:'ガス',name:'小糸 → HAS → 日清オイリオ → CLO',start:'19:00',end:'18:00',pay:13800},
-  {cat:'ガス',name:'小糸 → HAS → 松本油脂 → CLO',start:'19:00',end:'18:00',pay:13800},
-  {cat:'ガス',name:'小糸 → NSC',start:'18:00',end:'14:00',pay:8000},
-  {cat:'ガス',name:'小糸 → カネヤン → NSC',start:'19:00',end:'16:00',pay:10800},
-  {cat:'ガス',name:'サカキ',start:'18:00',end:'14:30',pay:12400},
-  {cat:'ガス',name:'サカキ（冬）',start:'17:30',end:'15:00',pay:11600},
-  {cat:'ガス',name:'サカキ → CLO',start:'18:00',end:'16:00',pay:12400},
-  {cat:'ガス',name:'三協立山 → CLO',start:'18:00',end:'16:30',pay:13200},
-  {cat:'ガス',name:'三協立山 → CLO（冬）',start:'17:00',end:'17:30',pay:16400},
-  {cat:'ガス',name:'塩谷硝子 → CLO → 小松窯業所',start:'16:30',end:'20:30',pay:23000},
-  {cat:'ガス',name:'シャープ（冬）',start:'16:30',end:'16:00',pay:14800},
-  {cat:'ガス',name:'シャープ → SP（冬）',start:'16:30',end:'17:00',pay:16400},
-  {cat:'ガス',name:'昭和電工川崎',start:'16:30',end:'17:00',pay:16400},
-  {cat:'ガス',name:'昭和電工川崎 → 昭和電工四日市',start:'16:30',end:'20:00',pay:21200},
-  {cat:'ガス',name:'東レ石川 → CLO',start:'18:00',end:'15:30',pay:13200},
-  {cat:'ガス',name:'トライ → CLO',start:'19:00',end:'15:30',pay:10000},
-  {cat:'ガス',name:'ハイブリッド → HAS → 浜岡',start:'18:00',end:'15:00',pay:13800},
-  {cat:'ガス',name:'光が丘病院',start:'17:00',end:'15:30',pay:13200},
-  {cat:'ガス',name:'飛騨市民病院 → 神岡鉱業 → CLO',start:'18:00',end:'16:30',pay:13400},
-  {cat:'ガス',name:'北酸高圧ガス → CAP',start:'18:00',end:'21:30',pay:23800},
-  {cat:'ガス',name:'北酸高圧ガス（富山）',start:'18:00',end:'15:00',pay:10800},
-  {cat:'ガス',name:'北酸高圧ガス（富山）（冬）',start:'17:00',end:'16:00',pay:14000},
-  {cat:'ガス',name:'北酸高圧ガス（富山）→ NSC',start:'18:00',end:'16:00',pay:12400},
-  {cat:'ガス',name:'北酸高圧ガス（富山）→ SP',start:'18:00',end:'16:00',pay:12400},
-  {cat:'ガス',name:'北酸高圧ガス（富山）→ SP（冬）',start:'17:00',end:'17:00',pay:15600},
-  {cat:'ガス',name:'北酸高圧ガス（富山）→ ヨネダ',start:'18:00',end:'16:00',pay:12400},
-  {cat:'ガス',name:'北酸高圧ガス（富山）→ ヨネダ（冬）',start:'17:00',end:'17:00',pay:15600},
-  {cat:'ガス',name:'北酸高圧ガス（富山）→ ヨネダ → SP',start:'17:00',end:'17:00',pay:14000},
-  {cat:'ガス',name:'北酸高圧ガス（富山）→ 中渡',start:'17:00',end:'17:30',pay:14000},
-  {cat:'ガス',name:'ヨネダ → SP',start:'18:30',end:'14:30',pay:9200},
-  {cat:'ガス',name:'ヨネダ → サカキ',start:'18:00',end:'15:30',pay:10800},
-  {cat:'ガス',name:'ヨネダ → サカキ（冬）',start:'17:30',end:'16:30',pay:14000},
-  {cat:'ガス',name:'ヨネダ → シャープ',start:'18:00',end:'16:00',pay:12400},
-  {cat:'ガス',name:'ヨネダ → シャープ（冬）',start:'17:30',end:'17:30',pay:15600},
-  {cat:'ガス',name:'ヨネダ',start:'18:30',end:'14:00',pay:7400},
-  {cat:'ガス',name:'ヨネダ（冬）',start:'17:30',end:'15:00',pay:11600},
-  {cat:'ガス',name:'NGK石川',start:'18:00',end:'14:30',pay:10800},
-  {cat:'ガス',name:'NGK石川 → SP積',start:'18:00',end:'15:30',pay:12400},
-  {cat:'ガス',name:'東亜合成 高岡 → JX',start:'18:00',end:'17:00',pay:12400},
-  {cat:'ガス',name:'東亜合成 高岡 → JX（冬）',start:'17:00',end:'17:30',pay:15600},
-  {cat:'ガス',name:'東亜合成 高岡',start:'18:00',end:'15:30',pay:10800},
-  {cat:'ガス',name:'東亜合成 高岡（冬）',start:'17:00',end:'15:30',pay:13200},
-  {cat:'ガス',name:'東亜合成 高岡 → YCX',start:'18:00',end:'17:30',pay:14800},
-  {cat:'ガス',name:'東亜合成 高岡 → YCX（冬）',start:'18:00',end:'18:30',pay:18000},
-  {cat:'ガス',name:'岩谷千葉',start:'',end:'16:30',pay:16400},
-  {cat:'ガス',name:'UACJ福井',start:'18:30',end:'15:30',pay:10600},
-  {cat:'ガス',name:'UACJ福井 → SP',start:'19:30',end:'16:30',pay:12200},
-  // 液安
-  {cat:'液安',name:'AWPC㈱ 湘南',start:'17:00',end:'16:30',pay:14600},
-  {cat:'液安',name:'AWPC㈱ → AN',start:'17:30',end:'17:30',pay:16400},
-  {cat:'液安',name:'関西電力㈱ 相生',start:'17:00',end:'17:00',pay:15600},
-  {cat:'液安',name:'関西電力㈱ 海南',start:'18:00',end:'15:30',pay:11600},
-  {cat:'液安',name:'関西電力㈱ 海南 → AN',start:'18:00',end:'17:00',pay:14000},
-  {cat:'液安',name:'関西電力㈱ 御坊',start:'17:30',end:'16:00',pay:13200},
-  {cat:'液安',name:'関西電力㈱ 姫路第一',start:'17:30',end:'16:30',pay:14000},
-  {cat:'液安',name:'関西電力㈱ 姫路第二',start:'17:30',end:'16:30',pay:14000},
-  {cat:'液安',name:'多木化学㈱',start:'17:30',end:'16:00',pay:13200},
-  {cat:'液安',name:'多木化学㈱ → AN',start:'17:30',end:'17:00',pay:15600},
-  {cat:'液安',name:'新日本電工(㈱)※旧中央電気',start:'15:00',end:'18:30',pay:18800},
-  {cat:'液安',name:'中国電力㈱ 玉島',start:'17:30',end:'17:00',pay:17000},
-  {cat:'液安',name:'中国電力㈱ 水島',start:'16:30',end:'17:00',pay:17200},
-  {cat:'液安',name:'㈱ステンレス 久世',start:'17:30',end:'14:30',pay:14800},
-  {cat:'液安',name:'JFEスチール㈱ 東日本製鉄所 千葉',start:'15:00',end:'19:00',pay:20600},
-  {cat:'液安',name:'JFEスチール㈱東日本製鉄所千葉→AN',start:'15:00',end:'20:30',pay:23000},
-  {cat:'液安',name:'ADEKA富士',start:'18:30',end:'15:00',pay:9000},
-  {cat:'液安',name:'ADEKA富士 → AN',start:'18:30',end:'16:30',pay:12400},
-  {cat:'液安',name:'北陸電力 七尾',start:'16:30',end:'17:30',pay:17200},
-  {cat:'液安',name:'北陸電力 新港',start:'17:00',end:'16:30',pay:14800},
-  {cat:'液安',name:'北陸電力 七尾 → AN',start:'16:30',end:'19:00',pay:19600},
-  {cat:'液安',name:'北陸電力 福井',start:'18:30',end:'15:00',pay:10200},
-  {cat:'液安',name:'北陸電力 福井 → AN',start:'18:30',end:'16:30',pay:12600},
-  {cat:'液安',name:'北陸電力 新港 → AN',start:'',end:'18:00',pay:17200},
-  {cat:'液安',name:'ステンレス久世 → AN',start:'17:30',end:'',pay:17200},
-  {cat:'液安',name:'日産化学㈱ 富山工場',start:'',end:'',pay:17200},
-  // 液塩
-  {cat:'液塩',name:'ダイセル新井ケミカル㈱',start:'14:30',end:'19:00',pay:20600},
-  {cat:'液塩',name:'ラサ工業㈱ 大阪',start:'19:00',end:'15:00',pay:8000},
-  {cat:'液塩',name:'㈱カネカ 大阪',start:'19:00',end:'15:00',pay:8000},
-  {cat:'液塩',name:'新興化学㈱ 堺臨界工場',start:'19:00',end:'15:00',pay:8000},
-  {cat:'液塩',name:'東邦チタニウム',start:'17:00',end:'16:30',pay:14600},
-  {cat:'液塩',name:'㈱カネカ 高砂',start:'17:30',end:'17:00',pay:14000},
-  {cat:'液塩',name:'東亜合成 徳島',start:'17:00',end:'19:00',pay:18800},
-];
-
-var fareCategory = 'すべて';
-
-function openFareTable() {
-  document.getElementById('fareOverlay').classList.add('open');
-  document.getElementById('fareSearch').value = '';
-  fareCategory = 'すべて';
-  buildFareCategoryBtns();
-  renderFareTable();
-  setTimeout(function(){ document.getElementById('fareSearch').focus(); }, 100);
-}
-
-function closeFareTable(e) {
-  if (e.target === document.getElementById('fareOverlay')) closeFareTableDirect();
-}
-function closeFareTableDirect() {
-  document.getElementById('fareOverlay').classList.remove('open');
-}
-
-function buildFareCategoryBtns() {
-  var cats = ['すべて', 'エステル', 'エステル引取', 'ポリマー', 'ガス', '液安', '液塩'];
-  var container = document.getElementById('fareCategoryBtns');
-  container.innerHTML = cats.map(function(c) {
-    return '<div class="memo-btn" id="farecat-'+c+'" onclick="setFareCategory(\''+c+'\')" style="'+(c===fareCategory?'background:rgba(245,166,35,0.2);border-color:var(--accent);color:var(--accent);':'')+'">'+c+'</div>';
-  }).join('');
-}
-
-function setFareCategory(cat) {
-  fareCategory = cat;
-  buildFareCategoryBtns();
-  renderFareTable();
-}
-
-function renderFareTable() {
-  var sw = document.getElementById('fareSearch').value.trim();
-  var data = FARE_DATA.filter(function(r) {
-    var catOk = fareCategory === 'すべて' || r.cat === fareCategory;
-    var swOk = !sw || r.name.includes(sw);
-    return catOk && swOk;
-  });
-  if (!data.length) {
-    document.getElementById('fareList').innerHTML = '<div class="empty">該当なし</div>';
-    return;
-  }
-  document.getElementById('fareList').innerHTML = data.map(function(r) {
-    return '<div onclick="selectFare('+r.pay+')" style="display:flex;justify-content:space-between;align-items:center;padding:10px 4px;border-bottom:1px solid var(--border);cursor:pointer;active:background:var(--surface2);">'+
-      '<div>'+
-        '<div style="font-size:13px;">'+r.name+'</div>'+
-        (r.start||r.end?'<div style="font-size:11px;color:var(--muted);">'+r.start+' 〜 '+r.end+'</div>':'')+'</div>'+
-      '<div style="font-family:\'Oswald\',sans-serif;font-size:16px;color:var(--accent);min-width:70px;text-align:right;">'+r.pay.toLocaleString()+'円</div>'+
-    '</div>';
-  }).join('');
-}
-
-function selectFare(pay) {
-  document.getElementById('longDistancePay').value = pay;
-  closeFareTableDirect();
-  showToast('💰 '+pay.toLocaleString()+'円 を入力しました');
-}
-var _today=new Date();
-buildHourBtns('start');buildHourBtns('end');buildOvertimeHourBtns();
-document.getElementById('inputDate').value=getLocalDateStr();
-document.getElementById('headerDate').textContent=_today.toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
-document.getElementById('inputDate').addEventListener('change',onDateChange);
-addSwipe(document.getElementById('page-records'),function(){changeMonth(1);},function(){changeMonth(-1);});
-addSwipe(document.getElementById('page-stats'),function(){changeStatsMonth(1);},function(){changeStatsMonth(-1);});
-renderRecords();renderStats();
-</script>
-</body>
-</html>
+function editFromModal(){var r=getRecords().find(function(rec){return String(rec.id)===String(activeModal);});if(!r)return;closeModalDirect();showTab('input');document.getElementById('inputDate').value=r.date;lo
