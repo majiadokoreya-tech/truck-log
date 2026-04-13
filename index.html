@@ -323,10 +323,16 @@ function toggleJob(el){
     selectedJobs=selectedJobs.filter(function(x){return x!==j;});
     el.classList.remove('selected');
     if(j==='休み'){var memo=document.getElementById('jobMemo');memo.value=memo.value.replace('休み','').trim();}
+    if(j==='毒手当'){selectToxic(toxicCount===1?1:0);if(toxicCount===1)selectToxic(1);}
+    if(j==='毒×2'){if(toxicCount===2)selectToxic(2);}
+    if(j==='トレーラー'){if(trailerOn)toggleTrailer();}
   }else{
     selectedJobs.push(j);
     el.classList.add('selected');
     if(j==='休み'){var memo=document.getElementById('jobMemo');if(!memo.value.includes('休み'))memo.value=(memo.value?memo.value+'　':'')+'休み';}
+    if(j==='毒手当'){selectToxic(1);}
+    if(j==='毒×2'){selectToxic(2);}
+    if(j==='トレーラー'){if(!trailerOn)toggleTrailer();}
   }
 }
 function selectToxic(n){if(toxicCount===n){toxicCount=0;document.getElementById('toxicBtn1').classList.remove('selected');document.getElementById('toxicBtn2').classList.remove('selected');document.getElementById('toxicDisplay').textContent='未選択';}else{toxicCount=n;document.getElementById('toxicBtn1').classList.toggle('selected',n===1);document.getElementById('toxicBtn2').classList.toggle('selected',n===2);document.getElementById('toxicDisplay').textContent='☠️×'+n+' = '+(n*2500).toLocaleString()+'円';}}
