@@ -661,7 +661,6 @@ function showModal(id){
   var html='';
   if(r.startTime)html+='<div class="modal-row"><span class="modal-row-label">出勤</span><span>'+r.startTime+'</span></div>';
   if(r.endTime)html+='<div class="modal-row"><span class="modal-row-label">退勤</span><span>'+r.endTime+'</span></div>';
-  if(wh)html+='<div class="modal-row"><span class="modal-row-label">実働</span><span>'+wh+'時間</span></div>';
   if(r.overtime>0)html+='<div class="modal-row"><span class="modal-row-label">残業</span><span>'+r.overtime+'時間</span></div>';
   if(r.distance>0)html+='<div class="modal-row"><span class="modal-row-label">走行距離</span><span>'+r.distance.toLocaleString()+' km</span></div>';
   if(r.longDistancePay>0)html+='<div class="modal-row"><span class="modal-row-label">🛌 長距離手当</span><span>'+r.longDistancePay.toLocaleString()+' 円</span></div>';
