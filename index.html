@@ -302,37 +302,37 @@ var HOLIDAYS=new Set([
   '2025-07-21','2025-08-11','2025-09-15','2025-09-22','2025-09-23',
   '2025-10-13','2025-11-03','2025-11-23','2025-11-24',
   // 2026年祝日
-  '2026-01-01','2026-01-12','2026-02-11','2026-02-23','2026-03-20',
-  '2026-04-29','2026-05-03','2026-05-04','2026-05-05','2026-05-06',
+  '2026-01-01','2026-01-02','2026-01-03','2026-01-12','2026-02-11','2026-02-23','2026-03-20',
+  '2026-04-29','2026-05-01','2026-05-03','2026-05-04','2026-05-05','2026-05-06',
   '2026-07-20','2026-08-11','2026-09-21','2026-09-22','2026-09-23',
   '2026-10-12','2026-11-03','2026-11-23'
 ]);
 // 会社の休み土曜日（青）
 var COMPANY_SAT_OFF=new Set([
-  // 1月
-  '2026-01-03','2026-01-10','2026-01-17','2026-01-24','2026-01-31',
-  // 2月
-  '2026-02-07','2026-02-14','2026-02-28',
-  // 3月
+  // 1月（10休み・17仕事・24休み・31休み）
+  '2026-01-10','2026-01-24','2026-01-31',
+  // 2月（7休み・14仕事・21休み・28仕事）
+  '2026-02-07','2026-02-21',
+  // 3月（7休み・14休み・21祝日・28休み）
   '2026-03-07','2026-03-14','2026-03-28',
-  // 4月
+  // 4月（4休み・11休み・18休み・25休み）
   '2026-04-04','2026-04-11','2026-04-18','2026-04-25',
-  // 5月
-  '2026-05-02','2026-05-09','2026-05-16','2026-05-23','2026-05-30',
-  // 6月
-  '2026-06-06','2026-06-13','2026-06-27',
-  // 7月
-  '2026-07-04','2026-07-11','2026-07-18','2026-07-25',
-  // 8月
-  '2026-08-01','2026-08-08','2026-08-15','2026-08-22','2026-08-29',
-  // 9月
-  '2026-09-05','2026-09-12','2026-09-19','2026-09-26',
-  // 10月
-  '2026-10-03','2026-10-10','2026-10-17','2026-10-31',
-  // 11月
-  '2026-11-07','2026-11-14','2026-11-21','2026-11-28',
-  // 12月
-  '2026-12-05','2026-12-12','2026-12-19','2026-12-26'
+  // 5月（2仕事・9仕事・16休み・23休み・30休み）
+  '2026-05-16','2026-05-23','2026-05-30',
+  // 6月（6休み・13休み・20休み・27休み）
+  '2026-06-06','2026-06-13','2026-06-20','2026-06-27',
+  // 7月（4休み・11休み・18休み・25仕事）
+  '2026-07-04','2026-07-11','2026-07-18',
+  // 8月（1休み・8休み・13休み・14休み・15休み・22休み・29休み）
+  '2026-08-01','2026-08-08','2026-08-13','2026-08-14','2026-08-15','2026-08-22','2026-08-29',
+  // 9月（5休み・12休み・19休み・26仕事）
+  '2026-09-05','2026-09-12','2026-09-19',
+  // 10月（3休み・10休み・17仕事・24休み・31休み）
+  '2026-10-03','2026-10-10','2026-10-24','2026-10-31',
+  // 11月（7仕事・14休み・21休み・28仕事）
+  '2026-11-14','2026-11-21',
+  // 12月（5休み・12休み・19休み・26休み・30休み・31休み）
+  '2026-12-05','2026-12-12','2026-12-19','2026-12-26','2026-12-30','2026-12-31'
 ]);
 var selectedJobs=[],toxicCount=0,trailerOn=false,editingId=null;
 var currentMonth=new Date().getMonth(),currentYear=new Date().getFullYear();
@@ -586,30 +586,61 @@ function changeStatsMonth(d){statsMonth+=d;if(statsMonth>11){statsMonth=0;statsY
 
 function renderStats(){
   var prev=document.getElementById('statsBreakdown');if(prev)prev.remove();
+  var prev2=document.getElementById('statsOTPay');if(prev2)prev2.remove();
   var ms=statsYear+'-'+String(statsMonth+1).padStart(2,'0');
   document.getElementById('statsMonthLabel').textContent=statsYear+'年'+(statsMonth+1)+'月';
   var records=getRecords().filter(function(r){return r.date.startsWith(ms) && !(r.jobs||[]).includes('休み');});
   var totalDays=records.length,totalKm=0,totalOT=0,totalPay=0,totalLD=0,totalTox=0,totalTr=0,totalDP=0;
   var t1=0,t2=0,trDays=0;
+  var totalOTPay=0,totalHolidayPay=0,totalOTHours=0,totalHolidayHours=0;
+  var OT_RATE=1938,HOLIDAY_RATE=2060;
   records.forEach(function(r){
     totalKm+=r.distance||0;
-    totalOT=Math.round((totalOT+(parseFloat(r.overtime)||0))*100)/100;
+    var ot=parseFloat(r.overtime)||0;
+    totalOT=Math.round((totalOT+ot)*100)/100;
     var tp=r.toxicPay||((r.toxicCount||0)*2500),trp=r.trailerPay||0,dp=calcDistPay(r.distance),lp=r.longDistancePay||0;
     totalTox+=tp;totalTr+=trp;totalDP+=dp;totalLD+=lp;totalPay+=tp+trp+dp;
     if(r.toxicCount===1)t1++;if(r.toxicCount===2)t2++;if(r.trailerOn)trDays++;
+    // 時間外・休日手当計算
+    if(ot>0){
+      var dow=new Date(r.date).getDay();
+      if(dow===0){
+        totalHolidayHours=Math.round((totalHolidayHours+ot)*100)/100;
+        totalHolidayPay+=Math.round(ot*HOLIDAY_RATE);
+      } else {
+        totalOTHours=Math.round((totalOTHours+ot)*100)/100;
+        totalOTPay+=Math.round(ot*OT_RATE);
+      }
+    }
   });
   var otStr=totalOT%1===0?totalOT:totalOT.toFixed(2).replace(/\.?0+$/,'');
+  var otPayStr=(totalOTPay+totalHolidayPay).toLocaleString();
   document.getElementById('statsGrid').innerHTML=
     '<div class="stat-card"><div class="stat-label">出勤日数</div><div class="stat-value">'+totalDays+'<span class="stat-unit"> 日</span></div></div>'+
     '<div class="stat-card"><div class="stat-label">総走行距離</div><div class="stat-value">'+totalKm.toLocaleString()+'<span class="stat-unit"> km</span></div></div>'+
     '<div class="stat-card"><div class="stat-label">総残業時間</div><div class="stat-value">'+otStr+'<span class="stat-unit"> h</span></div></div>'+
     '<div class="stat-card"><div class="stat-label">💰 ワンマン手当</div><div class="stat-value" style="font-size:17px;">'+totalPay.toLocaleString()+'<span class="stat-unit"> 円</span></div></div>'+
-    '<div class="stat-card" style="grid-column:span 2;"><div class="stat-label">🛌 長距離手当合計</div><div class="stat-value">'+totalLD.toLocaleString()+'<span class="stat-unit"> 円</span></div></div>';
+    '<div class="stat-card" style="grid-column:span 2;"><div class="stat-label">🛌 長距離手当合計</div><div class="stat-value">'+totalLD.toLocaleString()+'<span class="stat-unit"> 円</span></div></div>'+
+    '<div class="stat-card"><div class="stat-label">⏰ 時間外手当</div><div class="stat-value" style="font-size:17px;">'+totalOTPay.toLocaleString()+'<span class="stat-unit"> 円</span></div></div>'+
+    '<div class="stat-card"><div class="stat-label">🌅 休日手当</div><div class="stat-value" style="font-size:17px;">'+totalHolidayPay.toLocaleString()+'<span class="stat-unit"> 円</span></div></div>';
   var bd='<div id="statsBreakdown" class="section" style="margin-bottom:14px;"><div class="section-title">ワンマン手当 内訳</div>';
   if(totalTox>0){bd+='<div class="modal-row"><span class="modal-row-label">☠️ 毒手当</span><span>'+totalTox.toLocaleString()+' 円</span></div>';if(t1>0)bd+='<div class="modal-row" style="padding-left:16px;"><span class="modal-row-label" style="font-size:11px;">　×1（2,500円）× '+t1+'日</span><span style="font-size:12px;">'+(t1*2500).toLocaleString()+' 円</span></div>';if(t2>0)bd+='<div class="modal-row" style="padding-left:16px;"><span class="modal-row-label" style="font-size:11px;">　×2（5,000円）× '+t2+'日</span><span style="font-size:12px;">'+(t2*5000).toLocaleString()+' 円</span></div>';}
   if(totalTr>0){bd+='<div class="modal-row"><span class="modal-row-label">🚜 トレーラー手当</span><span>'+totalTr.toLocaleString()+' 円</span></div>';bd+='<div class="modal-row" style="padding-left:16px;"><span class="modal-row-label" style="font-size:11px;">　3,000円 × '+trDays+'日</span><span style="font-size:12px;">'+(trDays*3000).toLocaleString()+' 円</span></div>';}
   if(totalDP>0){bd+='<div class="modal-row"><span class="modal-row-label">🛣️ 走行距離手当</span><span>'+totalDP.toLocaleString()+' 円</span></div><div class="modal-row" style="padding-left:16px;"><span class="modal-row-label" style="font-size:11px;">　各日の走行距離で計算（〜800km×8円、超過×18円）</span></div>';}
   bd+='<div class="modal-row" style="font-weight:700;margin-top:4px;"><span class="modal-row-label">💰 ワンマン手当合計</span><span style="color:var(--accent)">'+totalPay.toLocaleString()+' 円</span></div></div>';
+  // 時間外・休日手当内訳
+  bd+='<div id="statsOTPay" class="section" style="margin-bottom:14px;"><div class="section-title">時間外・休日手当 内訳</div>';
+  if(totalOTHours>0){
+    var othStr=totalOTHours%1===0?totalOTHours:totalOTHours.toFixed(2).replace(/\.?0+$/,'');
+    bd+='<div class="modal-row"><span class="modal-row-label">⏰ 時間外手当</span><span>'+totalOTPay.toLocaleString()+' 円</span></div>';
+    bd+='<div class="modal-row" style="padding-left:16px;"><span class="modal-row-label" style="font-size:11px;">　'+othStr+'h × 1,938円</span></div>';
+  }
+  if(totalHolidayHours>0){
+    var holStr=totalHolidayHours%1===0?totalHolidayHours:totalHolidayHours.toFixed(2).replace(/\.?0+$/,'');
+    bd+='<div class="modal-row"><span class="modal-row-label">🌅 休日手当（日曜）</span><span>'+totalHolidayPay.toLocaleString()+' 円</span></div>';
+    bd+='<div class="modal-row" style="padding-left:16px;"><span class="modal-row-label" style="font-size:11px;">　'+holStr+'h × 2,060円</span></div>';
+  }
+  bd+='<div class="modal-row" style="font-weight:700;margin-top:4px;"><span class="modal-row-label">⏰ 合計</span><span style="color:var(--accent)">'+(totalOTPay+totalHolidayPay).toLocaleString()+' 円</span></div></div>';
   document.getElementById('statsGrid').insertAdjacentHTML('afterend',bd);
   var header='日付\t仕事\t出勤\t退勤\t実働\t残業\t走行km\t長距離手当\t毒手当\tトレーラー手当\tワンマン手当\tメモ';
   var rows=records.map(function(r){var wh=calcWorkHours(r.startTime,r.endTime)||'';var tp=r.toxicPay||((r.toxicCount||0)*2500),trp=r.trailerPay||0,dp=calcDistPay(r.distance);return[r.date,(r.jobs||[]).map(function(j){return(JOB_EMOJI[j]||'')+j;}).join('|'),r.startTime,r.endTime,wh?wh+'h':'',r.overtime>0?r.overtime+'h':'',r.distance||'',r.longDistancePay||'',tp||'',trp||'',tp+trp+dp||'',r.jobMemo||''].join('\t');});
