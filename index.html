@@ -105,6 +105,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
   <div class="tab active" onclick="showTab('input')">📝 入力</div>
   <div class="tab" onclick="showTab('records')">📋 記録</div>
   <div class="tab" onclick="showTab('stats')">📊 集計</div>
+  <div class="tab" onclick="showTab('settings')">⚙️ 設定</div>
 </div>
 
 <!-- 入力 -->
@@ -261,6 +262,28 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
   </div>
 </div>
 
+<!-- 設定 -->
+<div class="page" id="page-settings">
+  <div class="section">
+    <div class="section-title">💴 時間外・休日単価設定</div>
+    <div class="input-group" style="margin-bottom:16px;">
+      <label class="input-label">⏰ 時間外単価（円/時間）</label>
+      <div class="money-input-wrap">
+        <input class="input-field" type="number" id="settingOtRate" inputmode="numeric" min="0" step="1" placeholder="1938">
+        <span class="yen">円</span>
+      </div>
+    </div>
+    <div class="input-group" style="margin-bottom:20px;">
+      <label class="input-label">🌅 休日時間外単価（円/時間）</label>
+      <div class="money-input-wrap">
+        <input class="input-field" type="number" id="settingHolidayRate" inputmode="numeric" min="0" step="1" placeholder="2060">
+        <span class="yen">円</span>
+      </div>
+    </div>
+    <button class="save-btn" onclick="saveSettingsUI()">💾 保存する</button>
+  </div>
+</div>
+
 <!-- モーダル -->
 <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
   <div class="modal">
@@ -344,6 +367,8 @@ var otState={h:null,m:null};
 function getLocalDateStr(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function getRecords(){return JSON.parse(localStorage.getItem('truckRecords')||'[]');}
 function saveRecords(r){localStorage.setItem('truckRecords',JSON.stringify(r));}
+function getSettings(){return Object.assign({otRate:1938,holidayRate:2060},JSON.parse(localStorage.getItem('truckSettings')||'{}'));}
+function saveSettings(s){localStorage.setItem('truckSettings',JSON.stringify(s));}
 function calcWorkHours(s,e){if(!s||!e)return null;var sh=parseInt(s.split(':')[0]),sm=parseInt(s.split(':')[1]),eh=parseInt(e.split(':')[0]),em=parseInt(e.split(':')[1]);var mins=(eh*60+em)-(sh*60+sm);if(mins<0)mins+=24*60;return(mins/60).toFixed(1);}
 function calcDistPay(km){if(!km||km<=0)return 0;if(km<=800)return Math.round(km*8);return Math.round(800*8+(km-800)*18);}
 function getDateColor(d,dow){
@@ -357,10 +382,22 @@ function showTab(tab){
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
   document.getElementById('page-'+tab).classList.add('active');
-  var idx=['input','records','stats'].indexOf(tab);
+  var idx=['input','records','stats','settings'].indexOf(tab);
   document.querySelectorAll('.tab')[idx].classList.add('active');
   if(tab==='records')renderRecords();
   if(tab==='stats')renderStats();
+  if(tab==='settings')loadSettingsUI();
+}
+function loadSettingsUI(){
+  var s=getSettings();
+  document.getElementById('settingOtRate').value=s.otRate;
+  document.getElementById('settingHolidayRate').value=s.holidayRate;
+}
+function saveSettingsUI(){
+  var ot=parseInt(document.getElementById('settingOtRate').value)||1938;
+  var hr=parseInt(document.getElementById('settingHolidayRate').value)||2060;
+  saveSettings({otRate:ot,holidayRate:hr});
+  showToast('✅ 単価を保存しました！');
 }
 
 function addMemo(text){var el=document.getElementById('jobMemo');el.value=(el.value?el.value+'　':'')+text;}
@@ -593,7 +630,7 @@ function renderStats(){
   var totalDays=records.length,totalKm=0,totalOT=0,totalPay=0,totalLD=0,totalTox=0,totalTr=0,totalDP=0;
   var t1=0,t2=0,trDays=0;
   var totalOTPay=0,totalHolidayPay=0,totalOTHours=0,totalHolidayHours=0;
-  var OT_RATE=1938,HOLIDAY_RATE=2060;
+  var _s=getSettings(),OT_RATE=_s.otRate,HOLIDAY_RATE=_s.holidayRate;
   records.forEach(function(r){
     totalKm+=r.distance||0;
     var ot=parseFloat(r.overtime)||0;
@@ -633,12 +670,12 @@ function renderStats(){
   if(totalOTHours>0){
     var othStr=totalOTHours%1===0?totalOTHours:totalOTHours.toFixed(2).replace(/\.?0+$/,'');
     bd+='<div class="modal-row"><span class="modal-row-label">⏰ 時間外手当</span><span>'+totalOTPay.toLocaleString()+' 円</span></div>';
-    bd+='<div class="modal-row" style="padding-left:16px;"><span class="modal-row-label" style="font-size:11px;">　'+othStr+'h × 1,938円</span></div>';
+    bd+='<div class="modal-row" style="padding-left:16px;"><span class="modal-row-label" style="font-size:11px;">　'+othStr+'h × '+OT_RATE.toLocaleString()+'円</span></div>';
   }
   if(totalHolidayHours>0){
     var holStr=totalHolidayHours%1===0?totalHolidayHours:totalHolidayHours.toFixed(2).replace(/\.?0+$/,'');
     bd+='<div class="modal-row"><span class="modal-row-label">🌅 休日手当（日曜）</span><span>'+totalHolidayPay.toLocaleString()+' 円</span></div>';
-    bd+='<div class="modal-row" style="padding-left:16px;"><span class="modal-row-label" style="font-size:11px;">　'+holStr+'h × 2,060円</span></div>';
+    bd+='<div class="modal-row" style="padding-left:16px;"><span class="modal-row-label" style="font-size:11px;">　'+holStr+'h × '+HOLIDAY_RATE.toLocaleString()+'円</span></div>';
   }
   bd+='<div class="modal-row" style="font-weight:700;margin-top:4px;"><span class="modal-row-label">⏰ 合計</span><span style="color:var(--accent)">'+(totalOTPay+totalHolidayPay).toLocaleString()+' 円</span></div></div>';
   document.getElementById('statsGrid').insertAdjacentHTML('afterend',bd);
