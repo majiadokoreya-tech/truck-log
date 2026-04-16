@@ -27,7 +27,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
 .section-title{font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:12px;}
 .job-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .job-btn{background:var(--surface2);border:2px solid var(--border);border-radius:var(--radius);padding:14px 10px;text-align:center;cursor:pointer;transition:all 0.15s;font-size:13px;color:var(--text);font-family:'Noto Sans JP',sans-serif;}
-.job-btn .emoji{font-size:28px;display:block;margin-bottom:6px;}
+.job-btn .emoji{font-size:22px;display:block;margin-bottom:4px;}
 .job-btn.selected{border-color:var(--accent);background:rgba(245,166,35,0.12);color:var(--accent);}
 .job-btn:active{transform:scale(0.96);}
 .input-group{display:flex;flex-direction:column;gap:6px;}
@@ -98,7 +98,10 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
 </head>
 <body>
 <div class="header">
-  <h1>🚛 運転日報</h1>
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <h1>🚛 運転日報</h1>
+    <button onclick="openSettings()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:4px;">⚙️</button>
+  </div>
   <div class="header-date" id="headerDate"></div>
 </div>
 <div class="tabs">
@@ -116,7 +119,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
   <div class="section">
     <div class="section-title">仕事の種類（複数選択OK）</div>
     <div class="job-grid">
-      <div class="job-btn" data-job="地場" onclick="toggleJob(this)" style="grid-column:span 2;font-size:16px;padding:18px 10px;"><span class="emoji" style="font-size:36px;">🚛</span>地場</div>
+      <div class="job-btn" data-job="地場" onclick="toggleJob(this)" style="grid-column:span 2;font-size:15px;padding:14px 10px;"><span class="emoji" style="font-size:28px;">🚛</span>地場</div>
       <div class="job-btn" data-job="長距離" onclick="toggleJob(this)"><span class="emoji">🛌</span>長距離</div>
       <div class="job-btn" data-job="毒手当" onclick="toggleJob(this)"><span class="emoji">☠️</span>毒</div>
       <div class="job-btn" data-job="毒×2" onclick="toggleJob(this)"><span class="emoji">☠️☠️</span>毒×2</div>
@@ -240,24 +243,9 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
   </div>
   <div class="stats-grid" id="statsGrid"></div>
   <div class="export-section">
-    <div class="export-title">📱 機種変更・バックアップ</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">データをファイルに保存して新しいスマホに引き継げます</div>
-    <button class="copy-btn" onclick="backupData()" style="background:rgba(46,204,113,0.15);border-color:var(--green);color:var(--green);margin-bottom:8px;">💾 データをバックアップ（書き出し）</button>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">新しいスマホで復元する場合👇</div>
-    <label class="copy-btn" style="display:block;text-align:center;background:rgba(52,152,219,0.15);border-color:#3498db;color:#3498db;cursor:pointer;">
-      📂 バックアップから復元
-      <input type="file" id="restoreFile" accept=".json" style="display:none;" onchange="restoreData(this)">
-    </label>
-  </div>
-  <div class="export-section">
     <div class="export-title">📋 スプレッドシート用コピー（タブ区切り）</div>
     <div class="export-text" id="exportText"></div>
     <button class="copy-btn" onclick="copyExport()">📋 クリップボードにコピー</button>
-  </div>
-  <div class="export-section">
-    <div class="export-title">🔧 データ修正</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">集計がおかしい場合はこちらを実行してください</div>
-    <button class="copy-btn" onclick="fixAllRecords()" style="background:rgba(245,166,35,0.15);border-color:var(--accent);color:var(--accent);">🔧 全データを修正する</button>
   </div>
 </div>
 
@@ -283,6 +271,34 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
     <input class="input-field" type="text" id="fareSearch" placeholder="🔍 客先名を検索..." oninput="renderFareTable()" style="font-size:14px;font-family:'Noto Sans JP',sans-serif;margin-bottom:12px;">
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;" id="fareCategoryBtns"></div>
     <div id="fareList" style="max-height:55vh;overflow-y:auto;"></div>
+  </div>
+</div>
+
+<!-- 設定モーダル -->
+<div class="modal-overlay" id="settingsOverlay" onclick="closeSettings(event)">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div class="modal-title" style="margin-bottom:0;">⚙️ 設定</div>
+      <button onclick="closeSettingsDirect()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div>
+        <div class="input-label" style="margin-bottom:6px;">⏰ 時間外単価（円/h）</div>
+        <input class="input-field" type="number" id="settingOTRate" placeholder="1938" style="font-size:16px;">
+      </div>
+      <div>
+        <div class="input-label" style="margin-bottom:6px;">🌅 休日単価（円/h）</div>
+        <input class="input-field" type="number" id="settingHolidayRate" placeholder="2060" style="font-size:16px;">
+      </div>
+      <button onclick="saveSettings()" style="width:100%;background:linear-gradient(135deg,var(--accent2),var(--accent));border:none;border-radius:var(--radius);padding:14px;font-family:'Oswald',sans-serif;font-size:16px;font-weight:600;color:#fff;cursor:pointer;">💾 単価を保存</button>
+      <hr style="border:none;border-top:1px solid var(--border);">
+      <button onclick="backupData()" style="width:100%;background:rgba(46,204,113,0.15);border:1.5px solid var(--green);border-radius:10px;padding:12px;color:var(--green);font-size:14px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;">💾 データをバックアップ</button>
+      <label style="width:100%;display:block;text-align:center;background:rgba(52,152,219,0.15);border:1.5px solid #3498db;border-radius:10px;padding:12px;color:#3498db;font-size:14px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;">
+        📂 バックアップから復元
+        <input type="file" id="settingsRestoreFile" accept=".json" style="display:none;" onchange="restoreData(this)">
+      </label>
+      <button onclick="fixAllRecords()" style="width:100%;background:rgba(245,166,35,0.15);border:1.5px solid var(--accent);border-radius:10px;padding:12px;color:var(--accent);font-size:14px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;">🔧 全データを修正する</button>
+    </div>
   </div>
 </div>
 
@@ -593,7 +609,8 @@ function renderStats(){
   var totalDays=records.length,totalKm=0,totalOT=0,totalPay=0,totalLD=0,totalTox=0,totalTr=0,totalDP=0;
   var t1=0,t2=0,trDays=0;
   var totalOTPay=0,totalHolidayPay=0,totalOTHours=0,totalHolidayHours=0;
-  var OT_RATE=1938,HOLIDAY_RATE=2060;
+  var OT_RATE=parseInt(localStorage.getItem('otRate'))||1938;
+  var HOLIDAY_RATE=parseInt(localStorage.getItem('holRate'))||2060;
   records.forEach(function(r){
     totalKm+=r.distance||0;
     var ot=parseFloat(r.overtime)||0;
@@ -947,6 +964,24 @@ var FARE_DATA = [
 
 var fareCategory = 'すべて';
 
+function openSettings(){
+  var otRate=parseInt(localStorage.getItem('otRate'))||1938;
+  var holRate=parseInt(localStorage.getItem('holRate'))||2060;
+  document.getElementById('settingOTRate').value=otRate;
+  document.getElementById('settingHolidayRate').value=holRate;
+  document.getElementById('settingsOverlay').classList.add('open');
+}
+function closeSettings(e){if(e.target===document.getElementById('settingsOverlay'))closeSettingsDirect();}
+function closeSettingsDirect(){document.getElementById('settingsOverlay').classList.remove('open');}
+function saveSettings(){
+  var otRate=parseInt(document.getElementById('settingOTRate').value)||1938;
+  var holRate=parseInt(document.getElementById('settingHolidayRate').value)||2060;
+  localStorage.setItem('otRate',otRate);
+  localStorage.setItem('holRate',holRate);
+  closeSettingsDirect();
+  showToast('✅ 単価を保存しました！');
+  renderStats();
+}
 function openFareTable() {
   document.getElementById('fareOverlay').classList.add('open');
   document.getElementById('fareSearch').value = '';
