@@ -432,7 +432,7 @@ function updateTimeValue(which){
   else if(s.h!==null){document.getElementById(which+'TimeDisplay').textContent=String(s.h).padStart(2,'0')+':--';}
 }
 function setTimePicker(which,val){
-  if(!val)return;
+  if(!val){clearTimePicker(which);return;}
   var p=val.split(':'),hh=parseInt(p[0]),mm=parseInt(p[1]);
   timeState[which]={h:hh,m:mm};
   document.querySelectorAll('#'+which+'HourBtns .time-btn').forEach(function(b){b.classList.remove('selected');});
