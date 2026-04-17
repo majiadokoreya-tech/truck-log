@@ -532,7 +532,6 @@ function resetForm(resetDate){
 }
 
 function onDateChange(){
-  if(editingId)return;
   var date=this.value;
   var ex=getRecords().find(function(r){return r.date===date;});
   if(ex)loadRecordToForm(ex);else resetForm(false);
