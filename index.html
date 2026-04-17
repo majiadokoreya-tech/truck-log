@@ -242,6 +242,10 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
     <button class="month-btn" onclick="changeStatsMonth(1)">›</button>
   </div>
   <div class="stats-grid" id="statsGrid"></div>
+  <div class="section" id="annualGraphSection" style="margin-bottom:14px;">
+    <div class="section-title">📈 年間収入グラフ</div>
+    <canvas id="annualGraph" style="width:100%;display:block;"></canvas>
+  </div>
   <div class="export-section">
     <div class="export-title">📋 スプレッドシート用コピー（タブ区切り）</div>
     <div class="export-text" id="exportText"></div>
@@ -658,9 +662,77 @@ function renderStats(){
   }
   bd+='<div class="modal-row" style="font-weight:700;margin-top:4px;"><span class="modal-row-label">⏰ 合計</span><span style="color:var(--accent)">'+(totalOTPay+totalHolidayPay).toLocaleString()+' 円</span></div></div>';
   document.getElementById('statsGrid').insertAdjacentHTML('afterend',bd);
+  renderAnnualGraph();
   var header='日付\t仕事\t出勤\t退勤\t実働\t残業\t走行km\t長距離手当\t毒手当\tトレーラー手当\tワンマン手当\tメモ';
   var rows=records.map(function(r){var wh=calcWorkHours(r.startTime,r.endTime)||'';var tp=r.toxicPay||((r.toxicCount||0)*2500),trp=r.trailerPay||0,dp=calcDistPay(r.distance);return[r.date,(r.jobs||[]).map(function(j){return(JOB_EMOJI[j]||'')+j;}).join('|'),r.startTime,r.endTime,wh?wh+'h':'',r.overtime>0?r.overtime+'h':'',r.distance||'',r.longDistancePay||'',tp||'',trp||'',tp+trp+dp||'',r.jobMemo||''].join('\t');});
   document.getElementById('exportText').textContent=[header].concat(rows).join('\n');
+}
+
+function renderAnnualGraph(){
+  var canvas=document.getElementById('annualGraph');if(!canvas)return;
+  var ctx=canvas.getContext('2d');
+  var year=statsYear;
+  var OT_RATE=parseInt(localStorage.getItem('otRate'))||1938;
+  var HOLIDAY_RATE=parseInt(localStorage.getItem('holRate'))||2060;
+  var allRecords=getRecords();
+  var monthlyTotals=[];
+  for(var m=0;m<12;m++){
+    var ms=year+'-'+String(m+1).padStart(2,'0');
+    var recs=allRecords.filter(function(r){return r.date.startsWith(ms)&&!(r.jobs||[]).includes('休み');});
+    var total=0;
+    recs.forEach(function(r){
+      var tp=r.toxicPay||((r.toxicCount||0)*2500),trp=r.trailerPay||0,dp=calcDistPay(r.distance),lp=r.longDistancePay||0;
+      var ot=parseFloat(r.overtime)||0,otPay=0;
+      if(ot>0){var dow=new Date(r.date).getDay();otPay=dow===0?Math.round(ot*HOLIDAY_RATE):Math.round(ot*OT_RATE);}
+      total+=tp+trp+dp+lp+otPay;
+    });
+    monthlyTotals.push(total);
+  }
+  var W=canvas.offsetWidth||300,H=220;
+  var dpr=window.devicePixelRatio||1;
+  canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.height=H+'px';
+  ctx.scale(dpr,dpr);
+  var padL=52,padR=10,padT=24,padB=36;
+  var chartW=W-padL-padR,chartH=H-padT-padB;
+  ctx.clearRect(0,0,W,H);
+  var maxVal=Math.max.apply(null,monthlyTotals)||1;
+  var mag=Math.pow(10,Math.floor(Math.log10(maxVal)));
+  maxVal=Math.ceil(maxVal/mag)*mag;
+  var numLines=4;
+  ctx.lineWidth=1;
+  for(var i=0;i<=numLines;i++){
+    var v=maxVal/numLines*i;
+    var gy=padT+chartH-(v/maxVal)*chartH;
+    ctx.strokeStyle='rgba(46,63,88,0.9)';
+    ctx.beginPath();ctx.moveTo(padL,gy);ctx.lineTo(padL+chartW,gy);ctx.stroke();
+    ctx.fillStyle='#8a9bb5';ctx.font='10px Oswald,sans-serif';ctx.textAlign='right';
+    var lbl=v>=10000?Math.round(v/10000)+'万':v>0?v.toLocaleString():'0';
+    ctx.fillText(lbl,padL-4,gy+4);
+  }
+  var barGap=chartW/12,barW=barGap*0.62,curM=statsMonth;
+  for(var m=0;m<12;m++){
+    var val=monthlyTotals[m],barH=val>0?(val/maxVal)*chartH:0;
+    var bx=padL+m*barGap+(barGap-barW)/2,by=padT+chartH-barH;
+    if(barH>0){
+      var r=Math.min(4,barW/2);
+      ctx.fillStyle=m===curM?'#f5a623':'rgba(245,166,35,0.38)';
+      ctx.beginPath();
+      ctx.moveTo(bx+r,by);ctx.lineTo(bx+barW-r,by);ctx.quadraticCurveTo(bx+barW,by,bx+barW,by+r);
+      ctx.lineTo(bx+barW,by+barH);ctx.lineTo(bx,by+barH);ctx.lineTo(bx,by+r);
+      ctx.quadraticCurveTo(bx,by,bx+r,by);ctx.closePath();ctx.fill();
+    }
+    ctx.fillStyle=m===curM?'#f5a623':'#8a9bb5';
+    ctx.font='10px Oswald,sans-serif';ctx.textAlign='center';
+    ctx.fillText((m+1)+'月',bx+barW/2,padT+chartH+16);
+    if(val>0){
+      ctx.fillStyle=m===curM?'#f5a623':'rgba(200,170,100,0.85)';
+      ctx.font='9px Oswald,sans-serif';
+      var vlbl=val>=10000?Math.round(val/10000)+'万':val.toLocaleString();
+      ctx.fillText(vlbl,bx+barW/2,by-3);
+    }
+  }
+  ctx.fillStyle='#f5a623';ctx.font='bold 12px Oswald,sans-serif';ctx.textAlign='left';
+  ctx.fillText(year+'年　収入グラフ（総手当）',padL,14);
 }
 
 function copyExport(){navigator.clipboard.writeText(document.getElementById('exportText').textContent).then(function(){showToast('📋 コピーしました！');});}
