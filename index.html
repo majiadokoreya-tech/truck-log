@@ -1041,6 +1041,9 @@ function selectFare(pay) {
 var _today=new Date();
 buildHourBtns('start');buildHourBtns('end');buildOvertimeHourBtns();
 document.getElementById('inputDate').value=getLocalDateStr();
+// 当日のデータがあれば自動読み込み
+var todayRecord=getRecords().find(function(r){return r.date===getLocalDateStr();});
+if(todayRecord)loadRecordToForm(todayRecord);
 document.getElementById('headerDate').textContent=_today.toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
 document.getElementById('inputDate').addEventListener('change',onDateChange);
 addSwipe(document.getElementById('page-records'),function(){changeMonth(1);},function(){changeMonth(-1);});
