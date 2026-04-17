@@ -50,13 +50,13 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
 .save-btn:active{transform:scale(0.98);opacity:0.9;}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:14px;}
 .cal-head{text-align:center;font-size:11px;font-weight:600;padding:6px 0;}
-.cal-cell{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:4px 3px;min-height:64px;}
+.cal-cell{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:5px 4px;min-height:80px;}
 .cal-cell.empty{background:transparent;border-color:transparent;}
 .cal-cell.has-data{border-color:var(--accent);background:rgba(245,166,35,0.07);cursor:pointer;}
 .cal-cell.has-data:active{background:rgba(245,166,35,0.2);}
-.cal-day{font-family:'Oswald',sans-serif;font-size:13px;font-weight:600;line-height:1.2;}
-.cal-emoji{font-size:12px;margin-top:2px;}
-.cal-time{font-size:9px;color:var(--muted);margin-top:1px;}
+.cal-day{font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;line-height:1.2;}
+.cal-emoji{font-size:13px;margin-top:3px;}
+.cal-time{font-size:9px;color:var(--muted);margin-top:2px;}
 .cal-memo{font-size:8px;color:var(--muted);margin-top:2px;line-height:1.3;word-break:break-all;}
 .record-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;cursor:pointer;}
 .record-card:active{border-color:var(--accent);}
@@ -590,7 +590,7 @@ function renderRecords(){
     var dc=getDateColor(ds,dow),ih=HOLIDAYS.has(ds);
     html+='<div class="cal-cell '+(hd?'has-data':'')+'" '+(hd?'onclick="showModal('+r.id+')"':'')+'>'+
       '<div class="cal-day" style="'+dc+'">'+day+(ih?'🎌':'')+'</div>'+
-      (hd?'<div class="cal-emoji">'+(je||'—')+'</div>'+(r.startTime?'<div class="cal-time">'+r.startTime+'</div>':'')+(r.jobMemo?'<div class="cal-memo">'+r.jobMemo+'</div>':''):'')+
+      (hd?'<div class="cal-emoji">'+(je||'—')+'</div>'+(r.startTime?'<div class="cal-time">出 '+r.startTime+'</div>':'')+(r.endTime?'<div class="cal-time">退 '+r.endTime+'</div>':'')+(r.overtime>0?'<div class="cal-time">残 '+r.overtime+'h</div>':'')+(r.jobMemo?'<div class="cal-memo">'+r.jobMemo+'</div>':''):'')+
     '</div>';
   }
   list.innerHTML=html+'</div>';
