@@ -27,7 +27,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
 .section-title{font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:12px;}
 .job-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .job-btn{background:var(--surface2);border:2px solid var(--border);border-radius:var(--radius);padding:14px 10px;text-align:center;cursor:pointer;transition:all 0.15s;font-size:13px;color:var(--text);font-family:'Noto Sans JP',sans-serif;}
-.job-btn .emoji{font-size:28px;display:block;margin-bottom:6px;}
+.job-btn .emoji{font-size:22px;display:block;margin-bottom:4px;}
 .job-btn.selected{border-color:var(--accent);background:rgba(245,166,35,0.12);color:var(--accent);}
 .job-btn:active{transform:scale(0.96);}
 .input-group{display:flex;flex-direction:column;gap:6px;}
@@ -50,13 +50,13 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
 .save-btn:active{transform:scale(0.98);opacity:0.9;}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:14px;}
 .cal-head{text-align:center;font-size:11px;font-weight:600;padding:6px 0;}
-.cal-cell{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:4px 3px;min-height:64px;}
+.cal-cell{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:5px 4px;min-height:80px;}
 .cal-cell.empty{background:transparent;border-color:transparent;}
 .cal-cell.has-data{border-color:var(--accent);background:rgba(245,166,35,0.07);cursor:pointer;}
 .cal-cell.has-data:active{background:rgba(245,166,35,0.2);}
-.cal-day{font-family:'Oswald',sans-serif;font-size:13px;font-weight:600;line-height:1.2;}
-.cal-emoji{font-size:12px;margin-top:2px;}
-.cal-time{font-size:9px;color:var(--muted);margin-top:1px;}
+.cal-day{font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;line-height:1.2;}
+.cal-emoji{font-size:13px;margin-top:3px;}
+.cal-time{font-size:9px;color:var(--muted);margin-top:2px;}
 .cal-memo{font-size:8px;color:var(--muted);margin-top:2px;line-height:1.3;word-break:break-all;}
 .record-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;cursor:pointer;}
 .record-card:active{border-color:var(--accent);}
@@ -98,14 +98,16 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
 </head>
 <body>
 <div class="header">
-  <h1>🚛 運転日報</h1>
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <h1>🚛 運転日報</h1>
+    <button onclick="openSettings()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:4px;">⚙️</button>
+  </div>
   <div class="header-date" id="headerDate"></div>
 </div>
 <div class="tabs">
   <div class="tab active" onclick="showTab('input')">📝 入力</div>
   <div class="tab" onclick="showTab('records')">📋 記録</div>
   <div class="tab" onclick="showTab('stats')">📊 集計</div>
-  <div class="tab" onclick="showTab('settings')">⚙️ 設定</div>
 </div>
 
 <!-- 入力 -->
@@ -117,7 +119,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
   <div class="section">
     <div class="section-title">仕事の種類（複数選択OK）</div>
     <div class="job-grid">
-      <div class="job-btn" data-job="地場" onclick="toggleJob(this)" style="grid-column:span 2;font-size:16px;padding:18px 10px;"><span class="emoji" style="font-size:36px;">🚛</span>地場</div>
+      <div class="job-btn" data-job="地場" onclick="toggleJob(this)" style="grid-column:span 2;font-size:15px;padding:14px 10px;"><span class="emoji" style="font-size:28px;">🚛</span>地場</div>
       <div class="job-btn" data-job="長距離" onclick="toggleJob(this)"><span class="emoji">🛌</span>長距離</div>
       <div class="job-btn" data-job="毒手当" onclick="toggleJob(this)"><span class="emoji">☠️</span>毒</div>
       <div class="job-btn" data-job="毒×2" onclick="toggleJob(this)"><span class="emoji">☠️☠️</span>毒×2</div>
@@ -241,46 +243,9 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
   </div>
   <div class="stats-grid" id="statsGrid"></div>
   <div class="export-section">
-    <div class="export-title">📱 機種変更・バックアップ</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">データをファイルに保存して新しいスマホに引き継げます</div>
-    <button class="copy-btn" onclick="backupData()" style="background:rgba(46,204,113,0.15);border-color:var(--green);color:var(--green);margin-bottom:8px;">💾 データをバックアップ（書き出し）</button>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">新しいスマホで復元する場合👇</div>
-    <label class="copy-btn" style="display:block;text-align:center;background:rgba(52,152,219,0.15);border-color:#3498db;color:#3498db;cursor:pointer;">
-      📂 バックアップから復元
-      <input type="file" id="restoreFile" accept=".json" style="display:none;" onchange="restoreData(this)">
-    </label>
-  </div>
-  <div class="export-section">
     <div class="export-title">📋 スプレッドシート用コピー（タブ区切り）</div>
     <div class="export-text" id="exportText"></div>
     <button class="copy-btn" onclick="copyExport()">📋 クリップボードにコピー</button>
-  </div>
-  <div class="export-section">
-    <div class="export-title">🔧 データ修正</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">集計がおかしい場合はこちらを実行してください</div>
-    <button class="copy-btn" onclick="fixAllRecords()" style="background:rgba(245,166,35,0.15);border-color:var(--accent);color:var(--accent);">🔧 全データを修正する</button>
-  </div>
-</div>
-
-<!-- 設定 -->
-<div class="page" id="page-settings">
-  <div class="section">
-    <div class="section-title">💴 時間外・休日単価設定</div>
-    <div class="input-group" style="margin-bottom:16px;">
-      <label class="input-label">⏰ 時間外単価（円/時間）</label>
-      <div class="money-input-wrap">
-        <input class="input-field" type="number" id="settingOtRate" inputmode="numeric" min="0" step="1" placeholder="1938">
-        <span class="yen">円</span>
-      </div>
-    </div>
-    <div class="input-group" style="margin-bottom:20px;">
-      <label class="input-label">🌅 休日時間外単価（円/時間）</label>
-      <div class="money-input-wrap">
-        <input class="input-field" type="number" id="settingHolidayRate" inputmode="numeric" min="0" step="1" placeholder="2060">
-        <span class="yen">円</span>
-      </div>
-    </div>
-    <button class="save-btn" onclick="saveSettingsUI()">💾 保存する</button>
   </div>
 </div>
 
@@ -306,6 +271,34 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
     <input class="input-field" type="text" id="fareSearch" placeholder="🔍 客先名を検索..." oninput="renderFareTable()" style="font-size:14px;font-family:'Noto Sans JP',sans-serif;margin-bottom:12px;">
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;" id="fareCategoryBtns"></div>
     <div id="fareList" style="max-height:55vh;overflow-y:auto;"></div>
+  </div>
+</div>
+
+<!-- 設定モーダル -->
+<div class="modal-overlay" id="settingsOverlay" onclick="closeSettings(event)">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div class="modal-title" style="margin-bottom:0;">⚙️ 設定</div>
+      <button onclick="closeSettingsDirect()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div>
+        <div class="input-label" style="margin-bottom:6px;">⏰ 時間外単価（円/h）</div>
+        <input class="input-field" type="number" id="settingOTRate" placeholder="1938" style="font-size:16px;">
+      </div>
+      <div>
+        <div class="input-label" style="margin-bottom:6px;">🌅 休日単価（円/h）</div>
+        <input class="input-field" type="number" id="settingHolidayRate" placeholder="2060" style="font-size:16px;">
+      </div>
+      <button onclick="saveSettings()" style="width:100%;background:linear-gradient(135deg,var(--accent2),var(--accent));border:none;border-radius:var(--radius);padding:14px;font-family:'Oswald',sans-serif;font-size:16px;font-weight:600;color:#fff;cursor:pointer;">💾 単価を保存</button>
+      <hr style="border:none;border-top:1px solid var(--border);">
+      <button onclick="backupData()" style="width:100%;background:rgba(46,204,113,0.15);border:1.5px solid var(--green);border-radius:10px;padding:12px;color:var(--green);font-size:14px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;">💾 データをバックアップ</button>
+      <label style="width:100%;display:block;text-align:center;background:rgba(52,152,219,0.15);border:1.5px solid #3498db;border-radius:10px;padding:12px;color:#3498db;font-size:14px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;">
+        📂 バックアップから復元
+        <input type="file" id="settingsRestoreFile" accept=".json" style="display:none;" onchange="restoreData(this)">
+      </label>
+      <button onclick="fixAllRecords()" style="width:100%;background:rgba(245,166,35,0.15);border:1.5px solid var(--accent);border-radius:10px;padding:12px;color:var(--accent);font-size:14px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;">🔧 全データを修正する</button>
+    </div>
   </div>
 </div>
 
@@ -367,8 +360,6 @@ var otState={h:null,m:null};
 function getLocalDateStr(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function getRecords(){return JSON.parse(localStorage.getItem('truckRecords')||'[]');}
 function saveRecords(r){localStorage.setItem('truckRecords',JSON.stringify(r));}
-function getSettings(){return Object.assign({otRate:1938,holidayRate:2060},JSON.parse(localStorage.getItem('truckSettings')||'{}'));}
-function saveSettings(s){localStorage.setItem('truckSettings',JSON.stringify(s));}
 function calcWorkHours(s,e){if(!s||!e)return null;var sh=parseInt(s.split(':')[0]),sm=parseInt(s.split(':')[1]),eh=parseInt(e.split(':')[0]),em=parseInt(e.split(':')[1]);var mins=(eh*60+em)-(sh*60+sm);if(mins<0)mins+=24*60;return(mins/60).toFixed(1);}
 function calcDistPay(km){if(!km||km<=0)return 0;if(km<=800)return Math.round(km*8);return Math.round(800*8+(km-800)*18);}
 function getDateColor(d,dow){
@@ -382,22 +373,10 @@ function showTab(tab){
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
   document.getElementById('page-'+tab).classList.add('active');
-  var idx=['input','records','stats','settings'].indexOf(tab);
+  var idx=['input','records','stats'].indexOf(tab);
   document.querySelectorAll('.tab')[idx].classList.add('active');
   if(tab==='records')renderRecords();
   if(tab==='stats')renderStats();
-  if(tab==='settings')loadSettingsUI();
-}
-function loadSettingsUI(){
-  var s=getSettings();
-  document.getElementById('settingOtRate').value=s.otRate;
-  document.getElementById('settingHolidayRate').value=s.holidayRate;
-}
-function saveSettingsUI(){
-  var ot=parseInt(document.getElementById('settingOtRate').value)||1938;
-  var hr=parseInt(document.getElementById('settingHolidayRate').value)||2060;
-  saveSettings({otRate:ot,holidayRate:hr});
-  showToast('✅ 単価を保存しました！');
 }
 
 function addMemo(text){var el=document.getElementById('jobMemo');el.value=(el.value?el.value+'　':'')+text;}
@@ -453,7 +432,7 @@ function updateTimeValue(which){
   else if(s.h!==null){document.getElementById(which+'TimeDisplay').textContent=String(s.h).padStart(2,'0')+':--';}
 }
 function setTimePicker(which,val){
-  if(!val)return;
+  if(!val){clearTimePicker(which);return;}
   var p=val.split(':'),hh=parseInt(p[0]),mm=parseInt(p[1]);
   timeState[which]={h:hh,m:mm};
   document.querySelectorAll('#'+which+'HourBtns .time-btn').forEach(function(b){b.classList.remove('selected');});
@@ -553,7 +532,6 @@ function resetForm(resetDate){
 }
 
 function onDateChange(){
-  if(editingId)return;
   var date=this.value;
   var ex=getRecords().find(function(r){return r.date===date;});
   if(ex)loadRecordToForm(ex);else resetForm(false);
@@ -612,7 +590,7 @@ function renderRecords(){
     var dc=getDateColor(ds,dow),ih=HOLIDAYS.has(ds);
     html+='<div class="cal-cell '+(hd?'has-data':'')+'" '+(hd?'onclick="showModal('+r.id+')"':'')+'>'+
       '<div class="cal-day" style="'+dc+'">'+day+(ih?'🎌':'')+'</div>'+
-      (hd?'<div class="cal-emoji">'+(je||'—')+'</div>'+(r.startTime?'<div class="cal-time">'+r.startTime+'</div>':'')+(r.jobMemo?'<div class="cal-memo">'+r.jobMemo+'</div>':''):'')+
+      (hd?'<div class="cal-emoji">'+(je||'—')+'</div>'+(r.startTime?'<div class="cal-time">出 '+r.startTime+'</div>':'')+(r.endTime?'<div class="cal-time">退 '+r.endTime+'</div>':'')+(r.overtime>0?'<div class="cal-time">残 '+r.overtime+'h</div>':'')+(r.jobMemo?'<div class="cal-memo">'+r.jobMemo+'</div>':''):'')+
     '</div>';
   }
   list.innerHTML=html+'</div>';
@@ -630,7 +608,8 @@ function renderStats(){
   var totalDays=records.length,totalKm=0,totalOT=0,totalPay=0,totalLD=0,totalTox=0,totalTr=0,totalDP=0;
   var t1=0,t2=0,trDays=0;
   var totalOTPay=0,totalHolidayPay=0,totalOTHours=0,totalHolidayHours=0;
-  var _s=getSettings(),OT_RATE=_s.otRate,HOLIDAY_RATE=_s.holidayRate;
+  var OT_RATE=parseInt(localStorage.getItem('otRate'))||1938;
+  var HOLIDAY_RATE=parseInt(localStorage.getItem('holRate'))||2060;
   records.forEach(function(r){
     totalKm+=r.distance||0;
     var ot=parseFloat(r.overtime)||0;
@@ -670,12 +649,12 @@ function renderStats(){
   if(totalOTHours>0){
     var othStr=totalOTHours%1===0?totalOTHours:totalOTHours.toFixed(2).replace(/\.?0+$/,'');
     bd+='<div class="modal-row"><span class="modal-row-label">⏰ 時間外手当</span><span>'+totalOTPay.toLocaleString()+' 円</span></div>';
-    bd+='<div class="modal-row" style="padding-left:16px;"><span class="modal-row-label" style="font-size:11px;">　'+othStr+'h × '+OT_RATE.toLocaleString()+'円</span></div>';
+    bd+='<div class="modal-row" style="padding-left:16px;"><span class="modal-row-label" style="font-size:11px;">　'+othStr+'h × 1,938円</span></div>';
   }
   if(totalHolidayHours>0){
     var holStr=totalHolidayHours%1===0?totalHolidayHours:totalHolidayHours.toFixed(2).replace(/\.?0+$/,'');
     bd+='<div class="modal-row"><span class="modal-row-label">🌅 休日手当（日曜）</span><span>'+totalHolidayPay.toLocaleString()+' 円</span></div>';
-    bd+='<div class="modal-row" style="padding-left:16px;"><span class="modal-row-label" style="font-size:11px;">　'+holStr+'h × '+HOLIDAY_RATE.toLocaleString()+'円</span></div>';
+    bd+='<div class="modal-row" style="padding-left:16px;"><span class="modal-row-label" style="font-size:11px;">　'+holStr+'h × 2,060円</span></div>';
   }
   bd+='<div class="modal-row" style="font-weight:700;margin-top:4px;"><span class="modal-row-label">⏰ 合計</span><span style="color:var(--accent)">'+(totalOTPay+totalHolidayPay).toLocaleString()+' 円</span></div></div>';
   document.getElementById('statsGrid').insertAdjacentHTML('afterend',bd);
@@ -984,6 +963,24 @@ var FARE_DATA = [
 
 var fareCategory = 'すべて';
 
+function openSettings(){
+  var otRate=parseInt(localStorage.getItem('otRate'))||1938;
+  var holRate=parseInt(localStorage.getItem('holRate'))||2060;
+  document.getElementById('settingOTRate').value=otRate;
+  document.getElementById('settingHolidayRate').value=holRate;
+  document.getElementById('settingsOverlay').classList.add('open');
+}
+function closeSettings(e){if(e.target===document.getElementById('settingsOverlay'))closeSettingsDirect();}
+function closeSettingsDirect(){document.getElementById('settingsOverlay').classList.remove('open');}
+function saveSettings(){
+  var otRate=parseInt(document.getElementById('settingOTRate').value)||1938;
+  var holRate=parseInt(document.getElementById('settingHolidayRate').value)||2060;
+  localStorage.setItem('otRate',otRate);
+  localStorage.setItem('holRate',holRate);
+  closeSettingsDirect();
+  showToast('✅ 単価を保存しました！');
+  renderStats();
+}
 function openFareTable() {
   document.getElementById('fareOverlay').classList.add('open');
   document.getElementById('fareSearch').value = '';
@@ -1043,6 +1040,9 @@ function selectFare(pay) {
 var _today=new Date();
 buildHourBtns('start');buildHourBtns('end');buildOvertimeHourBtns();
 document.getElementById('inputDate').value=getLocalDateStr();
+// 当日のデータがあれば自動読み込み
+var todayRecord=getRecords().find(function(r){return r.date===getLocalDateStr();});
+if(todayRecord)loadRecordToForm(todayRecord);
 document.getElementById('headerDate').textContent=_today.toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
 document.getElementById('inputDate').addEventListener('change',onDateChange);
 addSwipe(document.getElementById('page-records'),function(){changeMonth(1);},function(){changeMonth(-1);});
