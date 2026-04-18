@@ -25,14 +25,14 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
 .page{display:none;padding:16px;}.page.active{display:block;}
 .section{background:var(--surface);border-radius:var(--radius);padding:16px;margin-bottom:14px;border:1px solid var(--border);}
 .section-title{font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:12px;}
-.job-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.job-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 10px;}
 .job-btn{background:transparent;border:none;border-radius:0;padding:4px 2px;text-align:center;cursor:pointer;transition:all 0.15s;font-size:11px;color:var(--muted);font-family:'Noto Sans JP',sans-serif;display:flex;flex-direction:column;align-items:center;gap:6px;}
-.job-icon{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 3px 8px rgba(0,0,0,0.35);transition:all 0.15s;position:relative;}
-.job-btn.selected .job-icon::after{content:'✓';position:absolute;top:-5px;right:-5px;background:var(--accent);color:#fff;font-size:10px;font-weight:700;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Noto Sans JP',sans-serif;}
+.job-icon{width:64px;height:64px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:30px;box-shadow:0 4px 10px rgba(0,0,0,0.35);transition:all 0.15s;position:relative;}
+.job-btn.selected .job-icon::after{content:'✓';position:absolute;top:-6px;right:-6px;background:var(--accent);color:#fff;font-size:10px;font-weight:700;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Noto Sans JP',sans-serif;}
 .job-btn.selected{color:var(--accent);}
 .job-btn:active .job-icon{transform:scale(0.88);}
-.job-btn-wide{grid-column:span 2;}
-.job-btn-wide .job-icon{width:100%;height:56px;border-radius:16px;font-size:30px;}
+.job-btn-wide{grid-column:span 3;}
+.job-btn-wide .job-icon{width:100%;height:64px;border-radius:18px;font-size:34px;}
 .input-group{display:flex;flex-direction:column;gap:6px;}
 .input-label{font-size:11px;color:var(--muted);letter-spacing:0.5px;}
 .input-field{background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-size:16px;font-family:'Oswald',sans-serif;width:100%;outline:none;transition:border-color 0.2s;}
@@ -123,7 +123,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
     <div class="section-title">仕事の種類（複数選択OK）</div>
     <div class="job-grid">
       <div class="job-btn job-btn-wide" data-job="地場" onclick="toggleJob(this)"><div class="job-icon" style="background:linear-gradient(145deg,#1a78c2,#2e86de);">🚛</div><span>地場</span></div>
-      <div class="job-btn job-btn-wide" data-job="長距離" onclick="toggleJob(this)"><div class="job-icon" style="background:linear-gradient(145deg,#6c3483,#9b59b6);">🛌</div><span>長距離</span></div>
+      <div class="job-btn" data-job="長距離" onclick="toggleJob(this)"><div class="job-icon" style="background:linear-gradient(145deg,#6c3483,#9b59b6);">🛌</div><span>長距離</span></div>
       <div class="job-btn" data-job="毒手当" onclick="toggleJob(this)"><div class="job-icon" style="background:linear-gradient(145deg,#1e8449,#27ae60);">☠️</div><span>毒</span></div>
       <div class="job-btn" data-job="毒×2" onclick="toggleJob(this)"><div class="job-icon" style="background:linear-gradient(145deg,#922b21,#e74c3c);">☠️☠️</div><span>毒×2</span></div>
       <div class="job-btn" data-job="トレーラー" onclick="toggleJob(this)"><div class="job-icon" style="background:linear-gradient(145deg,#b7770d,#f39c12);">🚜</div><span>トレーラー</span></div>
