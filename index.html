@@ -25,11 +25,14 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
 .page{display:none;padding:16px;}.page.active{display:block;}
 .section{background:var(--surface);border-radius:var(--radius);padding:16px;margin-bottom:14px;border:1px solid var(--border);}
 .section-title{font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:12px;}
-.job-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.job-btn{background:var(--surface2);border:2px solid var(--border);border-radius:var(--radius);padding:14px 10px;text-align:center;cursor:pointer;transition:all 0.15s;font-size:13px;color:var(--text);font-family:'Noto Sans JP',sans-serif;}
-.job-btn .emoji{font-size:22px;display:block;margin-bottom:4px;}
-.job-btn.selected{border-color:var(--accent);background:rgba(245,166,35,0.12);color:var(--accent);}
-.job-btn:active{transform:scale(0.96);}
+.job-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.job-btn{background:transparent;border:none;border-radius:0;padding:4px 2px;text-align:center;cursor:pointer;transition:all 0.15s;font-size:11px;color:var(--muted);font-family:'Noto Sans JP',sans-serif;display:flex;flex-direction:column;align-items:center;gap:6px;}
+.job-icon{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 3px 8px rgba(0,0,0,0.35);transition:all 0.15s;position:relative;}
+.job-btn.selected .job-icon::after{content:'✓';position:absolute;top:-5px;right:-5px;background:var(--accent);color:#fff;font-size:10px;font-weight:700;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Noto Sans JP',sans-serif;}
+.job-btn.selected{color:var(--accent);}
+.job-btn:active .job-icon{transform:scale(0.88);}
+.job-btn-wide{grid-column:span 2;}
+.job-btn-wide .job-icon{width:100%;height:56px;border-radius:16px;font-size:30px;}
 .input-group{display:flex;flex-direction:column;gap:6px;}
 .input-label{font-size:11px;color:var(--muted);letter-spacing:0.5px;}
 .input-field{background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-size:16px;font-family:'Oswald',sans-serif;width:100%;outline:none;transition:border-color 0.2s;}
@@ -119,13 +122,13 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
   <div class="section">
     <div class="section-title">仕事の種類（複数選択OK）</div>
     <div class="job-grid">
-      <div class="job-btn" data-job="地場" onclick="toggleJob(this)" style="grid-column:span 2;font-size:15px;padding:14px 10px;"><span class="emoji" style="font-size:28px;">🚛</span>地場</div>
-      <div class="job-btn" data-job="長距離" onclick="toggleJob(this)"><span class="emoji">🛌</span>長距離</div>
-      <div class="job-btn" data-job="毒手当" onclick="toggleJob(this)"><span class="emoji">☠️</span>毒</div>
-      <div class="job-btn" data-job="毒×2" onclick="toggleJob(this)"><span class="emoji">☠️☠️</span>毒×2</div>
-      <div class="job-btn" data-job="トレーラー" onclick="toggleJob(this)"><span class="emoji">🚜</span>トレーラー</div>
-      <div class="job-btn" data-job="半日有給" onclick="toggleJob(this)" style="padding:8px 6px;font-size:11px;"><span class="emoji" style="font-size:20px;">🌴</span>半日有給</div>
-      <div class="job-btn" data-job="休み" onclick="toggleJob(this)" style="padding:8px 6px;font-size:11px;"><span class="emoji" style="font-size:20px;">🕺</span>休み</div>
+      <div class="job-btn job-btn-wide" data-job="地場" onclick="toggleJob(this)"><div class="job-icon" style="background:linear-gradient(145deg,#1a78c2,#2e86de);">🚛</div><span>地場</span></div>
+      <div class="job-btn job-btn-wide" data-job="長距離" onclick="toggleJob(this)"><div class="job-icon" style="background:linear-gradient(145deg,#6c3483,#9b59b6);">🛌</div><span>長距離</span></div>
+      <div class="job-btn" data-job="毒手当" onclick="toggleJob(this)"><div class="job-icon" style="background:linear-gradient(145deg,#1e8449,#27ae60);">☠️</div><span>毒</span></div>
+      <div class="job-btn" data-job="毒×2" onclick="toggleJob(this)"><div class="job-icon" style="background:linear-gradient(145deg,#922b21,#e74c3c);">☠️☠️</div><span>毒×2</span></div>
+      <div class="job-btn" data-job="トレーラー" onclick="toggleJob(this)"><div class="job-icon" style="background:linear-gradient(145deg,#b7770d,#f39c12);">🚜</div><span>トレーラー</span></div>
+      <div class="job-btn" data-job="半日有給" onclick="toggleJob(this)"><div class="job-icon" style="background:linear-gradient(145deg,#117a65,#1abc9c);">🌴</div><span>半日有給</span></div>
+      <div class="job-btn" data-job="休み" onclick="toggleJob(this)"><div class="job-icon" style="background:linear-gradient(145deg,#a93226,#e84393);">🕺</div><span>休み</span></div>
     </div>
     <div style="margin-top:12px;">
       <div class="input-label" style="margin-bottom:6px;">仕事内容メモ</div>
