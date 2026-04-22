@@ -34,6 +34,8 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
 .input-label{font-size:11px;color:var(--muted);letter-spacing:0.5px;}
 .input-field{background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-size:16px;font-family:'Oswald',sans-serif;width:100%;outline:none;transition:border-color 0.2s;}
 .input-field:focus{border-color:var(--accent);}
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+input[type=number]{-moz-appearance:textfield;}
 .money-input-wrap{position:relative;}
 .money-input-wrap .yen{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;}
 .time-btn-row{display:flex;flex-wrap:wrap;gap:6px;}
@@ -178,7 +180,28 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
   </div>
   <div class="section">
     <div class="section-title">🛣️ 走行距離</div>
-    <input class="input-field" type="number" id="distance" placeholder="例: 350" enterkeyhint="next" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('longDistancePay').focus();document.getElementById('longDistancePay').scrollIntoView({behavior:'smooth',block:'center'});}">
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="font-size:11px;color:var(--muted);min-width:36px;">1台目</div>
+        <input class="input-field" type="number" id="distance1" placeholder="0" enterkeyhint="next" oninput="updateTotalDistance()" style="flex:1;" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('distance2').focus();}">
+        <div style="font-size:11px;color:var(--muted);">km</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="font-size:11px;color:var(--muted);min-width:36px;">2台目</div>
+        <input class="input-field" type="number" id="distance2" placeholder="0" enterkeyhint="next" oninput="updateTotalDistance()" style="flex:1;" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('distance3').focus();}">
+        <div style="font-size:11px;color:var(--muted);">km</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="font-size:11px;color:var(--muted);min-width:36px;">3台目</div>
+        <input class="input-field" type="number" id="distance3" placeholder="0" enterkeyhint="next" oninput="updateTotalDistance()" style="flex:1;" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('longDistancePay').focus();document.getElementById('longDistancePay').scrollIntoView({behavior:'smooth',block:'center'});}">
+        <div style="font-size:11px;color:var(--muted);">km</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--border);">
+        <div style="font-size:13px;color:var(--muted);">合計</div>
+        <div style="font-family:'Oswald',sans-serif;font-size:18px;color:var(--accent);" id="distanceTotal">0 <span style="font-size:12px;color:var(--muted);">km</span></div>
+      </div>
+    </div>
+    <input type="hidden" id="distance">
   </div>
   <div class="section">
     <div class="section-title">💰 金額・手当</div>
@@ -379,6 +402,14 @@ function showTab(tab){
   if(tab==='stats')renderStats();
 }
 
+function updateTotalDistance(){
+  var d1=parseFloat(document.getElementById('distance1').value)||0;
+  var d2=parseFloat(document.getElementById('distance2').value)||0;
+  var d3=parseFloat(document.getElementById('distance3').value)||0;
+  var total=d1+d2+d3;
+  document.getElementById('distance').value=total||'';
+  document.getElementById('distanceTotal').innerHTML=total.toLocaleString()+' <span style="font-size:12px;color:var(--muted);">km</span>';
+}
 function addMemo(text){var el=document.getElementById('jobMemo');el.value=(el.value?el.value+'　':'')+text;}
 function toggleJob(el){
   var j=el.dataset.job;
@@ -460,19 +491,20 @@ function updateTimeValue(which){
 }
 
 // 時間外早見表データ
-// 時間外早見表データ（下段の値＝早出＋残業の合計時間外）
+// 時間外早見表データ（表の下段の値）
+// 退勤時間=キー、出勤時間=値のキー、残業時間=値
 var OT_TABLE = {
-  '04:30':{'14:15':1.5,'14:30':1.75,'14:45':2.0,'15:00':2.25,'15:15':2.5,'15:30':2.75,'16:00':3.25,'16:15':3.5,'16:30':3.75,'16:45':4.0,'17:00':4.25,'17:15':4.5,'17:30':4.75,'17:45':5.0,'18:00':5.25,'18:15':5.5,'18:30':6.0,'18:45':5.75,'19:00':6.5,'19:15':6.75,'19:30':7.0,'19:45':7.25,'20:00':7.5,'20:15':7.75,'20:30':8.0,'20:45':8.25,'21:00':8.5},
-  '05:00':{'14:15':1.0,'14:30':0,'14:45':0.25,'15:00':0.5,'15:15':0.75,'15:30':1.0,'16:00':1.5,'16:15':1.75,'16:30':2.0,'16:45':2.25,'17:00':2.5,'17:15':2.75,'17:30':3.0,'17:45':3.25,'18:00':3.5,'18:15':3.75,'18:30':4.25,'18:45':4.0,'19:00':4.75,'19:15':5.0,'19:30':5.25,'19:45':5.5,'20:00':5.75,'20:15':6.0,'20:30':6.25,'20:45':6.5,'21:00':6.75},
-  '05:30':{'14:15':0.5,'14:30':0.25,'14:45':0,'15:00':0.25,'15:15':0.5,'15:30':0.75,'16:00':1.25,'16:15':1.5,'16:30':1.75,'16:45':2.0,'17:00':2.25,'17:15':2.5,'17:30':2.75,'17:45':3.0,'18:00':3.25,'18:15':3.5,'18:30':4.0,'18:45':3.75,'19:00':4.5,'19:15':4.75,'19:30':5.0,'19:45':5.25,'20:00':5.5,'20:15':5.75,'20:30':6.0,'20:45':6.25,'21:00':6.5},
-  '06:00':{'14:15':0,'14:30':0.25,'14:45':0.5,'15:00':0.75,'15:15':1.0,'15:30':1.25,'16:00':1.75,'16:15':2.0,'16:30':2.25,'16:45':2.5,'17:00':2.75,'17:15':3.0,'17:30':3.25,'17:45':3.5,'18:00':3.75,'18:15':4.0,'18:30':4.5,'18:45':4.25,'19:00':5.0,'19:15':5.25,'19:30':5.5,'19:45':5.75,'20:00':6.0,'20:15':6.25,'20:30':6.5,'20:45':6.75,'21:00':7.0},
-  '07:00':{'16:15':0,'16:30':0.25,'16:45':0.5,'17:00':0.75,'17:15':1.0,'17:30':1.25,'17:45':1.5,'18:00':1.75,'18:15':2.0,'18:30':2.5,'18:45':2.25,'19:00':3.0,'19:15':3.25,'19:30':3.5,'19:45':3.75,'20:00':4.0,'20:15':4.25,'20:30':4.5,'20:45':4.75,'21:00':5.0,'21:15':5.25,'21:30':5.5,'21:45':5.75,'22:00':6.0,'22:15':6.25,'22:30':6.5,'22:45':6.75,'23:00':7.0},
-  '07:30':{'16:15':0.5,'16:30':0.25,'16:45':0,'17:00':0.25,'17:15':0.5,'17:30':0.75,'17:45':1.0,'18:00':1.25,'18:15':1.5,'18:30':2.0,'18:45':1.75,'19:00':2.5,'19:15':2.75,'19:30':3.0,'19:45':3.25,'20:00':3.5,'20:15':3.75,'20:30':4.0,'20:45':4.25,'21:00':4.5,'21:15':4.75,'21:30':5.0,'21:45':5.25,'22:00':5.5,'22:15':5.75,'22:30':6.0,'22:45':6.25,'23:00':6.5},
-  '08:00':{'16:15':0.75,'16:30':0.5,'16:45':0.25,'17:00':0.25,'17:15':0.5,'17:30':0.75,'17:45':1.0,'18:00':1.25,'18:15':1.5,'18:30':2.0,'18:45':1.75,'19:00':2.5,'19:15':2.75,'19:30':3.0,'19:45':3.25,'20:00':3.5,'20:15':3.75,'20:30':4.0,'20:45':4.25,'21:00':4.5,'21:15':4.75,'21:30':5.0,'21:45':5.25,'22:00':5.5,'22:15':5.75,'22:30':6.0,'22:45':6.25,'23:00':6.5},
-  '09:00':{'18:15':0,'18:30':0.25,'18:45':0.5,'19:00':1.5,'19:15':1.75,'19:30':2.0,'19:45':2.25,'20:00':2.5,'20:15':2.75,'20:30':3.0,'20:45':3.25,'21:00':3.5,'21:15':3.75,'21:30':4.0,'21:45':4.25,'22:00':4.5,'22:15':4.75,'22:30':5.0,'22:45':5.25,'23:00':5.5,'23:15':5.75,'23:30':6.0,'23:45':6.25,'0:00':6.5,'0:15':6.75,'0:30':7.0,'0:45':7.25,'1:00':7.5},
-  '10:00':{'18:15':1.0,'18:30':0.25,'18:45':0,'19:00':0.75,'19:15':1.0,'19:30':1.25,'19:45':1.5,'20:00':1.75,'20:15':2.0,'20:30':2.25,'20:45':2.5,'21:00':2.75,'21:15':3.0,'21:30':3.25,'21:45':3.5,'22:00':3.75,'22:15':4.0,'22:30':4.25,'22:45':4.5,'23:00':4.75,'23:15':5.0,'23:30':5.25,'23:45':5.5,'0:00':5.75,'0:15':6.0,'0:30':6.25,'0:45':6.5,'1:00':6.75},
+  '04:30':{'14:15':1.5,'14:30':1.75,'14:45':2.0,'15:00':2.25,'15:15':2.5,'15:30':2.75,'15:45':3.0,'16:00':3.25,'16:15':3.5,'16:30':3.75,'16:45':4.0,'17:00':4.25,'17:15':4.5,'17:30':4.75,'17:45':5.0,'18:00':5.25,'18:15':5.5,'18:30':5.75,'18:45':6.0,'19:00':6.25,'19:15':6.5,'19:30':6.75,'19:45':7.0,'20:00':7.25,'20:15':7.5,'20:30':7.75,'20:45':8.0,'21:00':8.25},
+  '05:00':{'14:15':1.0,'14:30':1.25,'14:45':1.5,'15:00':1.75,'15:15':2.0,'15:30':2.25,'15:45':2.5,'16:00':2.75,'16:15':3.0,'16:30':3.25,'16:45':3.5,'17:00':3.75,'17:15':4.0,'17:30':4.25,'17:45':4.5,'18:00':4.75,'18:15':5.0,'18:30':5.25,'18:45':5.5,'19:00':5.75,'19:15':6.0,'19:30':6.25,'19:45':6.5,'20:00':6.75,'20:15':7.0,'20:30':7.25,'20:45':7.5,'21:00':7.75},
+  '05:30':{'14:15':0.5,'14:30':0.75,'14:45':1.0,'15:00':1.25,'15:15':1.5,'15:30':1.75,'15:45':2.0,'16:00':2.25,'16:15':2.5,'16:30':2.75,'16:45':3.0,'17:00':3.25,'17:15':3.5,'17:30':3.75,'17:45':4.0,'18:00':4.25,'18:15':4.5,'18:30':4.75,'18:45':5.0,'19:00':5.25,'19:15':5.5,'19:30':5.75,'19:45':6.0,'20:00':6.25,'20:15':6.5,'20:30':6.75,'20:45':7.0,'21:00':7.25},
+  '06:00':{'14:15':0,'14:30':0.25,'14:45':0.5,'15:00':0.75,'15:15':1.0,'15:30':1.25,'15:45':1.5,'16:00':1.75,'16:15':2.0,'16:30':2.25,'16:45':2.5,'17:00':2.75,'17:15':3.0,'17:30':3.25,'17:45':3.5,'18:00':3.75,'18:15':4.0,'18:30':4.25,'18:45':4.5,'19:00':4.75,'19:15':5.0,'19:30':5.25,'19:45':5.5,'20:00':5.75,'20:15':6.0,'20:30':6.25,'20:45':6.5,'21:00':6.75},
+  '07:00':{'16:15':0,'16:30':0.25,'16:45':0.5,'17:00':0.75,'17:15':1.0,'17:30':1.25,'17:45':1.5,'18:00':1.75,'18:15':2.0,'18:30':2.25,'18:45':2.5,'19:00':2.75,'19:15':3.0,'19:30':3.25,'19:45':3.5,'20:00':3.75,'20:15':4.0,'20:30':4.25,'20:45':4.5,'21:00':4.75,'21:15':5.0,'21:30':5.25,'21:45':5.5,'22:00':5.75,'22:15':6.0,'22:30':6.25,'22:45':6.5,'23:00':6.75},
+  '07:30':{'16:15':0.5,'16:30':0.25,'16:45':0,'17:00':0.25,'17:15':0.5,'17:30':0.75,'17:45':1.0,'18:00':1.25,'18:15':1.5,'18:30':1.75,'18:45':2.0,'19:00':2.25,'19:15':2.5,'19:30':2.75,'19:45':3.0,'20:00':3.25,'20:15':3.5,'20:30':3.75,'20:45':4.0,'21:00':4.25,'21:15':4.5,'21:30':4.75,'21:45':5.0,'22:00':5.25,'22:15':5.5,'22:30':5.75,'22:45':6.0,'23:00':6.25},
+  '08:00':{'16:15':1.0,'16:30':0.75,'16:45':0.5,'17:00':0.25,'17:15':0.5,'17:30':0.75,'17:45':1.0,'18:00':1.25,'18:15':1.5,'18:30':1.75,'18:45':2.0,'19:00':2.25,'19:15':2.5,'19:30':2.75,'19:45':3.0,'20:00':3.25,'20:15':3.5,'20:30':3.75,'20:45':4.0,'21:00':4.25,'21:15':4.5,'21:30':4.75,'21:45':5.0,'22:00':5.25,'22:15':5.5,'22:30':5.75,'22:45':6.0,'23:00':6.25},
+  '09:00':{'18:15':0,'18:30':0.25,'18:45':0.5,'19:00':0.75,'19:15':1.0,'19:30':1.25,'19:45':1.5,'20:00':1.75,'20:15':2.0,'20:30':2.25,'20:45':2.5,'21:00':2.75,'21:15':3.0,'21:30':3.25,'21:45':3.5,'22:00':3.75,'22:15':4.0,'22:30':4.25,'22:45':4.5,'23:00':4.75,'23:15':5.0,'23:30':5.25,'23:45':5.5,'0:00':5.75,'0:15':6.0,'0:30':6.25,'0:45':6.5,'1:00':6.75},
+  '10:00':{'18:15':1.0,'18:30':0.75,'18:45':0,'19:00':0.25,'19:15':0.5,'19:30':0.75,'19:45':1.0,'20:00':1.25,'20:15':1.5,'20:30':1.75,'20:45':2.0,'21:00':2.25,'21:15':2.5,'21:30':2.75,'21:45':3.0,'22:00':3.25,'22:15':3.5,'22:30':3.75,'22:45':4.0,'23:00':4.25,'23:15':4.5,'23:30':4.75,'23:45':5.0,'0:00':5.25,'0:15':5.5,'0:30':5.75,'0:45':6.0,'1:00':6.25},
   '12:00':{'21:15':0,'21:30':0.25,'21:45':0.5,'22:00':0.75,'22:15':1.0,'22:30':1.25,'22:45':1.5,'23:00':1.75,'23:15':2.0,'23:30':2.25,'23:45':2.5,'0:00':2.75,'0:15':3.0,'0:30':3.25,'0:45':3.5,'1:00':3.75,'1:15':4.0,'1:30':4.25,'1:45':4.5,'2:00':4.75,'2:15':5.0,'2:30':5.25,'2:45':5.5,'3:00':5.75,'3:15':6.0,'3:30':6.25,'3:45':6.5,'4:00':6.75},
-  '13:00':{'21:15':1.0,'21:30':0.25,'21:45':0.5,'22:00':0.75,'22:15':1.0,'22:30':1.25,'22:45':1.5,'23:00':1.75,'23:15':2.0,'23:30':2.25,'23:45':2.5,'0:00':2.75,'0:15':3.0,'0:30':3.25,'0:45':3.5,'1:00':3.75,'1:15':4.0,'1:30':4.25,'1:45':4.5,'2:00':4.75,'2:15':5.0,'2:30':5.25,'2:45':5.5,'3:00':5.75,'3:15':6.0,'3:30':6.25,'3:45':6.5,'4:00':6.75}
+  '13:00':{'21:15':1.0,'21:30':0.75,'21:45':0.5,'22:00':0.25,'22:15':0.5,'22:30':0.75,'22:45':1.0,'23:00':1.25,'23:15':1.5,'23:30':1.75,'23:45':2.0,'0:00':2.25,'0:15':2.5,'0:30':2.75,'0:45':3.0,'1:00':3.25,'1:15':3.5,'1:30':3.75,'1:45':4.0,'2:00':4.25,'2:15':4.5,'2:30':4.75,'2:45':5.0,'3:00':5.25,'3:15':5.5,'3:30':5.75,'3:45':6.0,'4:00':6.25}
 };
 
 function autoCalcOvertime(){
@@ -611,7 +643,10 @@ function resetForm(resetDate){
   document.getElementById('toxicDisplay').textContent='未選択';
   document.getElementById('trailerStatus').textContent='タップでON';
   document.getElementById('trailerStatus').style.color='var(--muted)';
-  ['distance','longDistancePay','jobMemo'].forEach(function(id){document.getElementById(id).value='';});
+  ['longDistancePay','jobMemo'].forEach(function(id){document.getElementById(id).value='';});
+  ['distance1','distance2','distance3'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('distance').value='';
+  document.getElementById('distanceTotal').innerHTML='0 <span style="font-size:12px;color:var(--muted);">km</span>';;
   clearTimePicker('start');clearTimePicker('end');clearOvertimePicker();
   if(resetDate){var di=document.getElementById('inputDate');di.removeEventListener('change',onDateChange);di.value=getLocalDateStr();di.addEventListener('change',onDateChange);}
   document.querySelector('.save-btn').textContent='💾 保存する';
@@ -630,7 +665,11 @@ function loadRecordToForm(r){
   setTimePicker('start',r.startTime||'');
   setTimePicker('end',r.endTime||'');
   setOvertimePicker(r.overtime||0);
+  document.getElementById('distance1').value=r.distance||'';
+  document.getElementById('distance2').value='';
+  document.getElementById('distance3').value='';
   document.getElementById('distance').value=r.distance||'';
+  document.getElementById('distanceTotal').innerHTML=(r.distance||0).toLocaleString()+' <span style="font-size:12px;color:var(--muted);">km</span>';
   document.getElementById('longDistancePay').value=r.longDistancePay||'';
   toxicCount=r.toxicCount||0;
   document.getElementById('toxicBtn1').classList.toggle('selected',toxicCount===1);
