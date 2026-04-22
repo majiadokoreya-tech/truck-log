@@ -25,14 +25,11 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
 .page{display:none;padding:16px;}.page.active{display:block;}
 .section{background:var(--surface);border-radius:var(--radius);padding:16px;margin-bottom:14px;border:1px solid var(--border);}
 .section-title{font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:12px;}
-.job-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 10px;}
-.job-btn{background:transparent;border:none;border-radius:0;padding:4px 2px;text-align:center;cursor:pointer;transition:all 0.15s;font-size:11px;color:var(--muted);font-family:'Noto Sans JP',sans-serif;display:flex;flex-direction:column;align-items:center;gap:6px;}
-.job-icon{width:64px;height:64px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:30px;box-shadow:0 4px 10px rgba(0,0,0,0.35);transition:all 0.15s;position:relative;}
-.job-btn.selected .job-icon::after{content:'✓';position:absolute;top:-6px;right:-6px;background:var(--accent);color:#fff;font-size:10px;font-weight:700;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Noto Sans JP',sans-serif;}
-.job-btn.selected{color:var(--accent);}
-.job-btn:active .job-icon{transform:scale(0.88);}
-.job-btn-wide{grid-column:span 3;}
-.job-btn-wide .job-icon{width:100%;height:64px;border-radius:18px;font-size:34px;}
+.job-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.job-btn{background:var(--surface2);border:2px solid var(--border);border-radius:var(--radius);padding:14px 10px;text-align:center;cursor:pointer;transition:all 0.15s;font-size:13px;color:var(--text);font-family:'Noto Sans JP',sans-serif;}
+.job-btn .emoji{font-size:22px;display:block;margin-bottom:4px;}
+.job-btn.selected{border-color:var(--accent);background:rgba(245,166,35,0.12);color:var(--accent);}
+.job-btn:active{transform:scale(0.96);}
 .input-group{display:flex;flex-direction:column;gap:6px;}
 .input-label{font-size:11px;color:var(--muted);letter-spacing:0.5px;}
 .input-field{background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-size:16px;font-family:'Oswald',sans-serif;width:100%;outline:none;transition:border-color 0.2s;}
@@ -122,18 +119,18 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
   <div class="section">
     <div class="section-title">仕事の種類（複数選択OK）</div>
     <div class="job-grid">
-      <div class="job-btn job-btn-wide" data-job="地場" onclick="toggleJob(this)"><div class="job-icon" style="background:linear-gradient(145deg,#1a78c2,#2e86de);">🚛</div><span>地場</span></div>
-      <div class="job-btn" data-job="長距離" onclick="toggleJob(this)"><div class="job-icon" style="background:linear-gradient(145deg,#6c3483,#9b59b6);">🛌</div><span>長距離</span></div>
-      <div class="job-btn" data-job="毒手当" onclick="toggleJob(this)"><div class="job-icon" style="background:linear-gradient(145deg,#1e8449,#27ae60);">☠️</div><span>毒</span></div>
-      <div class="job-btn" data-job="毒×2" onclick="toggleJob(this)"><div class="job-icon" style="background:linear-gradient(145deg,#922b21,#e74c3c);">☠️☠️</div><span>毒×2</span></div>
-      <div class="job-btn" data-job="トレーラー" onclick="toggleJob(this)"><div class="job-icon" style="background:linear-gradient(145deg,#b7770d,#f39c12);">🚜</div><span>トレーラー</span></div>
-      <div class="job-btn" data-job="半日有給" onclick="toggleJob(this)"><div class="job-icon" style="background:linear-gradient(145deg,#117a65,#1abc9c);">🌴</div><span>半日有給</span></div>
-      <div class="job-btn" data-job="休み" onclick="toggleJob(this)"><div class="job-icon" style="background:linear-gradient(145deg,#a93226,#e84393);">🕺</div><span>休み</span></div>
+      <div class="job-btn" data-job="地場" onclick="toggleJob(this)" style="grid-column:span 2;font-size:15px;padding:14px 10px;"><span class="emoji" style="font-size:28px;">🚛</span>地場</div>
+      <div class="job-btn" data-job="長距離" onclick="toggleJob(this)"><span class="emoji">🛌</span>長距離</div>
+      <div class="job-btn" data-job="毒手当" onclick="toggleJob(this)"><span class="emoji">☠️</span>毒</div>
+      <div class="job-btn" data-job="毒×2" onclick="toggleJob(this)"><span class="emoji">☠️☠️</span>毒×2</div>
+      <div class="job-btn" data-job="トレーラー" onclick="toggleJob(this)"><span class="emoji">🚜</span>トレーラー</div>
+      <div class="job-btn" data-job="半日有給" onclick="toggleJob(this)" style="padding:8px 6px;font-size:11px;"><span class="emoji" style="font-size:20px;">🌴</span>半日有給</div>
+      <div class="job-btn" data-job="休み" onclick="toggleJob(this)" style="padding:8px 6px;font-size:11px;"><span class="emoji" style="font-size:20px;">🕺</span>休み</div>
     </div>
     <div style="margin-top:12px;">
       <div class="input-label" style="margin-bottom:6px;">仕事内容メモ</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
-        <div class="memo-btn" onclick="addMemo('ガス')">💨 ガス</div>
+        <div class="memo-btn" onclick="addMemo('ガス')">⛽ ガス</div>
         <div class="memo-btn" onclick="addMemo('エステル')">🧪 エステル</div>
         <div class="memo-btn" onclick="addMemo('塩素搭載')">⚗️ 塩素搭載</div>
       </div>
@@ -170,10 +167,10 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
       <div class="time-btn-row" id="overtimeHourBtns"></div>
       <div class="input-label" style="margin:8px 0 5px;font-size:10px;">分</div>
       <div class="time-btn-row" id="overtimeMinBtns">
-        <div class="time-btn" onclick="setOvertimeMin(0)">00</div>
-        <div class="time-btn" onclick="setOvertimeMin(15)">15</div>
-        <div class="time-btn" onclick="setOvertimeMin(30)">30</div>
-        <div class="time-btn" onclick="setOvertimeMin(45)">45</div>
+        <div class="time-btn" onclick="setOvertimeMin(0)">0</div>
+        <div class="time-btn" onclick="setOvertimeMin(15)">.25</div>
+        <div class="time-btn" onclick="setOvertimeMin(30)">.5</div>
+        <div class="time-btn" onclick="setOvertimeMin(45)">.75</div>
       </div>
     </div>
     <input type="hidden" id="startTime">
@@ -399,6 +396,11 @@ function toggleJob(el){
     if(j==='毒手当'){selectToxic(1);}
     if(j==='毒×2'){selectToxic(2);}
     if(j==='トレーラー'){if(!trailerOn)toggleTrailer();}
+    if(j==='半日有給'){setTimePicker('end','12:00');}
+  }
+  // 仕事種類変更時も残業再計算
+  if(timeState.start.h!==null&&timeState.start.m!==null){
+    autoCalcOvertime();
   }
 }
 function selectToxic(n){if(toxicCount===n){toxicCount=0;document.getElementById('toxicBtn1').classList.remove('selected');document.getElementById('toxicBtn2').classList.remove('selected');document.getElementById('toxicDisplay').textContent='未選択';}else{toxicCount=n;document.getElementById('toxicBtn1').classList.toggle('selected',n===1);document.getElementById('toxicBtn2').classList.toggle('selected',n===2);document.getElementById('toxicDisplay').textContent='☠️×'+n+' = '+(n*2500).toLocaleString()+'円';}}
@@ -416,6 +418,24 @@ function setHour(which,h){
   document.querySelectorAll('#'+which+'HourBtns .time-btn').forEach(function(b){b.classList.remove('selected');});
   document.getElementById(which+'H'+h).classList.add('selected');
   if(which==='start'&&timeState[which].m===null)timeState[which].m=0;
+  // 出勤時間の分ボタン制限
+  if(which==='start'){
+    var btns=document.getElementById('startMinBtns').querySelectorAll('.time-btn');
+    // 4時は00を無効化（30固定）
+    if(h===4){
+      btns[0].style.opacity='0.3';btns[0].style.pointerEvents='none';
+      btns[1].style.opacity='';btns[1].style.pointerEvents='';
+      if(timeState.start.m===0){timeState.start.m=30;btns[1].classList.add('selected');btns[0].classList.remove('selected');}
+    // 6,8,9,10,12,13時は30を無効化（00固定）
+    } else if(h===6||h===8||h===9||h===10||h===12||h===13){
+      btns[0].style.opacity='';btns[0].style.pointerEvents='';
+      btns[1].style.opacity='0.3';btns[1].style.pointerEvents='none';
+      if(timeState.start.m===30){timeState.start.m=0;btns[0].classList.add('selected');btns[1].classList.remove('selected');}
+    } else {
+      btns[0].style.opacity='';btns[0].style.pointerEvents='';
+      btns[1].style.opacity='';btns[1].style.pointerEvents='';
+    }
+  }
   updateTimeValue(which);
   var minEl=document.getElementById(which+'MinBtns');
   if(minEl)setTimeout(function(){minEl.scrollIntoView({behavior:'smooth',block:'center'});},100);
@@ -433,6 +453,69 @@ function updateTimeValue(which){
   var s=timeState[which];
   if(s.h!==null&&s.m!==null){var v=String(s.h).padStart(2,'0')+':'+String(s.m).padStart(2,'0');document.getElementById(which+'Time').value=v;document.getElementById(which+'TimeDisplay').textContent=v;}
   else if(s.h!==null){document.getElementById(which+'TimeDisplay').textContent=String(s.h).padStart(2,'0')+':--';}
+  // 出勤・退勤両方揃ったら残業自動計算
+  if(timeState.start.h!==null&&timeState.start.m!==null&&timeState.end.h!==null&&timeState.end.m!==null){
+    autoCalcOvertime();
+  }
+}
+
+// 時間外早見表データ
+// 時間外早見表データ（下段の値＝早出＋残業の合計時間外）
+var OT_TABLE = {
+  '04:30':{'14:15':1.5,'14:30':1.75,'14:45':2.0,'15:00':2.25,'15:15':2.5,'15:30':2.75,'16:00':3.25,'16:15':3.5,'16:30':3.75,'16:45':4.0,'17:00':4.25,'17:15':4.5,'17:30':4.75,'17:45':5.0,'18:00':5.25,'18:15':5.5,'18:30':6.0,'18:45':5.75,'19:00':6.5,'19:15':6.75,'19:30':7.0,'19:45':7.25,'20:00':7.5,'20:15':7.75,'20:30':8.0,'20:45':8.25,'21:00':8.5},
+  '05:00':{'14:15':1.0,'14:30':0,'14:45':0.25,'15:00':0.5,'15:15':0.75,'15:30':1.0,'16:00':1.5,'16:15':1.75,'16:30':2.0,'16:45':2.25,'17:00':2.5,'17:15':2.75,'17:30':3.0,'17:45':3.25,'18:00':3.5,'18:15':3.75,'18:30':4.25,'18:45':4.0,'19:00':4.75,'19:15':5.0,'19:30':5.25,'19:45':5.5,'20:00':5.75,'20:15':6.0,'20:30':6.25,'20:45':6.5,'21:00':6.75},
+  '05:30':{'14:15':0.5,'14:30':0.25,'14:45':0,'15:00':0.25,'15:15':0.5,'15:30':0.75,'16:00':1.25,'16:15':1.5,'16:30':1.75,'16:45':2.0,'17:00':2.25,'17:15':2.5,'17:30':2.75,'17:45':3.0,'18:00':3.25,'18:15':3.5,'18:30':4.0,'18:45':3.75,'19:00':4.5,'19:15':4.75,'19:30':5.0,'19:45':5.25,'20:00':5.5,'20:15':5.75,'20:30':6.0,'20:45':6.25,'21:00':6.5},
+  '06:00':{'14:15':0,'14:30':0.25,'14:45':0.5,'15:00':0.75,'15:15':1.0,'15:30':1.25,'16:00':1.75,'16:15':2.0,'16:30':2.25,'16:45':2.5,'17:00':2.75,'17:15':3.0,'17:30':3.25,'17:45':3.5,'18:00':3.75,'18:15':4.0,'18:30':4.5,'18:45':4.25,'19:00':5.0,'19:15':5.25,'19:30':5.5,'19:45':5.75,'20:00':6.0,'20:15':6.25,'20:30':6.5,'20:45':6.75,'21:00':7.0},
+  '07:00':{'16:15':0,'16:30':0.25,'16:45':0.5,'17:00':0.75,'17:15':1.0,'17:30':1.25,'17:45':1.5,'18:00':1.75,'18:15':2.0,'18:30':2.5,'18:45':2.25,'19:00':3.0,'19:15':3.25,'19:30':3.5,'19:45':3.75,'20:00':4.0,'20:15':4.25,'20:30':4.5,'20:45':4.75,'21:00':5.0,'21:15':5.25,'21:30':5.5,'21:45':5.75,'22:00':6.0,'22:15':6.25,'22:30':6.5,'22:45':6.75,'23:00':7.0},
+  '07:30':{'16:15':0.5,'16:30':0.25,'16:45':0,'17:00':0.25,'17:15':0.5,'17:30':0.75,'17:45':1.0,'18:00':1.25,'18:15':1.5,'18:30':2.0,'18:45':1.75,'19:00':2.5,'19:15':2.75,'19:30':3.0,'19:45':3.25,'20:00':3.5,'20:15':3.75,'20:30':4.0,'20:45':4.25,'21:00':4.5,'21:15':4.75,'21:30':5.0,'21:45':5.25,'22:00':5.5,'22:15':5.75,'22:30':6.0,'22:45':6.25,'23:00':6.5},
+  '08:00':{'16:15':0.75,'16:30':0.5,'16:45':0.25,'17:00':0.25,'17:15':0.5,'17:30':0.75,'17:45':1.0,'18:00':1.25,'18:15':1.5,'18:30':2.0,'18:45':1.75,'19:00':2.5,'19:15':2.75,'19:30':3.0,'19:45':3.25,'20:00':3.5,'20:15':3.75,'20:30':4.0,'20:45':4.25,'21:00':4.5,'21:15':4.75,'21:30':5.0,'21:45':5.25,'22:00':5.5,'22:15':5.75,'22:30':6.0,'22:45':6.25,'23:00':6.5},
+  '09:00':{'18:15':0,'18:30':0.25,'18:45':0.5,'19:00':1.5,'19:15':1.75,'19:30':2.0,'19:45':2.25,'20:00':2.5,'20:15':2.75,'20:30':3.0,'20:45':3.25,'21:00':3.5,'21:15':3.75,'21:30':4.0,'21:45':4.25,'22:00':4.5,'22:15':4.75,'22:30':5.0,'22:45':5.25,'23:00':5.5,'23:15':5.75,'23:30':6.0,'23:45':6.25,'0:00':6.5,'0:15':6.75,'0:30':7.0,'0:45':7.25,'1:00':7.5},
+  '10:00':{'18:15':1.0,'18:30':0.25,'18:45':0,'19:00':0.75,'19:15':1.0,'19:30':1.25,'19:45':1.5,'20:00':1.75,'20:15':2.0,'20:30':2.25,'20:45':2.5,'21:00':2.75,'21:15':3.0,'21:30':3.25,'21:45':3.5,'22:00':3.75,'22:15':4.0,'22:30':4.25,'22:45':4.5,'23:00':4.75,'23:15':5.0,'23:30':5.25,'23:45':5.5,'0:00':5.75,'0:15':6.0,'0:30':6.25,'0:45':6.5,'1:00':6.75},
+  '12:00':{'21:15':0,'21:30':0.25,'21:45':0.5,'22:00':0.75,'22:15':1.0,'22:30':1.25,'22:45':1.5,'23:00':1.75,'23:15':2.0,'23:30':2.25,'23:45':2.5,'0:00':2.75,'0:15':3.0,'0:30':3.25,'0:45':3.5,'1:00':3.75,'1:15':4.0,'1:30':4.25,'1:45':4.5,'2:00':4.75,'2:15':5.0,'2:30':5.25,'2:45':5.5,'3:00':5.75,'3:15':6.0,'3:30':6.25,'3:45':6.5,'4:00':6.75},
+  '13:00':{'21:15':1.0,'21:30':0.25,'21:45':0.5,'22:00':0.75,'22:15':1.0,'22:30':1.25,'22:45':1.5,'23:00':1.75,'23:15':2.0,'23:30':2.25,'23:45':2.5,'0:00':2.75,'0:15':3.0,'0:30':3.25,'0:45':3.5,'1:00':3.75,'1:15':4.0,'1:30':4.25,'1:45':4.5,'2:00':4.75,'2:15':5.0,'2:30':5.25,'2:45':5.5,'3:00':5.75,'3:15':6.0,'3:30':6.25,'3:45':6.5,'4:00':6.75}
+};
+
+function autoCalcOvertime(){
+  var dateStr=document.getElementById('inputDate').value;
+  if(dateStr){var dow=new Date(dateStr).getDay();if(dow===0)return;}
+  if(selectedJobs.includes('長距離'))return;
+  var sh=timeState.start.h,sm=timeState.start.m;
+  if(sh===null||sm===null)return;
+  var startMins=sh*60+sm;
+  // 半日有給：早出 = 8:00 - 出勤
+  if(selectedJobs.includes('半日有給')){
+    var hayade=8*60-startMins;
+    if(hayade<0)hayade=0;
+    setOvertimePicker(Math.floor(hayade/15)*15/60);
+    return;
+  }
+  var eh=timeState.end.h,em=timeState.end.m;
+  if(eh===null||em===null)return;
+  // 出勤キー（30分刻みに最も近いキー）
+  var startKey=String(sh).padStart(2,'0')+':'+String(sm).padStart(2,'0');
+  // 退勤キー
+  var endMins=eh*60+em;
+  if(endMins<startMins)endMins+=24*60;
+  var endH=Math.floor(endMins/60)%24,endM=endMins%60;
+  var endKey=String(endH).padStart(2,'0')+':'+String(endM).padStart(2,'0');
+  // テーブル検索
+  if(OT_TABLE[startKey]&&OT_TABLE[startKey][endKey]!==undefined){
+    setOvertimePicker(OT_TABLE[startKey][endKey]);
+    return;
+  }
+  // テーブルにない退勤時間の場合：早出分＋残業分で計算
+  var teiji=null, kijun=null;
+  if(startMins>=4*60+30&&startMins<=6*60){teiji=14*60+15;kijun=6*60;}
+  else if(startMins>=7*60&&startMins<=8*60){teiji=16*60+15;kijun=7*60;}
+  else if(startMins>=9*60&&startMins<=10*60){teiji=18*60+15;kijun=9*60;}
+  else if(startMins>=12*60&&startMins<=13*60){teiji=21*60+15;kijun=12*60;}
+  if(teiji===null)return;
+  // 早出分（基準時刻より前に出勤した分）
+  var hayade=kijun>startMins?kijun-startMins:0;
+  // 残業分（定時より後に退勤した分）
+  var zangyo=endMins>teiji?endMins-teiji:0;
+  var total=Math.floor((hayade+zangyo)/15)*15/60;
+  setOvertimePicker(total);
 }
 function setTimePicker(which,val){
   if(!val){clearTimePicker(which);return;}
@@ -478,9 +561,9 @@ function setOvertimeMin(m){
 function updateOvertimeDisplay(){
   if(otState.h!==null){
     var m=otState.m!==null?otState.m:0;
-    var hStr=otState.h>0?otState.h+'時間':'';
-    var mStr=m>0?m+'分':'';
-    document.getElementById('overtimeDisplay').textContent=(hStr+mStr)||'なし';
+    var val=otState.h+m/60;
+    val=Math.round(val*100)/100;
+    document.getElementById('overtimeDisplay').textContent=val>0?val+'h':'なし';
   }
 }
 function getOvertimeValue(){
