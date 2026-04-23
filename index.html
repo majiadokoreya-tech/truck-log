@@ -529,7 +529,23 @@ var OT_TABLE = {
 
 function autoCalcOvertime(){
   var dateStr=document.getElementById('inputDate').value;
-  if(dateStr){var dow=new Date(dateStr).getDay();if(dow===0)return;}
+  var dow=dateStr?new Date(dateStr).getDay():-1;
+
+  // 日曜：実働-休憩=残業（長距離は除く）
+  if(dow===0&&!selectedJobs.includes('長距離')){
+    var sh=timeState.start.h,sm=timeState.start.m;
+    var eh=timeState.end.h,em=timeState.end.m;
+    if(sh===null||sm===null||eh===null||em===null)return;
+    var startMins=sh*60+sm;
+    var endMins=eh*60+em;
+    if(endMins<startMins)endMins+=24*60;
+    var jitsuH=Math.round((endMins-startMins)/15)*15/60; // 実働時間
+    var kyukei=jitsuH<=4?0:jitsuH<=5.75?0.5:1.0; // 休憩時間
+    var ot=Math.max(0,Math.round((jitsuH-kyukei)*100)/100);
+    setOvertimePicker(ot);
+    return;
+  }
+
   if(selectedJobs.includes('長距離'))return;
   var sh=timeState.start.h,sm=timeState.start.m;
   if(sh===null||sm===null)return;
@@ -543,7 +559,7 @@ function autoCalcOvertime(){
   }
   var eh=timeState.end.h,em=timeState.end.m;
   if(eh===null||em===null)return;
-  // 出勤キー（30分刻みに最も近いキー）
+  // 出勤キー
   var startKey=String(sh).padStart(2,'0')+':'+String(sm).padStart(2,'0');
   // 退勤キー
   var endMins=eh*60+em;
@@ -562,9 +578,7 @@ function autoCalcOvertime(){
   else if(startMins>=9*60&&startMins<=10*60){teiji=18*60+15;kijun=9*60;}
   else if(startMins>=12*60&&startMins<=13*60){teiji=21*60+15;kijun=12*60;}
   if(teiji===null)return;
-  // 早出分（基準時刻より前に出勤した分）
   var hayade=kijun>startMins?kijun-startMins:0;
-  // 残業分（定時より後に退勤した分）
   var zangyo=endMins>teiji?endMins-teiji:0;
   var total=Math.floor((hayade+zangyo)/15)*15/60;
   setOvertimePicker(total);
