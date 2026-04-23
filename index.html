@@ -413,21 +413,41 @@ function updateTotalDistance(){
 function addMemo(text){var el=document.getElementById('jobMemo');el.value=(el.value?el.value+'　':'')+text;}
 function toggleJob(el){
   var j=el.dataset.job;
+  // 休みが選択中は休み以外を押せない
+  if(selectedJobs.includes('休み')&&j!=='休み')return;
+  // 他のジョブが選択中は休みを押せない
+  if(j==='休み'&&selectedJobs.filter(function(x){return x!=='休み';}).length>0)return;
   if(selectedJobs.includes(j)){
     selectedJobs=selectedJobs.filter(function(x){return x!==j;});
     el.classList.remove('selected');
-    if(j==='休み'){var memo=document.getElementById('jobMemo');memo.value=memo.value.replace('休み','').trim();}
+    if(j==='休み'){
+      var memo=document.getElementById('jobMemo');memo.value=memo.value.replace('休み','').trim();
+      // 休みを解除したら他のボタンを有効化
+      document.querySelectorAll('.job-btn').forEach(function(b){b.style.opacity='';b.style.pointerEvents='';});
+    }
     if(j==='毒手当'){selectToxic(toxicCount===1?1:0);if(toxicCount===1)selectToxic(1);}
     if(j==='毒×2'){if(toxicCount===2)selectToxic(2);}
     if(j==='トレーラー'){if(trailerOn)toggleTrailer();}
+    // 休み以外が全解除されたら休みボタンを有効化
+    if(j!=='休み'&&selectedJobs.filter(function(x){return x!=='休み';}).length===0){
+      document.querySelectorAll('.job-btn').forEach(function(b){if(b.dataset.job==='休み'){b.style.opacity='';b.style.pointerEvents='';}});
+    }
   }else{
     selectedJobs.push(j);
     el.classList.add('selected');
-    if(j==='休み'){var memo=document.getElementById('jobMemo');if(!memo.value.includes('休み'))memo.value=(memo.value?memo.value+'　':'')+'休み';}
+    if(j==='休み'){
+      var memo=document.getElementById('jobMemo');if(!memo.value.includes('休み'))memo.value=(memo.value?memo.value+'　':'')+'休み';
+      // 休みを選択したら他のボタンを無効化
+      document.querySelectorAll('.job-btn').forEach(function(b){if(b!==el){b.style.opacity='0.3';b.style.pointerEvents='none';}});
+    }
     if(j==='毒手当'){selectToxic(1);}
     if(j==='毒×2'){selectToxic(2);}
     if(j==='トレーラー'){if(!trailerOn)toggleTrailer();}
     if(j==='半日有給'){setTimePicker('end','12:00');}
+    // 休み以外が選択されたら休みボタンを無効化
+    if(j!=='休み'){
+      document.querySelectorAll('.job-btn').forEach(function(b){if(b.dataset.job==='休み'){b.style.opacity='0.3';b.style.pointerEvents='none';}});
+    }
   }
   // 仕事種類変更時も残業再計算
   if(timeState.start.h!==null&&timeState.start.m!==null){
@@ -638,6 +658,7 @@ function saveRecord(){
 
 function resetForm(resetDate){
   editingId=null;selectedJobs=[];toxicCount=0;trailerOn=false;
+  document.querySelectorAll('.job-btn').forEach(function(b){b.style.opacity='';b.style.pointerEvents='';});
   document.querySelectorAll('.job-btn').forEach(function(b){b.classList.remove('selected');});
   document.querySelectorAll('.allow-btn').forEach(function(b){b.classList.remove('selected');});
   document.getElementById('toxicDisplay').textContent='未選択';
@@ -715,7 +736,7 @@ function renderRecords(){
     var dc=getDateColor(ds,dow),ih=HOLIDAYS.has(ds);
     html+='<div class="cal-cell '+(hd?'has-data':'')+'" '+(hd?'onclick="showModal('+r.id+')"':'')+'>'+
       '<div class="cal-day" style="'+dc+'">'+day+(ih?'🎌':'')+'</div>'+
-      (hd?'<div class="cal-emoji">'+(je||'—')+'</div>'+(r.startTime?'<div class="cal-time">出 '+r.startTime+'</div>':'')+(r.endTime?'<div class="cal-time">退 '+r.endTime+'</div>':'')+(r.overtime>0?'<div class="cal-time">残 '+r.overtime+'h</div>':'')+(r.jobMemo?'<div class="cal-memo">'+r.jobMemo+'</div>':''):'')+
+      (hd?(((r.jobs||[]).includes('休み'))?'<div style="font-size:20px;margin-top:4px;">🕺</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">休み</div>':'<div class="cal-emoji">'+(je||'—')+'</div>'+(r.startTime?'<div class="cal-time">出 '+r.startTime+'</div>':'')+(r.endTime?'<div class="cal-time">退 '+r.endTime+'</div>':'')+(r.overtime>0?'<div class="cal-time">残 '+r.overtime+'h</div>':'')+(r.jobMemo?'<div class="cal-memo">'+r.jobMemo+'</div>':'')):'')+
     '</div>';
   }
   list.innerHTML=html+'</div>';
