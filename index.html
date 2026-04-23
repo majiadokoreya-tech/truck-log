@@ -275,4 +275,305 @@ var otState={h:null,m:null};
 function getLocalDateStr(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function getRecords(){return JSON.parse(localStorage.getItem('truckRecords')||'[]');}
 function saveRecords(r){localStorage.setItem('truckRecords',JSON.stringify(r));}
-fun
+function calcWorkHours(s,e){if(!s||!e)return null;var sh=parseInt(s.split(':')[0]),sm=parseInt(s.split(':')[1]),eh=parseInt(e.split(':')[0]),em=parseInt(e.split(':')[1]);var mins=(eh*60+em)-(sh*60+sm);if(mins<0)mins+=24*60;return(mins/60).toFixed(1);}
+function calcDistPay(km){if(!km||km<=0)return 0;if(km<=800)return Math.round(km*8);return Math.round(800*8+(km-800)*18);}
+function getDateColor(d,dow){if(HOLIDAYS.has(d)||dow===0)return'color:#e74c3c';if(dow===6)return'color:#3498db';return'';}
+function showToast(msg,isErr){var t=document.getElementById('toast');t.textContent=msg;t.style.background=isErr?'var(--red)':'var(--green)';t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2500);}
+
+function showTab(tab){
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  document.getElementById('page-'+tab).classList.add('active');
+  var idx=['input','records','stats'].indexOf(tab);
+  document.querySelectorAll('.tab')[idx].classList.add('active');
+  if(tab==='records')renderRecords();
+  if(tab==='stats')renderStats();
+}
+
+function toggleJob(el){var j=el.dataset.job;if(selectedJobs.includes(j)){selectedJobs=selectedJobs.filter(function(x){return x!==j;});el.classList.remove('selected');}else{selectedJobs.push(j);el.classList.add('selected');}}
+function selectToxic(n){if(toxicCount===n){toxicCount=0;document.getElementById('toxicBtn1').classList.remove('selected');document.getElementById('toxicBtn2').classList.remove('selected');document.getElementById('toxicDisplay').textContent='未選択';}else{toxicCount=n;document.getElementById('toxicBtn1').classList.toggle('selected',n===1);document.getElementById('toxicBtn2').classList.toggle('selected',n===2);document.getElementById('toxicDisplay').textContent='☠️×'+n+' = '+(n*2500).toLocaleString()+'円';}}
+function toggleTrailer(){trailerOn=!trailerOn;document.getElementById('trailerBtn').classList.toggle('selected',trailerOn);document.getElementById('trailerStatus').textContent=trailerOn?'✅ 3,000円':'タップでON';document.getElementById('trailerStatus').style.color=trailerOn?'var(--accent)':'var(--muted)';}
+
+function buildHourBtns(which){
+  var container=document.getElementById(which+'HourBtns');
+  var main=which==='start'?[4,5,6,7,8]:[14,15,16,17,18];
+  main.forEach(function(h){var btn=document.createElement('div');btn.className='time-btn';btn.textContent=h;btn.id=which+'H'+h;(function(hh){btn.onclick=function(){setHour(which,hh);};})(h);container.appendChild(btn);});
+  var sep=document.createElement('div');sep.style.cssText='width:100%;font-size:10px;color:var(--muted);margin:4px 0 2px;';sep.textContent='その他';container.appendChild(sep);
+  for(var h=0;h<24;h++){if(main.includes(h))continue;var btn=document.createElement('div');btn.className='time-btn dim';btn.textContent=h;btn.id=which+'H'+h;(function(hh){btn.onclick=function(){setHour(which,hh);};})(h);container.appendChild(btn);}
+}
+function setHour(which,h){
+  timeState[which].h=h;
+  document.querySelectorAll('#'+which+'HourBtns .time-btn').forEach(function(b){b.classList.remove('selected');});
+  document.getElementById(which+'H'+h).classList.add('selected');
+  if(which==='start'&&timeState[which].m===null)timeState[which].m=0;
+  updateTimeValue(which);
+  var minEl=document.getElementById(which+'MinBtns');
+  if(minEl)setTimeout(function(){minEl.scrollIntoView({behavior:'smooth',block:'center'});},100);
+}
+function setMin(which,m){
+  timeState[which].m=m;
+  var btns=document.getElementById(which+'MinBtns').querySelectorAll('.time-btn');
+  btns.forEach(function(b){b.classList.remove('selected');});
+  var opts=which==='start'?[0,30]:[0,15,30,45];
+  var idx=opts.indexOf(m);
+  if(idx>=0&&btns[idx])btns[idx].classList.add('selected');
+  updateTimeValue(which);
+}
+function updateTimeValue(which){
+  var s=timeState[which];
+  if(s.h!==null&&s.m!==null){var v=String(s.h).padStart(2,'0')+':'+String(s.m).padStart(2,'0');document.getElementById(which+'Time').value=v;document.getElementById(which+'TimeDisplay').textContent=v;}
+  else if(s.h!==null){document.getElementById(which+'TimeDisplay').textContent=String(s.h).padStart(2,'0')+':--';}
+}
+function setTimePicker(which,val){
+  if(!val)return;
+  var p=val.split(':'),hh=parseInt(p[0]),mm=parseInt(p[1]);
+  timeState[which]={h:hh,m:mm};
+  document.querySelectorAll('#'+which+'HourBtns .time-btn').forEach(function(b){b.classList.remove('selected');});
+  var hb=document.getElementById(which+'H'+hh);if(hb)hb.classList.add('selected');
+  var opts=which==='start'?[0,30]:[0,15,30,45];
+  var btns=document.getElementById(which+'MinBtns').querySelectorAll('.time-btn');
+  btns.forEach(function(b){b.classList.remove('selected');});
+  var idx=opts.indexOf(mm);if(idx>=0&&btns[idx])btns[idx].classList.add('selected');
+  updateTimeValue(which);
+}
+function clearTimePicker(which){
+  timeState[which]={h:null,m:null};
+  document.querySelectorAll('#'+which+'HourBtns .time-btn').forEach(function(b){b.classList.remove('selected');});
+  document.getElementById(which+'MinBtns').querySelectorAll('.time-btn').forEach(function(b){b.classList.remove('selected');});
+  document.getElementById(which+'TimeDisplay').textContent='--:--';
+  document.getElementById(which+'Time').value='';
+}
+
+function buildOvertimeHourBtns(){
+  var container=document.getElementById('overtimeHourBtns');
+  for(var h=0;h<=12;h++){var btn=document.createElement('div');btn.className='time-btn';btn.textContent=h;btn.id='otH'+h;(function(hh){btn.onclick=function(){setOvertimeHour(hh);};})(h);container.appendChild(btn);}
+}
+function setOvertimeHour(h){
+  otState.h=h;
+  document.querySelectorAll('#overtimeHourBtns .time-btn').forEach(function(b){b.classList.remove('selected');});
+  document.getElementById('otH'+h).classList.add('selected');
+  if(otState.m===null)otState.m=0;
+  updateOvertimeDisplay();
+  var minEl=document.getElementById('overtimeMinBtns');
+  if(minEl)setTimeout(function(){minEl.scrollIntoView({behavior:'smooth',block:'center'});},100);
+}
+function setOvertimeMin(m){
+  otState.m=m;
+  var btns=document.getElementById('overtimeMinBtns').querySelectorAll('.time-btn');
+  btns.forEach(function(b){b.classList.remove('selected');});
+  var idx=[0,15,30,45].indexOf(m);
+  if(idx>=0&&btns[idx])btns[idx].classList.add('selected');
+  updateOvertimeDisplay();
+}
+function updateOvertimeDisplay(){
+  if(otState.h!==null){
+    var m=otState.m!==null?otState.m:0;
+    var hStr=otState.h>0?otState.h+'時間':'';
+    var mStr=m>0?m+'分':'';
+    document.getElementById('overtimeDisplay').textContent=(hStr+mStr)||'なし';
+  }
+}
+function getOvertimeValue(){
+  if(otState.h===null)return 0;
+  var m=otState.m!==null?otState.m:0;
+  return Math.round((otState.h+m/60)*100)/100;
+}
+function setOvertimePicker(val){
+  val=parseFloat(val)||0;
+  if(val<=0){clearOvertimePicker();return;}
+  var h=Math.floor(val),m=Math.round((val-h)*60);
+  if([0,15,30,45].indexOf(m)<0)m=Math.round(m/15)*15;
+  if(m>=60){h++;m=0;}
+  otState={h:h,m:m};
+  document.querySelectorAll('#overtimeHourBtns .time-btn').forEach(function(b){b.classList.remove('selected');});
+  var hb=document.getElementById('otH'+h);if(hb)hb.classList.add('selected');
+  var btns=document.getElementById('overtimeMinBtns').querySelectorAll('.time-btn');
+  btns.forEach(function(b){b.classList.remove('selected');});
+  var idx=[0,15,30,45].indexOf(m);if(idx>=0&&btns[idx])btns[idx].classList.add('selected');
+  updateOvertimeDisplay();
+}
+function clearOvertimePicker(){
+  otState={h:null,m:null};
+  document.querySelectorAll('#overtimeHourBtns .time-btn').forEach(function(b){b.classList.remove('selected');});
+  document.getElementById('overtimeMinBtns').querySelectorAll('.time-btn').forEach(function(b){b.classList.remove('selected');});
+  document.getElementById('overtimeDisplay').textContent='なし';
+}
+
+function saveRecord(){
+  var date=document.getElementById('inputDate').value;
+  if(!date){showToast('❗ 日付を入力してください',true);return;}
+  var record={id:editingId||Date.now(),date:date,jobs:selectedJobs.slice(),startTime:document.getElementById('startTime').value,endTime:document.getElementById('endTime').value,overtime:getOvertimeValue(),distance:parseFloat(document.getElementById('distance').value)||0,longDistancePay:parseInt(document.getElementById('longDistancePay').value)||0,toxicCount:toxicCount,toxicPay:toxicCount*2500,trailerOn:trailerOn,trailerPay:trailerOn?3000:0,otherPay:0,jobMemo:document.getElementById('jobMemo').value,memo:''};
+  var records=getRecords();
+  if(editingId){records=records.map(function(r){return String(r.id)===String(editingId)?record:r;});showToast('✅ 更新しました！');}
+  else{records.unshift(record);showToast('✅ 保存しました！');}
+  saveRecords(records);
+  resetForm(true);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function resetForm(resetDate){
+  editingId=null;selectedJobs=[];toxicCount=0;trailerOn=false;
+  document.querySelectorAll('.job-btn').forEach(function(b){b.classList.remove('selected');});
+  document.querySelectorAll('.allow-btn').forEach(function(b){b.classList.remove('selected');});
+  document.getElementById('toxicDisplay').textContent='未選択';
+  document.getElementById('trailerStatus').textContent='タップでON';
+  document.getElementById('trailerStatus').style.color='var(--muted)';
+  ['distance','longDistancePay','jobMemo'].forEach(function(id){document.getElementById(id).value='';});
+  clearTimePicker('start');clearTimePicker('end');clearOvertimePicker();
+  if(resetDate){var di=document.getElementById('inputDate');di.removeEventListener('change',onDateChange);di.value=getLocalDateStr();di.addEventListener('change',onDateChange);}
+  document.querySelector('.save-btn').textContent='💾 保存する';
+}
+
+function onDateChange(){
+  if(editingId)return;
+  var date=this.value;
+  var ex=getRecords().find(function(r){return r.date===date;});
+  if(ex)loadRecordToForm(ex);else resetForm(false);
+}
+
+function loadRecordToForm(r){
+  editingId=r.id;
+  selectedJobs=(r.jobs||[]).slice();
+  document.querySelectorAll('.job-btn').forEach(function(b){b.classList.toggle('selected',selectedJobs.includes(b.dataset.job));});
+  setTimePicker('start',r.startTime||'');
+  setTimePicker('end',r.endTime||'');
+  setOvertimePicker(r.overtime||0);
+  document.getElementById('distance').value=r.distance||'';
+  document.getElementById('longDistancePay').value=r.longDistancePay||'';
+  toxicCount=r.toxicCount||0;
+  document.getElementById('toxicBtn1').classList.toggle('selected',toxicCount===1);
+  document.getElementById('toxicBtn2').classList.toggle('selected',toxicCount===2);
+  document.getElementById('toxicDisplay').textContent=toxicCount>0?'☠️×'+toxicCount+' = '+(toxicCount*2500).toLocaleString()+'円':'未選択';
+  trailerOn=r.trailerOn||false;
+  document.getElementById('trailerBtn').classList.toggle('selected',trailerOn);
+  document.getElementById('trailerStatus').textContent=trailerOn?'✅ 3,000円':'タップでON';
+  document.getElementById('trailerStatus').style.color=trailerOn?'var(--accent)':'var(--muted)';
+  document.getElementById('jobMemo').value=r.jobMemo||'';
+  document.querySelector('.save-btn').textContent='✏️ 更新する';
+  showToast('📋 入力済みデータを読み込みました');
+}
+
+function renderRecords(){
+  var monthStr=currentYear+'-'+String(currentMonth+1).padStart(2,'0');
+  document.getElementById('recordsMonthLabel').textContent=currentYear+'年'+(currentMonth+1)+'月';
+  var sw=document.getElementById('searchBox')?document.getElementById('searchBox').value.trim().toLowerCase():'';
+  var list=document.getElementById('recordsList');
+  if(sw){
+    var res=getRecords().filter(function(r){return(r.jobMemo||'').toLowerCase().includes(sw)||(r.jobs||[]).join('').toLowerCase().includes(sw);}).sort(function(a,b){return b.date.localeCompare(a.date);});
+    if(!res.length){list.innerHTML='<div class="empty"><div class="empty-icon">🔍</div>「'+sw+'」の記録はありません</div>';return;}
+    list.innerHTML=res.map(function(r){
+      var d=new Date(r.date),wd=['日','月','火','水','木','金','土'][d.getDay()];
+      var dc=getDateColor(r.date,d.getDay());
+      var je=(r.jobs||[]).map(function(j){return JOB_EMOJI[j]||'';}).join('');
+      var tp=r.toxicPay||((r.toxicCount||0)*2500),dp=calcDistPay(r.distance),total=tp+(r.trailerPay||0)+dp;
+      return '<div class="record-card" onclick="showModal('+r.id+')"><div class="record-top"><div class="record-date" style="'+dc+'">'+r.date.replace(/-/g,'/')+'（'+wd+'）</div><div>'+je+'</div></div>'+(r.jobMemo?'<div style="font-size:12px;color:var(--muted);margin-top:4px;">📝 '+r.jobMemo+'</div>':'')+(total>0?'<div style="margin-top:6px;"><span class="badge">💰 '+total.toLocaleString()+'円</span></div>':'')+'</div>';
+    }).join('');
+    return;
+  }
+  var all=getRecords().filter(function(r){return r.date.startsWith(monthStr);});
+  var rm={};all.forEach(function(r){rm[r.date]=r;});
+  var firstDay=new Date(currentYear,currentMonth,1).getDay();
+  var dim=new Date(currentYear,currentMonth+1,0).getDate();
+  var html='<div class="cal-grid">';
+  ['日','月','火','水','木','金','土'].forEach(function(d,i){var c=i===0?'color:#e74c3c':i===6?'color:#3498db':'color:var(--muted)';html+='<div class="cal-head" style="'+c+'">'+d+'</div>';});
+  for(var i=0;i<firstDay;i++)html+='<div class="cal-cell empty"></div>';
+  for(var day=1;day<=dim;day++){
+    var ds=currentYear+'-'+String(currentMonth+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+    var dow=new Date(currentYear,currentMonth,day).getDay();
+    var r=rm[ds],hd=!!r,je=r?(r.jobs||[]).map(function(j){return JOB_EMOJI[j]||'';}).join(''):'';
+    var dc=getDateColor(ds,dow),ih=HOLIDAYS.has(ds);
+    html+='<div class="cal-cell '+(hd?'has-data':'')+'" '+(hd?'onclick="showModal('+r.id+')"':'')+'>'+
+      '<div class="cal-day" style="'+dc+'">'+day+(ih?'🎌':'')+'</div>'+
+      (hd?'<div class="cal-emoji">'+(je||'—')+'</div>'+(r.startTime?'<div class="cal-time">'+r.startTime+'</div>':'')+(r.jobMemo?'<div class="cal-memo">'+r.jobMemo+'</div>':''):'')+
+    '</div>';
+  }
+  list.innerHTML=html+'</div>';
+}
+
+function changeMonth(d){currentMonth+=d;if(currentMonth>11){currentMonth=0;currentYear++;}if(currentMonth<0){currentMonth=11;currentYear--;}renderRecords();}
+function changeStatsMonth(d){statsMonth+=d;if(statsMonth>11){statsMonth=0;statsYear++;}if(statsMonth<0){statsMonth=11;statsYear--;}renderStats();}
+
+function renderStats(){
+  var prev=document.getElementById('statsBreakdown');if(prev)prev.remove();
+  var ms=statsYear+'-'+String(statsMonth+1).padStart(2,'0');
+  document.getElementById('statsMonthLabel').textContent=statsYear+'年'+(statsMonth+1)+'月';
+  var records=getRecords().filter(function(r){return r.date.startsWith(ms);});
+  var totalDays=records.length,totalKm=0,totalOT=0,totalPay=0,totalLD=0,totalTox=0,totalTr=0,totalDP=0;
+  var t1=0,t2=0,trDays=0;
+  records.forEach(function(r){
+    totalKm+=r.distance||0;
+    totalOT=Math.round((totalOT+(parseFloat(r.overtime)||0))*100)/100;
+    var tp=r.toxicPay||((r.toxicCount||0)*2500),trp=r.trailerPay||0,dp=calcDistPay(r.distance),lp=r.longDistancePay||0;
+    totalTox+=tp;totalTr+=trp;totalDP+=dp;totalLD+=lp;totalPay+=tp+trp+dp;
+    if(r.toxicCount===1)t1++;if(r.toxicCount===2)t2++;if(r.trailerOn)trDays++;
+  });
+  var otStr=totalOT%1===0?totalOT:totalOT.toFixed(2).replace(/\.?0+$/,'');
+  document.getElementById('statsGrid').innerHTML=
+    '<div class="stat-card"><div class="stat-label">出勤日数</div><div class="stat-value">'+totalDays+'<span class="stat-unit"> 日</span></div></div>'+
+    '<div class="stat-card"><div class="stat-label">総走行距離</div><div class="stat-value">'+totalKm.toLocaleString()+'<span class="stat-unit"> km</span></div></div>'+
+    '<div class="stat-card"><div class="stat-label">総残業時間</div><div class="stat-value">'+otStr+'<span class="stat-unit"> h</span></div></div>'+
+    '<div class="stat-card"><div class="stat-label">💰 ワンマン手当</div><div class="stat-value" style="font-size:17px;">'+totalPay.toLocaleString()+'<span class="stat-unit"> 円</span></div></div>'+
+    '<div class="stat-card" style="grid-column:span 2;"><div class="stat-label">🛌 長距離手当合計</div><div class="stat-value">'+totalLD.toLocaleString()+'<span class="stat-unit"> 円</span></div></div>';
+  var bd='<div id="statsBreakdown" class="section" style="margin-bottom:14px;"><div class="section-title">ワンマン手当 内訳</div>';
+  if(totalTox>0){bd+='<div class="modal-row"><span class="modal-row-label">☠️ 毒手当</span><span>'+totalTox.toLocaleString()+' 円</span></div>';if(t1>0)bd+='<div class="modal-row" style="padding-left:16px;"><span class="modal-row-label" style="font-size:11px;">　×1（2,500円）× '+t1+'日</span><span style="font-size:12px;">'+(t1*2500).toLocaleString()+' 円</span></div>';if(t2>0)bd+='<div class="modal-row" style="padding-left:16px;"><span class="modal-row-label" style="font-size:11px;">　×2（5,000円）× '+t2+'日</span><span style="font-size:12px;">'+(t2*5000).toLocaleString()+' 円</span></div>';}
+  if(totalTr>0){bd+='<div class="modal-row"><span class="modal-row-label">🚜 トレーラー手当</span><span>'+totalTr.toLocaleString()+' 円</span></div>';bd+='<div class="modal-row" style="padding-left:16px;"><span class="modal-row-label" style="font-size:11px;">　3,000円 × '+trDays+'日</span><span style="font-size:12px;">'+(trDays*3000).toLocaleString()+' 円</span></div>';}
+  if(totalDP>0){var rn=totalKm<=800?totalKm.toLocaleString()+'km × 8円':'800km×8円 + '+(totalKm-800).toLocaleString()+'km×18円';bd+='<div class="modal-row"><span class="modal-row-label">🛣️ 走行距離手当</span><span>'+totalDP.toLocaleString()+' 円</span></div><div class="modal-row" style="padding-left:16px;"><span class="modal-row-label" style="font-size:11px;">　'+rn+'</span></div>';}
+  bd+='<div class="modal-row" style="font-weight:700;margin-top:4px;"><span class="modal-row-label">💰 ワンマン手当合計</span><span style="color:var(--accent)">'+totalPay.toLocaleString()+' 円</span></div></div>';
+  document.getElementById('statsGrid').insertAdjacentHTML('afterend',bd);
+  var header='日付\t仕事\t出勤\t退勤\t実働\t残業\t走行km\t長距離手当\t毒手当\tトレーラー手当\tワンマン手当\tメモ';
+  var rows=records.map(function(r){var wh=calcWorkHours(r.startTime,r.endTime)||'';var tp=r.toxicPay||((r.toxicCount||0)*2500),trp=r.trailerPay||0,dp=calcDistPay(r.distance);return[r.date,(r.jobs||[]).map(function(j){return(JOB_EMOJI[j]||'')+j;}).join('|'),r.startTime,r.endTime,wh?wh+'h':'',r.overtime>0?r.overtime+'h':'',r.distance||'',r.longDistancePay||'',tp||'',trp||'',tp+trp+dp||'',r.jobMemo||''].join('\t');});
+  document.getElementById('exportText').textContent=[header].concat(rows).join('\n');
+}
+
+function copyExport(){navigator.clipboard.writeText(document.getElementById('exportText').textContent).then(function(){showToast('📋 コピーしました！');});}
+function fixAllRecords(){var r=getRecords().map(function(r){return Object.assign({},r,{overtime:Math.round((parseFloat(r.overtime)||0)*100)/100,distance:parseFloat(r.distance)||0,longDistancePay:parseInt(r.longDistancePay)||0,toxicCount:parseInt(r.toxicCount)||0,toxicPay:parseInt(r.toxicPay)||0,trailerPay:parseInt(r.trailerPay)||0,otherPay:0});});saveRecords(r);renderStats();showToast('✅ 全データを修正しました！');}
+function backupData(){var d=JSON.stringify(getRecords(),null,2);var b=new Blob([d],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='truck-log-backup.json';a.click();URL.revokeObjectURL(a.href);showToast('💾 バックアップしました！');}
+function restoreData(input){var f=input.files[0];if(!f)return;var reader=new FileReader();reader.onload=function(e){try{var r=JSON.parse(e.target.result);if(!Array.isArray(r))throw new Error();saveRecords(r);renderRecords();renderStats();showToast('✅ '+r.length+'件のデータを復元しました！');}catch(err){showToast('❌ ファイルが正しくありません',true);}input.value='';};reader.readAsText(f);}
+
+function showModal(id){
+  var r=getRecords().find(function(rec){return String(rec.id)===String(id);});if(!r)return;
+  activeModal=r.id;deleteConfirmMode=false;
+  var d=new Date(r.date),wd=['日','月','火','水','木','金','土'][d.getDay()];
+  document.getElementById('modalTitle').textContent=r.date.replace(/-/g,'/')+'（'+wd+'） '+(r.jobs||[]).map(function(j){return JOB_EMOJI[j]||'';}).join('');
+  var wh=calcWorkHours(r.startTime,r.endTime),tc=r.toxicCount||0,tp=r.toxicPay||(tc*2500),trp=r.trailerPay||0,dp=calcDistPay(r.distance),total=tp+trp+dp;
+  var html='';
+  if(r.startTime)html+='<div class="modal-row"><span class="modal-row-label">出勤</span><span>'+r.startTime+'</span></div>';
+  if(r.endTime)html+='<div class="modal-row"><span class="modal-row-label">退勤</span><span>'+r.endTime+'</span></div>';
+  if(wh)html+='<div class="modal-row"><span class="modal-row-label">実働</span><span>'+wh+'時間</span></div>';
+  if(r.overtime>0)html+='<div class="modal-row"><span class="modal-row-label">残業</span><span>'+r.overtime+'時間</span></div>';
+  if(r.distance>0)html+='<div class="modal-row"><span class="modal-row-label">走行距離</span><span>'+r.distance.toLocaleString()+' km</span></div>';
+  if(r.longDistancePay>0)html+='<div class="modal-row"><span class="modal-row-label">🛌 長距離手当</span><span>'+r.longDistancePay.toLocaleString()+' 円</span></div>';
+  if(tp>0)html+='<div class="modal-row"><span class="modal-row-label">☠️ 毒手当（×'+tc+'）</span><span>'+tp.toLocaleString()+' 円</span></div>';
+  if(trp>0)html+='<div class="modal-row"><span class="modal-row-label">🚜 トレーラー手当</span><span>'+trp.toLocaleString()+' 円</span></div>';
+  if(dp>0){var rn=(r.distance||0)<=800?r.distance+'km × 8円':'800km×8円 + '+(r.distance-800)+'km×18円';html+='<div class="modal-row"><span class="modal-row-label">🛣️ 走行距離手当</span><span>'+dp.toLocaleString()+' 円</span></div><div class="modal-row" style="padding-left:16px;"><span class="modal-row-label" style="font-size:11px;">　'+rn+'</span></div>';}
+  if(total>0)html+='<div class="modal-row" style="font-weight:700;"><span class="modal-row-label">💰 ワンマン手当</span><span style="color:var(--accent)">'+total.toLocaleString()+' 円</span></div>';
+  if(r.jobMemo)html+='<div class="modal-row"><span class="modal-row-label">📝 仕事内容</span><span style="text-align:right;max-width:65%;">'+r.jobMemo+'</span></div>';
+  document.getElementById('modalContent').innerHTML=html;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal(e){if(e.target===document.getElementById('modalOverlay'))closeModalDirect();}
+function closeModalDirect(){document.getElementById('modalOverlay').classList.remove('open');activeModal=null;deleteConfirmMode=false;}
+function editFromModal(){var r=getRecords().find(function(rec){return String(rec.id)===String(activeModal);});if(!r)return;closeModalDirect();showTab('input');document.getElementById('inputDate').value=r.date;loadRecordToForm(r);}
+function deleteRecord(){
+  if(activeModal===null)return;
+  if(!deleteConfirmMode){deleteConfirmMode=true;var btn=document.querySelector('.modal-delete');btn.textContent='⚠️ もう一度タップで削除';btn.style.background='rgba(231,76,60,0.4)';setTimeout(function(){deleteConfirmMode=false;if(btn){btn.textContent='🗑️ 削除';btn.style.background='rgba(231,76,60,0.15)';}},3000);return;}
+  deleteConfirmMode=false;
+  var records=getRecords().filter(function(r){return String(r.id)!==String(activeModal);});
+  saveRecords(records);closeModalDirect();renderRecords();showToast('🗑️ 削除しました');
+}
+
+var swX=0,swY=0;
+function addSwipe(el,onL,onR){el.addEventListener('touchstart',function(e){swX=e.touches[0].clientX;swY=e.touches[0].clientY;},{passive:true});el.addEventListener('touchend',function(e){var dx=e.changedTouches[0].clientX-swX,dy=e.changedTouches[0].clientY-swY;if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>50){if(dx<0)onL();else onR();}},{passive:true});}
+
+// 初期化
+buildHourBtns('start');buildHourBtns('end');buildOvertimeHourBtns();
+var _today=new Date();
+document.getElementById('inputDate').value=getLocalDateStr();
+document.getElementById('headerDate').textContent=_today.toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
+document.getElementById('inputDate').addEventListener('change',onDateChange);
+addSwipe(document.getElementById('page-records'),function(){changeMonth(1);},function(){changeMonth(-1);});
+addSwipe(document.getElementById('page-stats'),function(){changeStatsMonth(1);},function(){changeStatsMonth(-1);});
+renderRecords();renderStats();
+</script>
+</body>
+</html>
