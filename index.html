@@ -6,7 +6,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1923">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="運転日報">
 <title>🚛 運転日報</title>
+<link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -16,7 +19,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
 .header{background:linear-gradient(135deg,#0f1923 0%,#1a2535 100%);border-bottom:2px solid var(--accent);padding:16px 20px 12px;position:sticky;top:0;z-index:100;}
 .header h1{font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;color:var(--accent);letter-spacing:2px;}
 .header-date{font-size:12px;color:var(--muted);margin-top:2px;}
-.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:72px;z-index:99;}
+.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:72px;z-index:150;}
 .tab{flex:1;padding:12px 4px;text-align:center;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;}
 .tab.active{color:var(--accent);border-bottom-color:var(--accent);}
 .page{display:none;padding:16px;}.page.active{display:block;}
@@ -24,13 +27,15 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
 .section-title{font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:12px;}
 .job-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .job-btn{background:var(--surface2);border:2px solid var(--border);border-radius:var(--radius);padding:14px 10px;text-align:center;cursor:pointer;transition:all 0.15s;font-size:13px;color:var(--text);font-family:'Noto Sans JP',sans-serif;}
-.job-btn .emoji{font-size:28px;display:block;margin-bottom:6px;}
+.job-btn .emoji{font-size:22px;display:block;margin-bottom:4px;}
 .job-btn.selected{border-color:var(--accent);background:rgba(245,166,35,0.12);color:var(--accent);}
 .job-btn:active{transform:scale(0.96);}
 .input-group{display:flex;flex-direction:column;gap:6px;}
 .input-label{font-size:11px;color:var(--muted);letter-spacing:0.5px;}
 .input-field{background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-size:16px;font-family:'Oswald',sans-serif;width:100%;outline:none;transition:border-color 0.2s;}
 .input-field:focus{border-color:var(--accent);}
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+input[type=number]{-moz-appearance:textfield;}
 .money-input-wrap{position:relative;}
 .money-input-wrap .yen{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;}
 .time-btn-row{display:flex;flex-wrap:wrap;gap:6px;}
@@ -41,17 +46,19 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
 .allow-btn{background:var(--surface2);border:2px solid var(--border);border-radius:var(--radius);padding:12px 10px;text-align:center;cursor:pointer;transition:all 0.15s;color:var(--text);}
 .allow-btn.selected{border-color:var(--accent);background:rgba(245,166,35,0.12);}
 .allow-btn:active{transform:scale(0.97);}
+.memo-btn{background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:6px 12px;font-size:13px;color:var(--text);cursor:pointer;font-family:'Noto Sans JP',sans-serif;transition:all 0.15s;}
+.memo-btn:active{background:rgba(245,166,35,0.15);border-color:var(--accent);color:var(--accent);}
 .save-btn{width:100%;background:linear-gradient(135deg,var(--accent2),var(--accent));border:none;border-radius:var(--radius);padding:16px;font-family:'Oswald',sans-serif;font-size:18px;font-weight:600;letter-spacing:2px;color:#fff;cursor:pointer;margin-top:4px;transition:opacity 0.2s,transform 0.1s;text-shadow:0 1px 2px rgba(0,0,0,0.3);}
 .save-btn:active{transform:scale(0.98);opacity:0.9;}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:14px;}
 .cal-head{text-align:center;font-size:11px;font-weight:600;padding:6px 0;}
-.cal-cell{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:4px 3px;min-height:64px;}
+.cal-cell{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:5px 4px;min-height:80px;}
 .cal-cell.empty{background:transparent;border-color:transparent;}
 .cal-cell.has-data{border-color:var(--accent);background:rgba(245,166,35,0.07);cursor:pointer;}
 .cal-cell.has-data:active{background:rgba(245,166,35,0.2);}
-.cal-day{font-family:'Oswald',sans-serif;font-size:13px;font-weight:600;line-height:1.2;}
-.cal-emoji{font-size:12px;margin-top:2px;}
-.cal-time{font-size:9px;color:var(--muted);margin-top:1px;}
+.cal-day{font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;line-height:1.2;}
+.cal-emoji{font-size:13px;margin-top:3px;}
+.cal-time{font-size:9px;color:var(--muted);margin-top:2px;}
 .cal-memo{font-size:8px;color:var(--muted);margin-top:2px;line-height:1.3;word-break:break-all;}
 .record-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;cursor:pointer;}
 .record-card:active{border-color:var(--accent);}
@@ -75,8 +82,8 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
 .date-input-wrap input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(0.7);}
 .empty{text-align:center;color:var(--muted);padding:40px 20px;font-size:14px;}
 .empty-icon{font-size:48px;margin-bottom:12px;}
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;align-items:flex-end;justify-content:center;}
-.modal-overlay.open{display:flex;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;align-items:flex-end;justify-content:center;pointer-events:none;}
+.modal-overlay.open{display:flex;pointer-events:auto;}
 .modal{background:var(--surface);border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:80vh;overflow-y:auto;border-top:2px solid var(--accent);}
 .modal-title{font-family:'Oswald',sans-serif;font-size:18px;color:var(--accent);margin-bottom:16px;}
 .modal-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px;}
@@ -93,7 +100,10 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
 </head>
 <body>
 <div class="header">
-  <h1>🚛 運転日報</h1>
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <h1>🚛 運転日報</h1>
+    <button onclick="openSettings()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:4px;">⚙️</button>
+  </div>
   <div class="header-date" id="headerDate"></div>
 </div>
 <div class="tabs">
@@ -109,24 +119,36 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
     <div class="date-input-wrap"><input type="date" id="inputDate"></div>
   </div>
   <div class="section">
-    <div class="section-title">仕事の種類（複数選択OK）</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <div class="section-title" style="margin-bottom:0;">仕事の種類（複数選択OK）</div>
+    </div>
     <div class="job-grid">
-      <div class="job-btn" data-job="地場" onclick="toggleJob(this)"><span class="emoji">🚛</span>地場</div>
+      <div class="job-btn" data-job="地場" onclick="toggleJob(this)" style="grid-column:span 2;font-size:15px;padding:14px 10px;"><span class="emoji" style="font-size:28px;">🚛</span>地場</div>
       <div class="job-btn" data-job="長距離" onclick="toggleJob(this)"><span class="emoji">🛌</span>長距離</div>
       <div class="job-btn" data-job="毒手当" onclick="toggleJob(this)"><span class="emoji">☠️</span>毒</div>
       <div class="job-btn" data-job="毒×2" onclick="toggleJob(this)"><span class="emoji">☠️☠️</span>毒×2</div>
       <div class="job-btn" data-job="トレーラー" onclick="toggleJob(this)"><span class="emoji">🚜</span>トレーラー</div>
-      <div class="job-btn" data-job="半日有給" onclick="toggleJob(this)"><span class="emoji">🌴</span>半日有給</div>
+      <div class="job-btn" data-job="半日有給" onclick="toggleJob(this)" style="padding:8px 6px;font-size:11px;"><span class="emoji" style="font-size:20px;">🌴</span>半日有給</div>
+      <div class="job-btn" data-job="休み" onclick="toggleJob(this)" style="padding:8px 6px;font-size:11px;"><span class="emoji" style="font-size:20px;">🕺</span>休み</div>
     </div>
     <div style="margin-top:12px;">
       <div class="input-label" style="margin-bottom:6px;">仕事内容メモ</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center;">
+        <div class="memo-btn" onclick="addMemo('ガス')">⛽ ガス</div>
+        <div class="memo-btn" onclick="addMemo('エステル')">🧪 エステル</div>
+        <div class="memo-btn" onclick="addMemo('塩素搭載')">⚗️ 塩素搭載</div>
+        <button onclick="saveRecord()" style="margin-left:auto;background:rgba(245,166,35,0.15);border:1.5px solid var(--accent);border-radius:8px;padding:5px 12px;color:var(--accent);font-size:12px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;">💾 保存</button>
+      </div>
       <textarea class="input-field" id="jobMemo" rows="2" placeholder="例：○○工場→△△倉庫 など" style="resize:none;line-height:1.6;font-family:'Noto Sans JP',sans-serif;font-size:14px;"></textarea>
     </div>
   </div>
   <div class="section">
     <div class="section-title">🕐 時間</div>
     <div style="margin-bottom:14px;">
-      <div class="input-label" style="margin-bottom:8px;">出勤時間　<span id="startTimeDisplay" style="color:var(--accent);font-family:'Oswald',sans-serif;font-size:16px;">--:--</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div class="input-label" style="margin-bottom:0;">出勤時間　<span id="startTimeDisplay" style="color:var(--accent);font-family:'Oswald',sans-serif;font-size:16px;">--:--</span></div>
+        <button onclick="saveRecord()" style="background:rgba(245,166,35,0.15);border:1.5px solid var(--accent);border-radius:8px;padding:5px 12px;color:var(--accent);font-size:12px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;">💾 保存</button>
+      </div>
       <div class="input-label" style="margin-bottom:5px;font-size:10px;">時間</div>
       <div class="time-btn-row" id="startHourBtns"></div>
       <div class="input-label" style="margin:8px 0 5px;font-size:10px;">分</div>
@@ -152,19 +174,46 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
       <div class="input-label" style="margin-bottom:5px;font-size:10px;">時間（0=残業なし）</div>
       <div class="time-btn-row" id="overtimeHourBtns"></div>
       <div class="input-label" style="margin:8px 0 5px;font-size:10px;">分</div>
-      <div class="time-btn-row" id="overtimeMinBtns">
-        <div class="time-btn" onclick="setOvertimeMin(0)">00</div>
-        <div class="time-btn" onclick="setOvertimeMin(15)">15</div>
-        <div class="time-btn" onclick="setOvertimeMin(30)">30</div>
-        <div class="time-btn" onclick="setOvertimeMin(45)">45</div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div class="time-btn-row" id="overtimeMinBtns" style="flex:1;">
+          <div class="time-btn" onclick="setOvertimeMin(0)">0</div>
+          <div class="time-btn" onclick="setOvertimeMin(15)">.25</div>
+          <div class="time-btn" onclick="setOvertimeMin(30)">.5</div>
+          <div class="time-btn" onclick="setOvertimeMin(45)">.75</div>
+        </div>
+        <button onclick="saveRecord()" style="background:rgba(245,166,35,0.15);border:1.5px solid var(--accent);border-radius:8px;padding:5px 12px;color:var(--accent);font-size:12px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;white-space:nowrap;">💾 保存</button>
       </div>
     </div>
     <input type="hidden" id="startTime">
     <input type="hidden" id="endTime">
   </div>
   <div class="section">
-    <div class="section-title">🛣️ 走行距離</div>
-    <input class="input-field" type="number" id="distance" placeholder="例: 350" enterkeyhint="next" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('longDistancePay').focus();document.getElementById('longDistancePay').scrollIntoView({behavior:'smooth',block:'center'});}">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <div class="section-title" style="margin-bottom:0;">🛣️ 走行距離</div>
+      <button onclick="saveRecord()" style="background:rgba(245,166,35,0.15);border:1.5px solid var(--accent);border-radius:8px;padding:5px 12px;color:var(--accent);font-size:12px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;">💾 保存</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="font-size:11px;color:var(--muted);min-width:36px;">1台目</div>
+        <input class="input-field" type="number" id="distance1" placeholder="0" enterkeyhint="next" oninput="updateTotalDistance()" style="flex:1;" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('distance2').focus();}">
+        <div style="font-size:11px;color:var(--muted);">km</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="font-size:11px;color:var(--muted);min-width:36px;">2台目</div>
+        <input class="input-field" type="number" id="distance2" placeholder="0" enterkeyhint="next" oninput="updateTotalDistance()" style="flex:1;" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('distance3').focus();}">
+        <div style="font-size:11px;color:var(--muted);">km</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="font-size:11px;color:var(--muted);min-width:36px;">3台目</div>
+        <input class="input-field" type="number" id="distance3" placeholder="0" enterkeyhint="next" oninput="updateTotalDistance()" style="flex:1;" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('longDistancePay').focus();document.getElementById('longDistancePay').scrollIntoView({behavior:'smooth',block:'center'});}">
+        <div style="font-size:11px;color:var(--muted);">km</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--border);">
+        <div style="font-size:13px;color:var(--muted);">合計</div>
+        <div style="font-family:'Oswald',sans-serif;font-size:18px;color:var(--accent);" id="distanceTotal">0 <span style="font-size:12px;color:var(--muted);">km</span></div>
+      </div>
+    </div>
+    <input type="hidden" id="distance">
   </div>
   <div class="section">
     <div class="section-title">💰 金額・手当</div>
@@ -172,9 +221,11 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
       <div class="input-group">
         <div class="input-label">🛌 長距離手当（円）</div>
         <div class="money-input-wrap">
-          <input class="input-field" type="number" id="longDistancePay" placeholder="0" style="padding-right:32px;" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('saveBtn').scrollIntoView({behavior:'smooth',block:'center'});}">
+          <input class="input-field" type="number" id="longDistancePay" placeholder="0" style="padding-right:32px;" enterkeyhint="done">
           <span class="yen">円</span>
         </div>
+        <button onclick="openFareTable()" style="margin-top:8px;width:100%;background:rgba(52,152,219,0.15);border:1.5px solid #3498db;border-radius:10px;padding:10px;color:#3498db;font-size:14px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;">📋 運行料金表を見る</button>
+        <button onclick="saveRecord()" style="margin-top:8px;width:100%;background:rgba(245,166,35,0.15);border:1.5px solid var(--accent);border-radius:10px;padding:10px;color:var(--accent);font-size:14px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;">💾 保存</button>
       </div>
       <div>
         <div class="input-label" style="margin-bottom:8px;">☠️ 毒手当（1回 2,500円）</div>
@@ -187,92 +238,4 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
           <div class="allow-btn" id="toxicBtn2" onclick="selectToxic(2)">
             <span style="font-size:20px;">☠️☠️</span>
             <div style="font-size:13px;font-weight:600;margin-top:4px;">×2</div>
-            <div style="font-size:11px;color:var(--muted);">5,000円</div>
-          </div>
-        </div>
-        <div style="font-size:11px;color:var(--muted);margin-top:6px;text-align:right;" id="toxicDisplay">未選択</div>
-      </div>
-      <div>
-        <div class="input-label" style="margin-bottom:8px;">🚜 トレーラー手当（3,000円）</div>
-        <div class="allow-btn" id="trailerBtn" onclick="toggleTrailer()" style="display:flex;align-items:center;gap:12px;text-align:left;padding:12px 16px;">
-          <span style="font-size:24px;">🚜</span>
-          <div><div style="font-size:13px;font-weight:600;">トレーラー手当</div><div style="font-size:11px;color:var(--muted);">3,000円</div></div>
-          <div style="margin-left:auto;font-size:11px;" id="trailerStatus">タップでON</div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <button class="save-btn" id="saveBtn" onclick="saveRecord()">💾 保存する</button>
-</div>
-
-<!-- 記録 -->
-<div class="page" id="page-records">
-  <div class="month-selector">
-    <button class="month-btn" onclick="changeMonth(-1)">‹</button>
-    <div class="month-label" id="recordsMonthLabel"></div>
-    <button class="month-btn" onclick="changeMonth(1)">›</button>
-  </div>
-  <div style="padding:0 0 12px;">
-    <input class="input-field" type="text" id="searchBox" placeholder="🔍 仕事内容を検索..." oninput="renderRecords()" style="font-size:14px;font-family:'Noto Sans JP',sans-serif;">
-  </div>
-  <div id="recordsList"></div>
-</div>
-
-<!-- 集計 -->
-<div class="page" id="page-stats">
-  <div class="month-selector">
-    <button class="month-btn" onclick="changeStatsMonth(-1)">‹</button>
-    <div class="month-label" id="statsMonthLabel"></div>
-    <button class="month-btn" onclick="changeStatsMonth(1)">›</button>
-  </div>
-  <div class="stats-grid" id="statsGrid"></div>
-  <div class="export-section">
-    <div class="export-title">📱 機種変更・バックアップ</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">データをファイルに保存して新しいスマホに引き継げます</div>
-    <button class="copy-btn" onclick="backupData()" style="background:rgba(46,204,113,0.15);border-color:var(--green);color:var(--green);margin-bottom:8px;">💾 データをバックアップ（書き出し）</button>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">新しいスマホで復元する場合👇</div>
-    <label class="copy-btn" style="display:block;text-align:center;background:rgba(52,152,219,0.15);border-color:#3498db;color:#3498db;cursor:pointer;">
-      📂 バックアップから復元
-      <input type="file" id="restoreFile" accept=".json" style="display:none;" onchange="restoreData(this)">
-    </label>
-  </div>
-  <div class="export-section">
-    <div class="export-title">📋 スプレッドシート用コピー（タブ区切り）</div>
-    <div class="export-text" id="exportText"></div>
-    <button class="copy-btn" onclick="copyExport()">📋 クリップボードにコピー</button>
-  </div>
-  <div class="export-section">
-    <div class="export-title">🔧 データ修正</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">集計がおかしい場合はこちらを実行してください</div>
-    <button class="copy-btn" onclick="fixAllRecords()" style="background:rgba(245,166,35,0.15);border-color:var(--accent);color:var(--accent);">🔧 全データを修正する</button>
-  </div>
-</div>
-
-<!-- モーダル -->
-<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
-  <div class="modal">
-    <div class="modal-title" id="modalTitle"></div>
-    <div id="modalContent"></div>
-    <div class="modal-btns">
-      <button class="modal-close" onclick="closeModalDirect()">閉じる</button>
-      <button class="modal-edit" onclick="editFromModal()">✏️ 編集</button>
-      <button class="modal-delete" onclick="deleteRecord()">🗑️ 削除</button>
-    </div>
-  </div>
-</div>
-<div class="toast" id="toast"></div>
-
-<script>
-var JOB_EMOJI={'地場':'🚛','長距離':'🛌','毒手当':'☠️','毒×2':'☠️☠️','トレーラー':'🚜','半日有給':'🌴'};
-var HOLIDAYS=new Set(['2024-01-01','2024-01-08','2024-02-11','2024-02-12','2024-02-23','2024-03-20','2024-04-29','2024-05-03','2024-05-04','2024-05-05','2024-05-06','2024-07-15','2024-08-11','2024-08-12','2024-09-16','2024-09-22','2024-09-23','2024-10-14','2024-11-03','2024-11-04','2024-11-23','2025-01-01','2025-01-13','2025-02-11','2025-02-23','2025-02-24','2025-03-20','2025-04-29','2025-05-03','2025-05-04','2025-05-05','2025-05-06','2025-07-21','2025-08-11','2025-09-15','2025-09-22','2025-09-23','2025-10-13','2025-11-03','2025-11-23','2025-11-24','2026-01-01','2026-01-12','2026-02-11','2026-02-23','2026-03-20','2026-04-29','2026-05-03','2026-05-04','2026-05-05','2026-05-06','2026-07-20','2026-08-11','2026-09-21','2026-09-22','2026-09-23','2026-10-12','2026-11-03','2026-11-23']);
-var selectedJobs=[],toxicCount=0,trailerOn=false,editingId=null;
-var currentMonth=new Date().getMonth(),currentYear=new Date().getFullYear();
-var statsMonth=new Date().getMonth(),statsYear=new Date().getFullYear();
-var activeModal=null,deleteConfirmMode=false;
-var timeState={start:{h:null,m:null},end:{h:null,m:null}};
-var otState={h:null,m:null};
-
-function getLocalDateStr(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-function getRecords(){return JSON.parse(localStorage.getItem('truckRecords')||'[]');}
-function saveRecords(r){localStorage.setItem('truckRecords',JSON.stringify(r));}
-fun
+            <div style
