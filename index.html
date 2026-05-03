@@ -641,7 +641,7 @@ function renderRecords(){
     var dow=new Date(currentYear,currentMonth,day).getDay();
     var r=rm[ds],hd=!!r,je=r?(r.jobs||[]).map(function(j){return JOB_EMOJI[j]||'';}).join(''):'';
     var dc=getDateColor(ds,dow),ih=HOLIDAYS.has(ds);
-    var isToday=(ds===getLocalDateStr());html+='<div '+(isToday?'id="cal-today"':'')+' class="cal-cell '+(hd?'has-data':'')+'" '+(hd?'onclick="showModal('+r.id+')"':'')+' style="'+(isToday?'outline:2px solid var(--accent);outline-offset:-2px;':'')+'">'+
+    var isToday=(ds===getLocalDateStr());html+='<div '+(isToday?'id="cal-today"':'')+' class="cal-cell '+(hd?'has-data':'')+'" '+(hd?'onclick="showModal('+r.id+')"':'')+' style="'+(isToday?'outline:2px solid #3498db;outline-offset:-2px;':'')+'">'+
       '<div class="cal-day" style="'+dc+'">'+day+(ih?'🎌':'')+'</div>'+
       (hd?('<div class="cal-emoji">'+(je||'—')+'</div>'+(r.startTime?'<div class="cal-time">出 '+r.startTime+'</div>':'')+(r.endTime?'<div class="cal-time">退 '+r.endTime+'</div>':'')+(r.overtime>0?'<div class="cal-time">残 '+r.overtime+'h</div>':'')+(r.jobMemo?'<div class="cal-memo">'+r.jobMemo+'</div>':'')):'')+
     '</div>';
