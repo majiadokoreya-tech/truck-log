@@ -420,6 +420,7 @@ function buildHourBtns(which){
   for(var h=0;h<24;h++){if(main.includes(h))continue;var btn=document.createElement('div');btn.className='time-btn dim';btn.textContent=h;btn.id=which+'H'+h;(function(hh){btn.onclick=function(){setHour(which,hh);};})(h);container.appendChild(btn);}
 }
 function setHour(which,h){
+  if(timeState[which].h===h){clearTimePicker(which);return;}
   timeState[which].h=h;
   document.querySelectorAll('#'+which+'HourBtns .time-btn').forEach(function(b){b.classList.remove('selected');});
   document.getElementById(which+'H'+h).classList.add('selected');
@@ -435,6 +436,7 @@ function setHour(which,h){
   if(minEl)setTimeout(function(){minEl.scrollIntoView({behavior:'smooth',block:'center'});},100);
 }
 function setMin(which,m){
+  if(timeState[which].m===m){timeState[which].m=null;document.getElementById(which+'MinBtns').querySelectorAll('.time-btn').forEach(function(b){b.classList.remove('selected');});document.getElementById(which+'TimeDisplay').textContent=timeState[which].h!==null?String(timeState[which].h).padStart(2,'0')+':--':'--:--';document.getElementById(which+'Time').value='';return;}
   timeState[which].m=m;
   var btns=document.getElementById(which+'MinBtns').querySelectorAll('.time-btn');
   btns.forEach(function(b){b.classList.remove('selected');});
