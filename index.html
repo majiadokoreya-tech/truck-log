@@ -26,8 +26,8 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
 .section{background:var(--surface);border-radius:var(--radius);padding:16px;margin-bottom:14px;border:1px solid var(--border);}
 .section-title{font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:12px;}
 .job-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.job-btn{background:var(--surface2);border:2px solid var(--border);border-radius:var(--radius);padding:14px 10px;text-align:center;cursor:pointer;transition:all 0.15s;font-size:13px;color:var(--text);font-family:'Noto Sans JP',sans-serif;}
-.job-btn .emoji{font-size:18px;display:block;margin-bottom:2px;}
+.job-btn{background:var(--surface2);border:2px solid var(--border);border-radius:var(--radius);padding:10px 6px;text-align:center;cursor:pointer;transition:all 0.15s;font-size:12px;color:var(--text);font-family:'Noto Sans JP',sans-serif;}
+.job-btn .emoji{font-size:14px;display:block;margin-bottom:2px;}
 .job-btn.selected{border-color:var(--accent);background:rgba(245,166,35,0.12);color:var(--accent);}
 .job-btn:active{transform:scale(0.96);}
 .input-group{display:flex;flex-direction:column;gap:6px;}
@@ -111,9 +111,10 @@ input[type=number]{-moz-appearance:textfield;}
 
 <!-- 入力 -->
 <div class="page" id="page-input">
-  <div class="section">
-    <div class="section-title">📅 日付</div>
-    <div class="date-input-wrap"><input type="date" id="inputDate"></div>
+  <div class="section" style="position:sticky;top:108px;z-index:90;margin-bottom:10px;">
+    <div class="date-input-wrap" style="font-size:17px;font-family:'Oswald',sans-serif;">
+      <input type="date" id="inputDate" style="font-size:17px;font-family:'Oswald',sans-serif;">
+    </div>
   </div>
   <div class="section">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -248,15 +249,17 @@ input[type=number]{-moz-appearance:textfield;}
 
 <!-- 記録 -->
 <div class="page active" id="page-records">
-  <div class="month-selector">
-    <button class="month-btn" onclick="changeMonth(-1)">&#8249;</button>
-    <div class="month-label" id="recordsMonthLabel"></div>
-    <button class="month-btn" onclick="changeMonth(1)">&#8250;</button>
-  </div>
-  <div style="padding:0 0 12px;">
-    <input class="input-field" type="text" id="searchBox" placeholder="🔍 仕事内容を検索..." oninput="renderRecords()" style="font-size:14px;font-family:'Noto Sans JP',sans-serif;">
+  <div style="position:sticky;top:108px;z-index:90;background:var(--bg);padding-bottom:8px;">
+    <div class="month-selector" style="margin-bottom:0;">
+      <button class="month-btn" onclick="changeMonth(-1)">&#8249;</button>
+      <div class="month-label" id="recordsMonthLabel" style="font-size:22px;"></div>
+      <button class="month-btn" onclick="changeMonth(1)">&#8250;</button>
+    </div>
   </div>
   <div id="recordsList"></div>
+  <div style="padding:12px 0 0;">
+    <input class="input-field" type="text" id="searchBox" placeholder="🔍 仕事内容を検索..." oninput="renderRecords()" style="font-size:14px;font-family:'Noto Sans JP',sans-serif;">
+  </div>
 </div>
 
 <!-- 集計 -->
