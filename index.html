@@ -104,13 +104,13 @@ input[type=number]{-moz-appearance:textfield;}
   <div class="header-date" id="headerDate"></div>
 </div>
 <div class="tabs">
-  <div class="tab active" onclick="showTab('input')">📝 入力</div>
-  <div class="tab" onclick="showTab('records')">📋 記録</div>
+  <div class="tab active" onclick="showTab('records')">📋 記録</div>
+  <div class="tab" onclick="showTab('input')">📝 入力</div>
   <div class="tab" onclick="showTab('stats')">📊 集計</div>
 </div>
 
 <!-- 入力 -->
-<div class="page active" id="page-input">
+<div class="page" id="page-input">
   <div class="section">
     <div class="section-title">📅 日付</div>
     <div class="date-input-wrap"><input type="date" id="inputDate"></div>
@@ -247,7 +247,7 @@ input[type=number]{-moz-appearance:textfield;}
 </div>
 
 <!-- 記録 -->
-<div class="page" id="page-records">
+<div class="page active" id="page-records">
   <div class="month-selector">
     <button class="month-btn" onclick="changeMonth(-1)">&#8249;</button>
     <div class="month-label" id="recordsMonthLabel"></div>
@@ -374,7 +374,7 @@ function showTab(tab){
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
   document.getElementById('page-'+tab).classList.add('active');
-  var idx=['input','records','stats'].indexOf(tab);
+  var idx=['records','input','stats'].indexOf(tab);
   document.querySelectorAll('.tab')[idx].classList.add('active');
   if(tab==='records'){renderRecords();setTimeout(function(){var t=document.getElementById('cal-today');if(t)t.scrollIntoView({behavior:'smooth',block:'center'});},150);}
   if(tab==='stats')renderStats();
@@ -891,6 +891,7 @@ document.getElementById('inputDate').value=getLocalDateStr();
 document.getElementById('inputDate').addEventListener('change',onDateChange);
 document.getElementById('headerDate').textContent=_today.getFullYear()+'年'+(_today.getMonth()+1)+'月'+_today.getDate()+'日（'+'日月火水木金土'[_today.getDay()]+'）';
 renderRecords();
+setTimeout(function(){var t=document.getElementById('cal-today');if(t)t.scrollIntoView({behavior:'smooth',block:'center'});},150);
 var todayRecord=getRecords().find(function(r){return r.date===getLocalDateStr();});
 if(todayRecord)loadRecordToForm(todayRecord);
 </script>
