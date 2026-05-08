@@ -27,7 +27,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
 .section-title{font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:12px;}
 .job-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .job-btn{background:var(--surface2);border:2px solid var(--border);border-radius:var(--radius);padding:14px 10px;text-align:center;cursor:pointer;transition:all 0.15s;font-size:13px;color:var(--text);font-family:'Noto Sans JP',sans-serif;}
-.job-btn .emoji{font-size:22px;display:block;margin-bottom:4px;}
+.job-btn .emoji{font-size:18px;display:block;margin-bottom:2px;}
 .job-btn.selected{border-color:var(--accent);background:rgba(245,166,35,0.12);color:var(--accent);}
 .job-btn:active{transform:scale(0.96);}
 .input-group{display:flex;flex-direction:column;gap:6px;}
@@ -134,7 +134,9 @@ input[type=number]{-moz-appearance:textfield;}
         <div class="memo-btn" onclick="addMemo('エステル')">🧪 エステル</div>
         <div class="memo-btn" onclick="addMemo('塩素搭載')">⚗️ 塩素搭載</div>
         <div class="memo-btn" onclick="addMemo('カネカ')">🏭 カネカ</div>
-        <button onclick="saveRecord()" style="margin-left:auto;background:rgba(245,166,35,0.15);border:1.5px solid var(--accent);border-radius:8px;padding:5px 12px;color:var(--accent);font-size:12px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;">💾 保存</button>
+      </div>
+      <div style="margin-bottom:8px;">
+        <button onclick="saveRecord()" style="width:100%;background:rgba(245,166,35,0.15);border:1.5px solid var(--accent);border-radius:8px;padding:5px 12px;color:var(--accent);font-size:12px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;">💾 保存</button>
       </div>
       <textarea class="input-field" id="jobMemo" rows="2" placeholder="例：○○工場→△△倉庫 など" style="resize:none;line-height:1.6;font-family:'Noto Sans JP',sans-serif;font-size:14px;"></textarea>
     </div>
@@ -386,7 +388,14 @@ function updateTotalDistance(){
   document.getElementById('distance').value=total||'';
   document.getElementById('distanceTotal').innerHTML=total.toLocaleString()+' <span style="font-size:12px;color:var(--muted);">km</span>';
 }
-function addMemo(text){var el=document.getElementById('jobMemo');el.value=(el.value?el.value+'\u3000':'')+text;}
+function addMemo(text){
+  var el=document.getElementById('jobMemo');
+  el.value=(el.value?el.value+'　':'')+text;
+  if(text==='カネカ'&&selectedJobs.includes('長距離')){
+    document.getElementById('longDistancePay').value=8000;
+    showToast('💰 長距離手当 8,000円をセットしました');
+  }
+}
 
 function toggleJob(el){
   var j=el.dataset.job;
