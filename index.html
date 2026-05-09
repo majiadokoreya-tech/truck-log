@@ -264,10 +264,12 @@ input[type=number]{-moz-appearance:textfield;}
 
 <!-- 集計 -->
 <div class="page" id="page-stats">
-  <div class="month-selector">
-    <button class="month-btn" onclick="changeStatsMonth(-1)">&#8249;</button>
-    <div class="month-label" id="statsMonthLabel"></div>
-    <button class="month-btn" onclick="changeStatsMonth(1)">&#8250;</button>
+  <div style="position:sticky;top:108px;z-index:90;background:var(--bg);padding-bottom:8px;">
+    <div class="month-selector" style="margin-bottom:0;">
+      <button class="month-btn" onclick="changeStatsMonth(-1)">&#8249;</button>
+      <div class="month-label" id="statsMonthLabel" style="font-size:22px;"></div>
+      <button class="month-btn" onclick="changeStatsMonth(1)">&#8250;</button>
+    </div>
   </div>
   <div class="stats-grid" id="statsGrid"></div>
   <div class="export-section">
