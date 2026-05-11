@@ -411,6 +411,9 @@ function toggleJob(el){
     if(j==='毒×2'&&toxicCount===2)selectToxic(2);
     if(j==='トレーラー'&&trailerOn)toggleTrailer();
   }else{
+    // 毒と毒×2は排他
+    if(j==='毒手当'&&selectedJobs.includes('毒×2'))return;
+    if(j==='毒×2'&&selectedJobs.includes('毒手当'))return;
     selectedJobs.push(j);
     el.classList.add('selected');
     if(j==='毒手当')selectToxic(1);
