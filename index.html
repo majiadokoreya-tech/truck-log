@@ -702,8 +702,11 @@ function renderStats(){
   document.getElementById('statsGrid').innerHTML=
     '<div class="stat-card"><div class="stat-label">出勤日数</div><div class="stat-value">'+totalDays+'<span class="stat-unit"> 日</span></div></div>'+
     '<div class="stat-card"><div class="stat-label">総走行距離</div><div class="stat-value">'+totalKm.toLocaleString()+'<span class="stat-unit"> km</span></div></div>'+
-    '<div class="stat-card"><div class="stat-label">⏰ 時間外時間</div><div class="stat-value">'+otHStr+'<span class="stat-unit"> h</span></div></div>'+
-    '<div class="stat-card"><div class="stat-label">🌅 休出時間</div><div class="stat-value">'+holHStr+'<span class="stat-unit"> h</span></div></div>'+
+    '<div class="stat-card" style="grid-column:span 2;text-align:left;"><div class="stat-label" style="margin-bottom:8px;">⏰ 残業時間</div>'+
+    '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span style="color:var(--muted);">時間外</span><span>'+otHStr+' h</span></div>'+
+    '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span style="color:var(--muted);">休日時間</span><span>'+holHStr+' h</span></div>'+
+    '<div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;border-top:1px solid var(--border);padding-top:6px;"><span>合計</span><span style="color:var(--accent);">'+Math.round((totalOTHours+totalHolidayHours)*100)/100+' h</span></div>'+
+    '</div>'+
     '<div class="stat-card" style="grid-column:span 2;"><div class="stat-label">💰 ワンマン手当</div><div class="stat-value" style="font-size:17px;">'+totalPay.toLocaleString()+'<span class="stat-unit"> 円</span></div></div>'+
     '<div class="stat-card" style="grid-column:span 2;"><div class="stat-label">🛌 長距離手当合計</div><div class="stat-value">'+totalLD.toLocaleString()+'<span class="stat-unit"> 円</span></div></div>'+
     '';
