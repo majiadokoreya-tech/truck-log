@@ -445,8 +445,8 @@ function setHour(which,h){
   if(which==='start'&&timeState[which].m===null)timeState[which].m=0;
   if(which==='start'){
     var btns=document.getElementById('startMinBtns').querySelectorAll('.time-btn');
-    if(h===4){btns[0].style.opacity='0.3';btns[0].style.pointerEvents='none';btns[1].style.opacity='';btns[1].style.pointerEvents='';if(timeState.start.m===0){timeState.start.m=30;btns[1].classList.add('selected');btns[0].classList.remove('selected');}}
-    else if(h===6||h===8||h===9||h===10||h===12||h===13){btns[0].style.opacity='';btns[0].style.pointerEvents='';btns[1].style.opacity='0.3';btns[1].style.pointerEvents='none';if(timeState.start.m===30){timeState.start.m=0;btns[0].classList.add('selected');btns[1].classList.remove('selected');}}
+    if(h===4){btns[0].style.opacity='0.3';btns[0].style.pointerEvents='none';btns[1].style.opacity='';btns[1].style.pointerEvents='';timeState.start.m=30;btns[1].classList.add('selected');btns[0].classList.remove('selected');}
+    else if(h===6||h===8||h===9||h===10||h===12||h===13){btns[0].style.opacity='';btns[0].style.pointerEvents='';btns[1].style.opacity='0.3';btns[1].style.pointerEvents='none';timeState.start.m=0;btns[0].classList.add('selected');btns[1].classList.remove('selected');}
     else{btns[0].style.opacity='';btns[0].style.pointerEvents='';btns[1].style.opacity='';btns[1].style.pointerEvents='';}
   }
   updateTimeValue(which);
@@ -1052,8 +1052,10 @@ function renderFareTable(){
 function selectFare(pay,name){
   if(fareMode==='memo'){
     addMemo(name);
+    if(pay>0){document.getElementById('longDistancePay').value=pay;}
     closeFareTableDirect();
-    showToast('📝 '+name+'を入力しました');
+    var msg=name+(pay>0?' / '+pay.toLocaleString()+'円':'');
+    showToast('📝 '+msg);
   } else {
     if(pay>0){document.getElementById('longDistancePay').value=pay;closeFareTableDirect();showToast('💰 '+pay.toLocaleString()+'円をセットしました');}
   }
