@@ -135,6 +135,7 @@ input[type=number]{-moz-appearance:textfield;}
         <div class="memo-btn" onclick="addMemo('エステル')">🧪 エステル</div>
         <div class="memo-btn" onclick="addMemo('塩素搭載')">⚗️ 塩素搭載</div>
         <div class="memo-btn" onclick="addMemo('カネカ')">🏭 カネカ</div>
+        <div class="memo-btn" onclick="openFareTableForMemo()" style="background:rgba(52,152,219,0.15);border-color:#3498db;color:#3498db;">📋 客先</div>
       </div>
       <div style="margin-bottom:8px;">
         <button onclick="saveRecord()" style="width:100%;background:rgba(245,166,35,0.15);border:1.5px solid var(--accent);border-radius:8px;padding:5px 12px;color:var(--accent);font-size:12px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;">💾 保存</button>
@@ -1023,7 +1024,9 @@ var FARE_DATA=[
   {cat:'液塩',name:'東亜合成 徳島',start:'17:00',end:'19:00',pay:18800},
 ];
 var fareSelectedCat='';
-function openFareTable(){document.getElementById('fareOverlay').classList.add('open');document.getElementById('fareSearch').value='';fareSelectedCat='';renderFareCategoryBtns();renderFareTable();}
+var fareMode='pay'; // 'pay' or 'memo'
+function openFareTable(){fareMode='pay';document.getElementById('fareOverlay').classList.add('open');document.getElementById('fareSearch').value='';fareSelectedCat='';renderFareCategoryBtns();renderFareTable();}
+function openFareTableForMemo(){fareMode='memo';document.getElementById('fareOverlay').classList.add('open');document.getElementById('fareSearch').value='';fareSelectedCat='';renderFareCategoryBtns();renderFareTable();}
 function closeFareTable(e){if(e.target===document.getElementById('fareOverlay'))closeFareTableDirect();}
 function closeFareTableDirect(){document.getElementById('fareOverlay').classList.remove('open');}
 function renderFareCategoryBtns(){
@@ -1036,7 +1039,8 @@ function renderFareTable(){
   var data=FARE_DATA.filter(function(d){return(!fareSelectedCat||d.cat===fareSelectedCat)&&(!sw||d.name.toLowerCase().includes(sw));});
   if(!data.length){document.getElementById('fareList').innerHTML='<div class="empty" style="padding:20px;font-size:13px;">該当なし</div>';return;}
   document.getElementById('fareList').innerHTML=data.map(function(d){
-    return '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;" onclick="selectFare('+d.pay+')">'+
+    var safeName=d.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;" onclick="selectFare('+d.pay+',\''+safeName+'\')">'+ 
       '<div style="font-size:12px;color:var(--muted);margin-bottom:4px;">'+d.cat+'</div>'+
       '<div style="font-size:14px;font-weight:600;margin-bottom:6px;">'+d.name+'</div>'+
       '<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);">'+
@@ -1045,7 +1049,15 @@ function renderFareTable(){
       '</div></div>';
   }).join('');
 }
-function selectFare(pay){if(pay>0){document.getElementById('longDistancePay').value=pay;closeFareTableDirect();showToast('💰 '+pay.toLocaleString()+'円をセットしました');}}
+function selectFare(pay,name){
+  if(fareMode==='memo'){
+    addMemo(name);
+    closeFareTableDirect();
+    showToast('📝 '+name+'を入力しました');
+  } else {
+    if(pay>0){document.getElementById('longDistancePay').value=pay;closeFareTableDirect();showToast('💰 '+pay.toLocaleString()+'円をセットしました');}
+  }
+}
 
 function openSettings(){document.getElementById('settingOTRate').value=localStorage.getItem('otRate')||'';document.getElementById('settingHolidayRate').value=localStorage.getItem('holRate')||'';document.getElementById('settingsOverlay').classList.add('open');}
 function closeSettings(e){if(e.target===document.getElementById('settingsOverlay'))closeSettingsDirect();}
