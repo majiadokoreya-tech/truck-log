@@ -140,6 +140,7 @@ input[type=number]{-moz-appearance:textfield;}
         <div class="memo-btn" onclick="addMemo('エステル')">🧪 エステル</div>
         <div class="memo-btn" onclick="addMemo('塩素搭載')">⚗️ 塩素搭載</div>
         <div class="memo-btn" onclick="addMemo('カネカ')">🏭 カネカ</div>
+        <div class="memo-btn" onclick="addMemoAndToxic2()" style="background:rgba(231,76,60,0.1);border-color:#e74c3c;color:#e74c3c;">☠️ PM搭載</div>
         <div class="memo-btn" onclick="openFareTableForMemo()" style="background:rgba(52,152,219,0.15);border-color:#3498db;color:#3498db;">📋 客先</div>
       </div>
       <div style="margin-bottom:8px;">
@@ -398,6 +399,17 @@ function updateTotalDistance(){
   var total=d1+d2+d3;
   document.getElementById('distance').value=total||'';
   document.getElementById('distanceTotal').innerHTML=total.toLocaleString()+' <span style="font-size:12px;color:var(--muted);">km</span>';
+}
+function addMemoAndToxic2(){
+  addMemo('PM搭載');
+  // 毒×2をセット
+  selectedJobs=selectedJobs.filter(function(j){return j!=='毒手当'&&j!=='毒×2';});
+  selectedJobs.push('毒×2');
+  document.querySelectorAll('.job-btn').forEach(function(b){
+    if(b.dataset.job==='毒×2')b.classList.add('selected');
+    if(b.dataset.job==='毒手当')b.classList.remove('selected');
+  });
+  selectToxic(2);
 }
 function addMemo(text){
   var el=document.getElementById('jobMemo');
