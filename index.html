@@ -122,9 +122,11 @@ input[type=number]{-moz-appearance:textfield;}
     </div>
   </div>
   <div class="section">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+    <div class="accordion-toggle" id="inputJobAccordionToggle" onclick="toggleAccordion(this)" data-id="inputJobAccordion" style="margin-bottom:0;">
       <div class="section-title" style="margin-bottom:0;">仕事の種類（複数選択OK）</div>
+      <span class="arrow">▼</span>
     </div>
+    <div class="accordion-body" id="inputJobAccordion" onclick="event.stopPropagation();">
     <div class="job-grid">
       <div class="job-btn" data-job="地場" onclick="toggleJob(this)"><span class="emoji">🚛</span>地場</div>
       <div class="job-btn" data-job="長距離" onclick="toggleJob(this)"><span class="emoji">🛌</span>長距離</div>
@@ -150,7 +152,11 @@ input[type=number]{-moz-appearance:textfield;}
     </div>
   </div>
   <div class="section">
-    <div class="section-title">🕐 時間</div>
+    <div class="accordion-toggle" id="inputTimeAccordionToggle" onclick="toggleAccordion(this)" data-id="inputTimeAccordion" style="margin-bottom:0;">
+      <div class="section-title" style="margin-bottom:0;">🕐 時間</div>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="accordion-body" id="inputTimeAccordion" onclick="event.stopPropagation();">
     <div style="margin-bottom:14px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
         <div class="input-label" style="margin-bottom:0;">出勤時間　<span id="startTimeDisplay" style="color:var(--accent);font-family:'Oswald',sans-serif;font-size:16px;">--:--</span></div>
@@ -193,10 +199,15 @@ input[type=number]{-moz-appearance:textfield;}
     </div>
     <input type="hidden" id="startTime">
     <input type="hidden" id="endTime">
+    </div>
   </div>
   <div class="section">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+    <div class="accordion-toggle" id="inputDistanceAccordionToggle" onclick="toggleAccordion(this)" data-id="inputDistanceAccordion" style="margin-bottom:0;">
       <div class="section-title" style="margin-bottom:0;">🛣️ 走行距離</div>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="accordion-body" id="inputDistanceAccordion" onclick="event.stopPropagation();">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
       <button onclick="saveRecord()" style="background:rgba(245,166,35,0.15);border:1.5px solid var(--accent);border-radius:8px;padding:5px 12px;color:var(--accent);font-size:12px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;">💾 保存</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;">
@@ -221,9 +232,14 @@ input[type=number]{-moz-appearance:textfield;}
       </div>
     </div>
     <input type="hidden" id="distance">
+    </div>
   </div>
   <div class="section">
-    <div class="section-title">💰 金額・手当</div>
+    <div class="accordion-toggle" id="inputPayAccordionToggle" onclick="toggleAccordion(this)" data-id="inputPayAccordion" style="margin-bottom:0;">
+      <div class="section-title" style="margin-bottom:0;">💰 金額・手当</div>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="accordion-body" id="inputPayAccordion" onclick="event.stopPropagation();">
     <div style="display:flex;flex-direction:column;gap:14px;">
       <div class="input-group">
         <div class="input-label">🛌 長距離手当（円）</div>
@@ -250,6 +266,7 @@ input[type=number]{-moz-appearance:textfield;}
           <div style="margin-left:auto;font-size:11px;" id="trailerStatus">タップでON</div>
         </div>
       </div>
+    </div>
     </div>
   </div>
 </div>
