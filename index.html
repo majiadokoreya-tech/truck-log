@@ -279,10 +279,15 @@ input[type=number]{-moz-appearance:textfield;}
     </div>
   </div>
   <div class="stats-grid" id="statsGrid"></div>
-  <div class="export-section">
-    <div class="export-title">📋 スプレッドシート用コピー（タブ区切り）</div>
-    <div class="export-text" id="exportText"></div>
-    <button class="copy-btn" onclick="copyExport()">📋 クリップボードにコピー</button>
+  <div class="export-section" onclick="toggleAccordion(this)" data-id="exportAccordion" style="cursor:pointer;">
+    <div class="accordion-toggle" id="exportAccordionToggle">
+      <div class="export-title" style="margin-bottom:0;">📋 スプレッドシート用コピー（タブ区切り）</div>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="accordion-body" id="exportAccordion" onclick="event.stopPropagation();">
+      <div class="export-text" id="exportText"></div>
+      <button class="copy-btn" onclick="copyExport()">📋 クリップボードにコピー</button>
+    </div>
   </div>
 </div>
 
