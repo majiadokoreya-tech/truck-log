@@ -138,7 +138,7 @@ input[type=number]{-moz-appearance:textfield;}
     <div style="margin-top:12px;">
       <div class="input-label" style="margin-bottom:6px;">仕事内容メモ</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center;">
-        <div class="memo-btn" onclick="addMemo('ガス')">⛽ ガス</div>
+        <div class="memo-btn" id="memoBtnGas" onclick="toggleMemo('ガス','memoBtnGas')">⛽ ガス</div>
         <div class="memo-btn" onclick="addMemo('エステル')">🧪 エステル</div>
         <div class="memo-btn" onclick="addMemo('塩素搭載')">⚗️ 塩素搭載</div>
         <div class="memo-btn" onclick="addMemo('カネカ')">🏭 カネカ</div>
@@ -429,6 +429,27 @@ function addMemoAndToxic2(){
   });
   selectToxic(2);
 }
+function toggleMemo(text,btnId){
+  var el=document.getElementById('jobMemo');
+  var btn=document.getElementById(btnId);
+  var val=el.value;
+  var exists=val===text||(val.startsWith(text+'　'))||val.includes('　'+text+'　')||(val.endsWith('　'+text))||val.endsWith('　'+text);
+  // シンプルに含まれるか確認
+  var parts=val?val.split('　'):[];
+  var idx=parts.indexOf(text);
+  if(idx>=0){
+    parts.splice(idx,1);
+    el.value=parts.join('　');
+    if(btn){btn.style.background='';btn.style.borderColor='';btn.style.color='';}
+  }else{
+    el.value=(val?val+'　':'')+text;
+    if(btn){btn.style.background='rgba(245,166,35,0.15)';btn.style.borderColor='var(--accent)';btn.style.color='var(--accent)';}
+  }
+}
+function removeMemo(text){
+  var el=document.getElementById('jobMemo');
+  el.value=el.value.replace(new RegExp('(^|　)'+text.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(?=　|$)'),'').replace(/^　/,'');
+}
 function addMemo(text){
   var el=document.getElementById('jobMemo');
   el.value=(el.value?el.value+'　':'')+text;
@@ -446,7 +467,7 @@ function toggleJob(el){
     if(j==='毒手当'&&toxicCount===1)selectToxic(1);
     if(j==='毒×2'&&toxicCount===2)selectToxic(2);
     if(j==='トレーラー'&&trailerOn)toggleTrailer();
-    if(j==='半日有給'){clearTimePicker('end');clearOvertimePicker();}
+    if(j==='半日有給'){clearTimePicker('end');clearOvertimePicker();removeMemo('半日有給');}
   }else{
     // 毒と毒×2は排他
     if(j==='毒手当'&&selectedJobs.includes('毒×2'))return;
@@ -456,7 +477,7 @@ function toggleJob(el){
     if(j==='毒手当')selectToxic(1);
     if(j==='毒×2')selectToxic(2);
     if(j==='トレーラー'&&!trailerOn)toggleTrailer();
-    if(j==='半日有給')setTimePicker('end','12:00');
+    if(j==='半日有給'){setTimePicker('end','12:00');addMemo('半日有給');}
   }
   if(timeState.start.h!==null&&timeState.start.m!==null)autoCalcOvertime();
 }
