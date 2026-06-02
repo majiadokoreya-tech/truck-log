@@ -285,6 +285,19 @@ input[type=number]{-moz-appearance:textfield;}
   <div style="padding:12px 0 0;">
     <input class="input-field" type="text" id="searchBox" placeholder="🔍 仕事内容を検索..." oninput="renderRecords()" style="font-size:14px;font-family:'Noto Sans JP',sans-serif;">
   </div>
+  <div class="section" style="margin-top:10px;">
+    <div class="section-title">📅 残日数</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div>
+        <div class="input-label" style="margin-bottom:6px;">🌴 有給残（日）</div>
+        <input class="input-field" type="number" id="yukyuZan" placeholder="0" style="font-size:20px;font-family:'Oswald',sans-serif;text-align:center;" oninput="saveZandays()" min="0">
+      </div>
+      <div>
+        <div class="input-label" style="margin-bottom:6px;">🔄 代休残（日）</div>
+        <input class="input-field" type="number" id="daikyuZan" placeholder="0" style="font-size:20px;font-family:'Oswald',sans-serif;text-align:center;" oninput="saveZandays()" min="0">
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- 集計 -->
@@ -406,7 +419,7 @@ function showTab(tab){
   document.getElementById('page-'+tab).classList.add('active');
   var idx=['records','input','stats'].indexOf(tab);
   document.querySelectorAll('.tab')[idx].classList.add('active');
-  if(tab==='records'){renderRecords();setTimeout(function(){var t=document.getElementById('cal-today');if(t)t.scrollIntoView({behavior:'smooth',block:'center'});},150);}
+  if(tab==='records'){renderRecords();loadZandays();setTimeout(function(){var t=document.getElementById('cal-today');if(t)t.scrollIntoView({behavior:'smooth',block:'center'});},150);}
   if(tab==='stats')renderStats();
 }
 
@@ -820,6 +833,16 @@ function renderStats(){
   var header='日付\t仕事\t出勤\t退勤\t実働\t残業\t走行km\t長距離手当\t毒手当\tトレーラー手当\tワンマン手当\tメモ';
   var rows=records.map(function(r){var wh=calcWorkHours(r.startTime,r.endTime)||'';var tp=r.toxicPay||((r.toxicCount||0)*2500),trp=r.trailerPay||0,dp=calcDistPay(r.distance);return[r.date,(r.jobs||[]).map(function(j){return(JOB_EMOJI[j]||'')+j;}).join('|'),r.startTime,r.endTime,wh?wh+'h':'',r.overtime>0?r.overtime+'h':'',r.distance||'',r.longDistancePay||'',tp||'',trp||'',tp+trp+dp||'',r.jobMemo||''].join('\t');});
   document.getElementById('exportText').textContent=[header].concat(rows).join('\n');
+}
+function saveZandays(){
+  localStorage.setItem('yukyuZan',document.getElementById('yukyuZan').value||'0');
+  localStorage.setItem('daikyuZan',document.getElementById('daikyuZan').value||'0');
+}
+function loadZandays(){
+  var y=localStorage.getItem('yukyuZan');
+  var d=localStorage.getItem('daikyuZan');
+  if(y!==null)document.getElementById('yukyuZan').value=y;
+  if(d!==null)document.getElementById('daikyuZan').value=d;
 }
 function copyExport(){navigator.clipboard.writeText(document.getElementById('exportText').textContent).then(function(){showToast('📋 コピーしました！');});}
 function fixAllRecords(){var r=getRecords().map(function(r){return Object.assign({},r,{overtime:Math.round((parseFloat(r.overtime)||0)*100)/100,distance:parseFloat(r.distance)||0,longDistancePay:parseInt(r.longDistancePay)||0,toxicCount:parseInt(r.toxicCount)||0,toxicPay:parseInt(r.toxicPay)||0,trailerPay:parseInt(r.trailerPay)||0,otherPay:0});});saveRecords(r);renderStats();showToast('✅ 全データを修正しました！');}
