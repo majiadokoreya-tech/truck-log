@@ -419,7 +419,7 @@ function showTab(tab){
   document.getElementById('page-'+tab).classList.add('active');
   var idx=['records','input','stats'].indexOf(tab);
   document.querySelectorAll('.tab')[idx].classList.add('active');
-  if(tab==='records'){renderRecords();loadZandays();setTimeout(function(){var t=document.getElementById('cal-today');if(t)t.scrollIntoView({behavior:'smooth',block:'center'});},150);}
+  if(tab==='records'){renderRecords();setTimeout(function(){var t=document.getElementById('cal-today');if(t)t.scrollIntoView({behavior:'smooth',block:'center'});},150);}
   if(tab==='stats')renderStats();
 }
 
