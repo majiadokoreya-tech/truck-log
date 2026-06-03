@@ -292,11 +292,11 @@ input[type=number]{-moz-appearance:textfield;}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <div>
         <div class="input-label" style="margin-bottom:6px;">🌴 有給残（日）</div>
-        <input class="input-field" type="number" id="yukyuZan" placeholder="0" style="font-size:20px;font-family:'Oswald',sans-serif;text-align:center;" oninput="saveZandays()" min="0">
+        <input class="input-field" type="number" id="yukyuZan" placeholder="0" style="font-size:20px;font-family:'Oswald',sans-serif;text-align:center;" onchange="saveZandays()" min="0" step="0.5">
       </div>
       <div>
         <div class="input-label" style="margin-bottom:6px;">🔄 代休残（日）</div>
-        <input class="input-field" type="number" id="daikyuZan" placeholder="0" style="font-size:20px;font-family:'Oswald',sans-serif;text-align:center;" oninput="saveZandays()" min="0">
+        <input class="input-field" type="number" id="daikyuZan" placeholder="0" style="font-size:20px;font-family:'Oswald',sans-serif;text-align:center;" onchange="saveZandays()" min="0" step="1">
       </div>
     </div>
   </div>
@@ -866,28 +866,26 @@ function isHolidayWorkRecord(r){
   return isHol&&hasWork;
 }
 function calcLeaveBalances(){
+  // 入力欄の数字は「表示中の月の月初残」として扱う。
+  // 過去月まで全部足すと代休が異常に増えるため、現在表示中の月だけで計算する。
   var baseY=parseFloat(localStorage.getItem('yukyuBase')||localStorage.getItem('yukyuZan')||'0')||0;
   var baseD=parseFloat(localStorage.getItem('daikyuBase')||localStorage.getItem('daikyuZan')||'0')||0;
-  var records=getRecords().slice().sort(function(a,b){return a.date.localeCompare(b.date);});
-  var months={};
+  var targetMonth=String(currentYear)+'-'+String(currentMonth+1).padStart(2,'0');
+  var records=getRecords().filter(function(r){return (r.date||'').slice(0,7)===targetMonth;}).sort(function(a,b){return a.date.localeCompare(b.date);});
+  var rest=0,half=0,earn=0;
   records.forEach(function(r){
-    var m=(r.date||'').slice(0,7);if(!m)return;
-    if(!months[m])months[m]={rest:0,half:0,earn:0};
-    if((r.jobs||[]).includes('休み'))months[m].rest+=1;
-    if((r.jobs||[]).includes('半日有給'))months[m].half+=0.5;
-    if(isHolidayWorkRecord(r))months[m].earn+=1;
+    if((r.jobs||[]).includes('休み'))rest+=1;
+    if((r.jobs||[]).includes('半日有給'))half+=0.5;
+    if(isHolidayWorkRecord(r))earn+=1;
   });
-  Object.keys(months).sort().forEach(function(m){
-    var x=months[m];
-    var availableDaikyu=baseD+x.earn;
-    var useDaikyu=Math.min(x.rest,availableDaikyu);
-    var useYukyu=x.rest-useDaikyu;
-    baseD=Math.round((availableDaikyu-useDaikyu)*10)/10;
-    baseY=Math.round((baseY-useYukyu-x.half)*10)/10;
-  });
-  if(baseY<0)baseY=0;
-  if(baseD<0)baseD=0;
-  return {yukyu:baseY,daikyu:baseD};
+  var availableDaikyu=baseD+earn;
+  var useDaikyu=Math.min(rest,availableDaikyu);
+  var useYukyu=rest-useDaikyu;
+  var resultD=Math.round((availableDaikyu-useDaikyu)*10)/10;
+  var resultY=Math.round((baseY-useYukyu-half)*10)/10;
+  if(resultY<0)resultY=0;
+  if(resultD<0)resultD=0;
+  return {yukyu:resultY,daikyu:resultD};
 }
 function recalcLeaveBalances(){
   var b=calcLeaveBalances();
@@ -898,9 +896,12 @@ function recalcLeaveBalances(){
   localStorage.setItem('daikyuZan',String(b.daikyu));
 }
 function saveZandays(){
-  // 入力した数字を「計算前の基準残」として保存します。
-  localStorage.setItem('yukyuBase',document.getElementById('yukyuZan').value||'0');
-  localStorage.setItem('daikyuBase',document.getElementById('daikyuZan').value||'0');
+  // 入力した数字を「表示中の月の月初残」として保存。
+  // 入力中は再計算しない（onchangeで確定後だけ実行）。
+  var y=parseFloat(document.getElementById('yukyuZan').value)||0;
+  var d=parseFloat(document.getElementById('daikyuZan').value)||0;
+  localStorage.setItem('yukyuBase',String(Math.round(y*10)/10));
+  localStorage.setItem('daikyuBase',String(Math.round(d)));
   recalcLeaveBalances();
 }
 function loadZandays(){
