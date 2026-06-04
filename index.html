@@ -98,6 +98,17 @@ input[type=number]{-moz-appearance:textfield;}
 .accordion-toggle{cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;}
 .accordion-toggle .arrow{font-size:12px;color:var(--muted);transition:transform 0.2s;}
 .accordion-toggle.open .arrow{transform:rotate(180deg);}
+
+.time-card{background:var(--bg);border:1.5px solid var(--border);border-radius:14px;padding:12px;margin-bottom:12px;}
+.time-card:last-of-type{margin-bottom:0;}
+.time-card-header{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.time-card-title{font-size:14px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px;}
+.time-card-value{font-family:'Oswald',sans-serif;font-size:20px;color:var(--accent);margin-left:auto;white-space:nowrap;}
+.time-save-btn{background:rgba(245,166,35,0.15);border:1.5px solid var(--accent);border-radius:8px;padding:6px 10px;color:var(--accent);font-size:12px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;white-space:nowrap;}
+.time-subtitle{font-size:11px;color:var(--muted);margin:8px 0 5px;}
+.time-card-start{border-left:4px solid #3498db;}
+.time-card-end{border-left:4px solid #2ecc71;}
+.time-card-ot{border-left:4px solid var(--accent);}
 </style>
 </head>
 <body>
@@ -159,24 +170,30 @@ input[type=number]{-moz-appearance:textfield;}
       <span class="arrow">▼</span>
     </div>
     <div class="accordion-body open" id="inputTimeAccordion" onclick="event.stopPropagation();">
-    <div style="margin-bottom:14px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-        <div class="input-label" style="margin-bottom:0;">出勤時間　<span id="startTimeDisplay" style="color:var(--accent);font-family:'Oswald',sans-serif;font-size:16px;">--:--</span></div>
-        <button onclick="saveRecord()" style="background:rgba(245,166,35,0.15);border:1.5px solid var(--accent);border-radius:8px;padding:5px 12px;color:var(--accent);font-size:12px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;">💾 保存</button>
+
+    <div class="time-card time-card-start">
+      <div class="time-card-header">
+        <div class="time-card-title">🚚 出勤時間</div>
+        <div class="time-card-value" id="startTimeDisplay">--:--</div>
+        <button class="time-save-btn" onclick="saveRecord()">💾 保存</button>
       </div>
-      <div class="input-label" style="margin-bottom:5px;font-size:10px;">時間</div>
+      <div class="time-subtitle">時間</div>
       <div class="time-btn-row" id="startHourBtns"></div>
-      <div class="input-label" style="margin:8px 0 5px;font-size:10px;">分</div>
+      <div class="time-subtitle">分</div>
       <div class="time-btn-row" id="startMinBtns">
         <div class="time-btn" onclick="setMin('start',0)">00</div>
         <div class="time-btn" onclick="setMin('start',30)">30</div>
       </div>
     </div>
-    <div style="margin-bottom:14px;">
-      <div class="input-label" style="margin-bottom:8px;">退勤時間　<span id="endTimeDisplay" style="color:var(--accent);font-family:'Oswald',sans-serif;font-size:16px;">--:--</span></div>
-      <div class="input-label" style="margin-bottom:5px;font-size:10px;">時間</div>
+
+    <div class="time-card time-card-end">
+      <div class="time-card-header">
+        <div class="time-card-title">🏁 退勤時間</div>
+        <div class="time-card-value" id="endTimeDisplay">--:--</div>
+      </div>
+      <div class="time-subtitle">時間</div>
       <div class="time-btn-row" id="endHourBtns"></div>
-      <div class="input-label" style="margin:8px 0 5px;font-size:10px;">分</div>
+      <div class="time-subtitle">分</div>
       <div class="time-btn-row" id="endMinBtns">
         <div class="time-btn" onclick="setMin('end',0)">00</div>
         <div class="time-btn" onclick="setMin('end',15)">15</div>
@@ -184,25 +201,29 @@ input[type=number]{-moz-appearance:textfield;}
         <div class="time-btn" onclick="setMin('end',45)">45</div>
       </div>
     </div>
-    <div>
-      <div class="input-label" style="margin-bottom:8px;">残業時間　<span id="overtimeDisplay" style="color:var(--accent);font-family:'Oswald',sans-serif;font-size:16px;">なし</span></div>
-      <div class="input-label" style="margin-bottom:5px;font-size:10px;">時間（0=残業なし）</div>
+
+    <div class="time-card time-card-ot">
+      <div class="time-card-header">
+        <div class="time-card-title">⏰ 残業時間</div>
+        <div class="time-card-value" id="overtimeDisplay">なし</div>
+        <button class="time-save-btn" onclick="saveRecord()">💾 保存</button>
+      </div>
+      <div class="time-subtitle">時間（0=残業なし）</div>
       <div class="time-btn-row" id="overtimeHourBtns"></div>
-      <div class="input-label" style="margin:8px 0 5px;font-size:10px;">分</div>
-      <div style="display:flex;align-items:center;gap:6px;">
-        <div class="time-btn-row" id="overtimeMinBtns" style="flex:1;">
-          <div class="time-btn" onclick="setOvertimeMin(0)">0</div>
-          <div class="time-btn" onclick="setOvertimeMin(15)">.25</div>
-          <div class="time-btn" onclick="setOvertimeMin(30)">.5</div>
-          <div class="time-btn" onclick="setOvertimeMin(45)">.75</div>
-        </div>
-        <button onclick="saveRecord()" style="background:rgba(245,166,35,0.15);border:1.5px solid var(--accent);border-radius:8px;padding:5px 12px;color:var(--accent);font-size:12px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;white-space:nowrap;">💾 保存</button>
+      <div class="time-subtitle">分</div>
+      <div class="time-btn-row" id="overtimeMinBtns">
+        <div class="time-btn" onclick="setOvertimeMin(0)">0</div>
+        <div class="time-btn" onclick="setOvertimeMin(15)">.25</div>
+        <div class="time-btn" onclick="setOvertimeMin(30)">.5</div>
+        <div class="time-btn" onclick="setOvertimeMin(45)">.75</div>
       </div>
     </div>
+
     <input type="hidden" id="startTime">
     <input type="hidden" id="endTime">
     </div>
   </div>
+
   <div class="section">
     <div class="accordion-toggle" id="inputDistanceAccordionToggle" onclick="toggleAccordion(this)" data-id="inputDistanceAccordion" style="margin-bottom:0;">
       <div class="section-title" style="margin-bottom:0;">🛣️ 走行距離</div>
@@ -286,31 +307,29 @@ input[type=number]{-moz-appearance:textfield;}
   <div style="padding:12px 0 0;">
     <input class="input-field" type="text" id="searchBox" placeholder="🔍 仕事内容を検索..." oninput="renderRecords()" style="font-size:14px;font-family:'Noto Sans JP',sans-serif;">
   </div>
-  <div class="section" style="margin-top:10px;">
-    <div class="section-title">📅 残日数（自動計算）</div>
-    <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:10px;">月初残を入力 → その月の休み・半日有給・休日出勤から現在残を自動計算。🏠休み=代休から優先消化／不足分は有給。🌴半日有給=有給0.5消化。祝日・青土曜の出勤=代休+1。</div>
-    <div style="font-size:12px;color:var(--accent);font-weight:700;margin-bottom:8px;" id="leaveMonthTitle">月初残</div>
+  <div class="section" style="margin-top:10px;" id="leaveSection">
+    <div class="section-title">📅 残日数管理</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
       <div>
         <div class="input-label" style="margin-bottom:6px;">🌴 月初有給残（日）</div>
-        <input class="input-field" type="number" id="yukyuBaseInput" placeholder="0" style="font-size:20px;font-family:'Oswald',sans-serif;text-align:center;" onchange="saveZandays()" min="0" step="0.5">
+        <input class="input-field" type="number" id="leaveStartYukyu" placeholder="0" step="0.5" style="font-size:20px;font-family:'Oswald',sans-serif;text-align:center;" oninput="saveLeaveStart()" min="0">
       </div>
       <div>
         <div class="input-label" style="margin-bottom:6px;">🔄 月初代休残（日）</div>
-        <input class="input-field" type="number" id="daikyuBaseInput" placeholder="0" style="font-size:20px;font-family:'Oswald',sans-serif;text-align:center;" onchange="saveZandays()" min="0" step="1">
+        <input class="input-field" type="number" id="leaveStartDaikyu" placeholder="0" step="1" style="font-size:20px;font-family:'Oswald',sans-serif;text-align:center;" oninput="saveLeaveStart()" min="0">
       </div>
     </div>
-    <div style="font-size:12px;color:var(--accent);font-weight:700;margin-bottom:8px;">現在残（自動計算）</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div style="background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;text-align:center;">
-        <div class="input-label" style="margin-bottom:6px;">🌴 有給残（日）</div>
-        <div id="yukyuZanDisplay" style="font-size:22px;font-family:'Oswald',sans-serif;color:var(--text);">0</div>
+    <div style="border-top:1px solid var(--border);padding-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="stat-card" style="padding:10px;">
+        <div class="stat-label">現在有給残</div>
+        <div class="stat-value" id="leaveCurrentYukyu">0<span class="stat-unit"> 日</span></div>
       </div>
-      <div style="background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;text-align:center;">
-        <div class="input-label" style="margin-bottom:6px;">🔄 代休残（日）</div>
-        <div id="daikyuZanDisplay" style="font-size:22px;font-family:'Oswald',sans-serif;color:var(--text);">0</div>
+      <div class="stat-card" style="padding:10px;">
+        <div class="stat-label">現在代休残</div>
+        <div class="stat-value" id="leaveCurrentDaikyu">0<span class="stat-unit"> 日</span></div>
       </div>
     </div>
+    <div id="leaveBreakdown" style="margin-top:12px;font-size:12px;color:var(--muted);line-height:1.8;"></div>
   </div>
 </div>
 
@@ -427,6 +446,19 @@ function calcDistPay(km){if(!km||km<=0)return 0;if(km<=800)return Math.round(km*
 function getDateColor(d,dow){if(HOLIDAYS.has(d)||dow===0)return'color:#e74c3c';if(COMPANY_SAT_OFF.has(d))return'color:#3498db';return'';}
 function showToast(msg,isErr){var t=document.getElementById('toast');t.textContent=msg;t.style.background=isErr?'var(--red)':'var(--green)';t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2500);}
 
+function fmtLeave(n){n=Math.round((parseFloat(n)||0)*10)/10;return n%1===0?String(n):String(n.toFixed(1));}
+function getLeaveMonthKey(){return currentYear+'-'+String(currentMonth+1).padStart(2,'0');}
+function isHolidayLike(dateStr){var d=new Date(dateStr);return d.getDay()===0||HOLIDAYS.has(dateStr)||COMPANY_SAT_OFF.has(dateStr);}
+function getWorkHoursNum(r){if(!r||!r.startTime||!r.endTime)return 0;var sh=parseInt(r.startTime.split(':')[0]),sm=parseInt(r.startTime.split(':')[1]),eh=parseInt(r.endTime.split(':')[0]),em=parseInt(r.endTime.split(':')[1]);var mins=(eh*60+em)-(sh*60+sm);if(mins<0)mins+=24*60;return Math.round((mins/60)*100)/100;}
+function isRestRecord(r){return r&&(r.jobs||[]).includes('休み');}
+function isHalfLeaveRecord(r){return r&&(r.jobs||[]).includes('半日有給');}
+function earnsDaikyuRecord(r){return r&&!isRestRecord(r)&&isHolidayLike(r.date)&&getWorkHoursNum(r)>=8.25;}
+function getLeaveStart(ms){return {yukyu:parseFloat(localStorage.getItem('leaveStartYukyu_'+ms)||localStorage.getItem('yukyuZan')||'0')||0,daikyu:parseFloat(localStorage.getItem('leaveStartDaikyu_'+ms)||localStorage.getItem('daikyuZan')||'0')||0};}
+function saveLeaveStart(){var ms=getLeaveMonthKey();var y=parseFloat(document.getElementById('leaveStartYukyu').value)||0;var d=parseFloat(document.getElementById('leaveStartDaikyu').value)||0;d=Math.floor(d);localStorage.setItem('leaveStartYukyu_'+ms,String(y));localStorage.setItem('leaveStartDaikyu_'+ms,String(d));renderLeavePanel();}
+function loadLeaveStart(){var ms=getLeaveMonthKey();var st=getLeaveStart(ms);var y=document.getElementById('leaveStartYukyu');var d=document.getElementById('leaveStartDaikyu');if(y)y.value=fmtLeave(st.yukyu);if(d)d.value=fmtLeave(st.daikyu);}
+function calcLeaveMonth(){var ms=getLeaveMonthKey();var st=getLeaveStart(ms);var records=getRecords().filter(function(r){return r.date&&r.date.startsWith(ms);});var restDays=0,halfDays=0,earned=0,shortHoliday=0;records.forEach(function(r){if(isRestRecord(r))restDays+=1;if(isHalfLeaveRecord(r))halfDays+=0.5;if(earnsDaikyuRecord(r))earned+=1;else if(r&&!isRestRecord(r)&&isHolidayLike(r.date)&&r.startTime&&r.endTime&&getWorkHoursNum(r)<8.25)shortHoliday+=1;});var availableDaikyu=st.daikyu+earned;var usedDaikyu=Math.min(restDays,availableDaikyu);var usedYukyu=Math.max(0,restDays-usedDaikyu);var currentDaikyu=Math.round((availableDaikyu-usedDaikyu)*10)/10;var currentYukyu=Math.round((st.yukyu-usedYukyu-halfDays)*10)/10;return {startYukyu:st.yukyu,startDaikyu:st.daikyu,restDays:restDays,halfDays:halfDays,earned:earned,shortHoliday:shortHoliday,usedDaikyu:usedDaikyu,usedYukyu:usedYukyu,currentYukyu:currentYukyu,currentDaikyu:currentDaikyu};}
+function renderLeavePanel(){if(!document.getElementById('leaveCurrentYukyu'))return;loadLeaveStart();var c=calcLeaveMonth();document.getElementById('leaveCurrentYukyu').innerHTML=fmtLeave(c.currentYukyu)+'<span class="stat-unit"> 日</span>';document.getElementById('leaveCurrentDaikyu').innerHTML=fmtLeave(c.currentDaikyu)+'<span class="stat-unit"> 日</span>';var html='📋 今月内訳<br>🏠 休み '+fmtLeave(c.restDays)+'日（代休消化 '+fmtLeave(c.usedDaikyu)+'日 / 有給消化 '+fmtLeave(c.usedYukyu)+'日）<br>🌴 半日有給 '+fmtLeave(c.halfDays)+'日<br>🔄 代休発生 '+fmtLeave(c.earned)+'日（祝日・青土曜で8.25h以上）';if(c.shortHoliday>0)html+='<br>⏰ 休日短時間出勤 '+c.shortHoliday+'日（代休なし・全て残業扱い）';html+='<br><br>計算：有給 '+fmtLeave(c.startYukyu)+' - '+fmtLeave(c.usedYukyu)+' - '+fmtLeave(c.halfDays)+' = '+fmtLeave(c.currentYukyu)+' / 代休 '+fmtLeave(c.startDaikyu)+' + '+fmtLeave(c.earned)+' - '+fmtLeave(c.usedDaikyu)+' = '+fmtLeave(c.currentDaikyu);document.getElementById('leaveBreakdown').innerHTML=html;}
+
 function showTab(tab){
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
@@ -501,17 +533,13 @@ function toggleJob(el){
     if(j==='休み'){
       selectedJobs=[];
       document.querySelectorAll('.job-btn').forEach(function(b){b.classList.remove('selected');});
-      clearTimePicker('start');clearTimePicker('end');clearOvertimePicker();
       toxicCount=0;trailerOn=false;
-      document.getElementById('toxicBtn1').classList.remove('selected');
-      document.getElementById('toxicBtn2').classList.remove('selected');
-      document.getElementById('toxicDisplay').textContent='未選択';
-      document.getElementById('trailerBtn').classList.remove('selected');
-      document.getElementById('trailerStatus').textContent='タップでON';
-      document.getElementById('trailerStatus').style.color='var(--muted)';
-      document.getElementById('distance1').value='';document.getElementById('distance2').value='';document.getElementById('distance3').value='';updateTotalDistance();
-      document.getElementById('longDistancePay').value='';
-    }else if(selectedJobs.includes('休み')){
+      document.getElementById('toxicBtn1').classList.remove('selected');document.getElementById('toxicBtn2').classList.remove('selected');document.getElementById('toxicDisplay').textContent='未選択';
+      document.getElementById('trailerBtn').classList.remove('selected');document.getElementById('trailerStatus').textContent='タップでON';document.getElementById('trailerStatus').style.color='var(--muted)';
+      clearTimePicker('start');clearTimePicker('end');clearOvertimePicker();
+      selectedJobs.push(j);el.classList.add('selected');addMemo('休み');return;
+    }
+    if(selectedJobs.includes('休み')){
       selectedJobs=selectedJobs.filter(function(x){return x!=='休み';});
       document.querySelectorAll('.job-btn').forEach(function(b){if(b.dataset.job==='休み')b.classList.remove('selected');});
       removeMemo('休み');
@@ -525,7 +553,6 @@ function toggleJob(el){
     if(j==='毒×2')selectToxic(2);
     if(j==='トレーラー'&&!trailerOn)toggleTrailer();
     if(j==='半日有給'){setTimePicker('end','12:00');addMemo('半日有給');}
-    if(j==='休み'){addMemo('休み');}
   }
   if(timeState.start.h!==null&&timeState.start.m!==null)autoCalcOvertime();
 }
@@ -592,6 +619,15 @@ var OT_TABLE={
 function autoCalcOvertime(){
   var dateStr=document.getElementById('inputDate').value;
   var dow=dateStr?new Date(dateStr).getDay():-1;
+  if(dateStr&&isHolidayLike(dateStr)&&!selectedJobs.includes('長距離')){
+    var sh=timeState.start.h,sm=timeState.start.m,eh=timeState.end.h,em=timeState.end.m;
+    if(sh!==null&&sm!==null&&eh!==null&&em!==null){
+      var startMins=sh*60+sm,endMins=eh*60+em;
+      if(endMins<startMins)endMins+=24*60;
+      var workH=Math.round((endMins-startMins)/15)*15/60;
+      if(workH<8.25){setOvertimePicker(workH);return;}
+    }
+  }
   if(dow===0&&!selectedJobs.includes('長距離')){
     var sh=timeState.start.h,sm=timeState.start.m,eh=timeState.end.h,em=timeState.end.m;
     if(sh===null||sm===null||eh===null||em===null)return;
@@ -703,7 +739,7 @@ function saveRecord(){
   var records=getRecords();
   if(editingId){records=records.map(function(r){return String(r.id)===String(editingId)?record:r;});showToast('✅ 更新しました！');}
   else{records.unshift(record);showToast('✅ 保存しました！');}
-  saveRecords(records);recalcLeaveBalances();resetForm(true);window.scrollTo({top:0,behavior:'smooth'});
+  saveRecords(records);renderLeavePanel();resetForm(true);window.scrollTo({top:0,behavior:'smooth'});
 }
 function resetForm(resetDate){
   editingId=null;selectedJobs=[];toxicCount=0;trailerOn=false;
@@ -748,6 +784,7 @@ function loadRecordToForm(r){
 function renderRecords(){
   var monthStr=currentYear+'-'+String(currentMonth+1).padStart(2,'0');
   document.getElementById('recordsMonthLabel').textContent=currentYear+'年'+(currentMonth+1)+'月';
+  renderLeavePanel();
   var sw=document.getElementById('searchBox')?document.getElementById('searchBox').value.trim().toLowerCase():'';
   var list=document.getElementById('recordsList');
   if(sw){
@@ -781,7 +818,7 @@ function renderRecords(){
   }
   list.innerHTML=html+'</div>';
 }
-function changeMonth(d){currentMonth+=d;if(currentMonth>11){currentMonth=0;currentYear++;}if(currentMonth<0){currentMonth=11;currentYear--;}renderRecords();recalcLeaveBalances();}
+function changeMonth(d){currentMonth+=d;if(currentMonth>11){currentMonth=0;currentYear++;}if(currentMonth<0){currentMonth=11;currentYear--;}renderRecords();}
 function changeStatsMonth(d){statsMonth+=d;if(statsMonth>11){statsMonth=0;statsYear++;}if(statsMonth<0){statsMonth=11;statsYear--;}renderStats();}
 
 function renderStats(){
@@ -790,7 +827,7 @@ function renderStats(){
   var ms=statsYear+'-'+String(statsMonth+1).padStart(2,'0');
   document.getElementById('statsMonthLabel').textContent=statsYear+'年'+(statsMonth+1)+'月';
   var records=getRecords().filter(function(r){return r.date.startsWith(ms);});
-  var totalDays=records.filter(function(r){return !(r.jobs||[]).includes('休み');}).length,totalKm=0,totalPay=0,totalLD=0,totalTox=0,totalTr=0,totalDP=0;
+  var totalDays=records.length,totalKm=0,totalPay=0,totalLD=0,totalTox=0,totalTr=0,totalDP=0;
   var t1=0,t2=0,trDays=0,totalOTPay=0,totalHolidayPay=0,totalOTHours=0,totalHolidayHours=0;
   var OT_RATE=parseInt(localStorage.getItem('otRate'))||1938;
   var HOLIDAY_RATE=parseInt(localStorage.getItem('holRate'))||2060;
@@ -869,75 +906,12 @@ function renderStats(){
   var rows=records.map(function(r){var wh=calcWorkHours(r.startTime,r.endTime)||'';var tp=r.toxicPay||((r.toxicCount||0)*2500),trp=r.trailerPay||0,dp=calcDistPay(r.distance);return[r.date,(r.jobs||[]).map(function(j){return(JOB_EMOJI[j]||'')+j;}).join('|'),r.startTime,r.endTime,wh?wh+'h':'',r.overtime>0?r.overtime+'h':'',r.distance||'',r.longDistancePay||'',tp||'',trp||'',tp+trp+dp||'',r.jobMemo||''].join('\t');});
   document.getElementById('exportText').textContent=[header].concat(rows).join('\n');
 }
-function isHolidayWorkRecord(r){
-  if(!r||!r.date)return false;
-  if((r.jobs||[]).includes('休み'))return false;
-  var dow=new Date(r.date).getDay();
-  var isHol=HOLIDAYS.has(r.date)||COMPANY_SAT_OFF.has(r.date);
-  var hasWork=!!(r.startTime||r.endTime||(r.distance||0)>0||(r.jobs||[]).filter(function(j){return j!=='半日有給'&&j!=='休み';}).length>0||r.jobMemo);
-  return isHol&&hasWork;
-}
-function leaveMonthKey(){return String(currentYear)+'-'+String(currentMonth+1).padStart(2,'0');}
-function getMonthlyLeaveBase(){
-  var key=leaveMonthKey();
-  var oldY=localStorage.getItem('yukyuBase');
-  var oldD=localStorage.getItem('daikyuBase');
-  var y=localStorage.getItem('yukyuBase_'+key);
-  var d=localStorage.getItem('daikyuBase_'+key);
-  if(y===null)y=(oldY!==null?oldY:(localStorage.getItem('yukyuZan')||'0'));
-  if(d===null)d=(oldD!==null?oldD:(localStorage.getItem('daikyuZan')||'0'));
-  return {yukyu:parseFloat(y)||0,daikyu:parseFloat(d)||0};
-}
-function calcLeaveBalances(){
-  var base=getMonthlyLeaveBase();
-  var baseY=base.yukyu;
-  var baseD=base.daikyu;
-  var targetMonth=leaveMonthKey();
-  var records=getRecords().filter(function(r){return (r.date||'').slice(0,7)===targetMonth;}).sort(function(a,b){return a.date.localeCompare(b.date);});
-  var rest=0,half=0,earn=0;
-  records.forEach(function(r){
-    if((r.jobs||[]).includes('休み'))rest+=1;
-    if((r.jobs||[]).includes('半日有給'))half+=0.5;
-    if(isHolidayWorkRecord(r))earn+=1;
-  });
-  var availableDaikyu=baseD+earn;
-  var useDaikyu=Math.min(rest,availableDaikyu);
-  var useYukyu=rest-useDaikyu;
-  var resultD=Math.round((availableDaikyu-useDaikyu)*10)/10;
-  var resultY=Math.round((baseY-useYukyu-half)*10)/10;
-  if(resultY<0)resultY=0;
-  if(resultD<0)resultD=0;
-  return {baseY:baseY,baseD:baseD,yukyu:resultY,daikyu:resultD,rest:rest,half:half,earn:earn};
-}
-function recalcLeaveBalances(){
-  var b=calcLeaveBalances();
-  var title=document.getElementById('leaveMonthTitle');
-  if(title)title.textContent=currentYear+'年'+(currentMonth+1)+'月の月初残';
-  var by=document.getElementById('yukyuBaseInput'),bd=document.getElementById('daikyuBaseInput');
-  var y=document.getElementById('yukyuZanDisplay'),d=document.getElementById('daikyuZanDisplay');
-  if(by)by.value=b.baseY;
-  if(bd)bd.value=b.baseD;
-  if(y)y.textContent=b.yukyu;
-  if(d)d.textContent=b.daikyu;
-  localStorage.setItem('yukyuZan',String(b.yukyu));
-  localStorage.setItem('daikyuZan',String(b.daikyu));
-}
-function saveZandays(){
-  var key=leaveMonthKey();
-  var y=parseFloat(document.getElementById('yukyuBaseInput').value)||0;
-  var d=parseFloat(document.getElementById('daikyuBaseInput').value)||0;
-  localStorage.setItem('yukyuBase_'+key,String(Math.round(y*10)/10));
-  localStorage.setItem('daikyuBase_'+key,String(Math.round(d)));
-  recalcLeaveBalances();
-  showToast('📅 月初残を保存しました');
-}
-function loadZandays(){
-  recalcLeaveBalances();
-}
+function saveZandays(){saveLeaveStart();}
+function loadZandays(){loadLeaveStart();renderLeavePanel();}
 function copyExport(){navigator.clipboard.writeText(document.getElementById('exportText').textContent).then(function(){showToast('📋 コピーしました！');});}
 function fixAllRecords(){var r=getRecords().map(function(r){return Object.assign({},r,{overtime:Math.round((parseFloat(r.overtime)||0)*100)/100,distance:parseFloat(r.distance)||0,longDistancePay:parseInt(r.longDistancePay)||0,toxicCount:parseInt(r.toxicCount)||0,toxicPay:parseInt(r.toxicPay)||0,trailerPay:parseInt(r.trailerPay)||0,otherPay:0});});saveRecords(r);renderStats();showToast('✅ 全データを修正しました！');}
 function backupData(){var d=JSON.stringify(getRecords(),null,2);var b=new Blob([d],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='truck-log-backup.json';a.click();URL.revokeObjectURL(a.href);showToast('💾 バックアップしました！');}
-function restoreData(input){var f=input.files[0];if(!f)return;var reader=new FileReader();reader.onload=function(e){try{var r=JSON.parse(e.target.result);if(!Array.isArray(r))throw new Error();saveRecords(r);recalcLeaveBalances();renderRecords();renderStats();showToast('✅ '+r.length+'件のデータを復元しました！');}catch(err){showToast('❌ ファイルが正しくありません',true);}input.value='';};reader.readAsText(f);}
+function restoreData(input){var f=input.files[0];if(!f)return;var reader=new FileReader();reader.onload=function(e){try{var r=JSON.parse(e.target.result);if(!Array.isArray(r))throw new Error();saveRecords(r);renderRecords();renderStats();showToast('✅ '+r.length+'件のデータを復元しました！');}catch(err){showToast('❌ ファイルが正しくありません',true);}input.value='';};reader.readAsText(f);}
 
 function showModal(id){
   var r=getRecords().find(function(rec){return String(rec.id)===String(id);});if(!r)return;
@@ -967,7 +941,7 @@ function deleteRecord(){
   if(!deleteConfirmMode){deleteConfirmMode=true;var btn=document.querySelector('.modal-delete');btn.textContent='⚠️ もう一度タップで削除';btn.style.background='rgba(231,76,60,0.4)';setTimeout(function(){deleteConfirmMode=false;if(btn){btn.textContent='🗑️ 削除';btn.style.background='rgba(231,76,60,0.15)';}},3000);return;}
   deleteConfirmMode=false;
   var records=getRecords().filter(function(r){return String(r.id)!==String(activeModal);});
-  saveRecords(records);recalcLeaveBalances();closeModalDirect();renderRecords();showToast('🗑️ 削除しました');
+  saveRecords(records);closeModalDirect();renderRecords();showToast('🗑️ 削除しました');
 }
 
 var swX=0,swY=0;
@@ -1299,9 +1273,9 @@ var _today=new Date();
 buildHourBtns('start');buildHourBtns('end');buildOvertimeHourBtns();
 document.getElementById('inputDate').value=getLocalDateStr();
 document.getElementById('inputDate').addEventListener('change',onDateChange);
-loadZandays();
 document.getElementById('headerDate').textContent=_today.getFullYear()+'年'+(_today.getMonth()+1)+'月'+_today.getDate()+'日（'+'日月火水木金土'[_today.getDay()]+'）';
 renderRecords();
+renderLeavePanel();
 setTimeout(function(){var t=document.getElementById('cal-today');if(t)t.scrollIntoView({behavior:'smooth',block:'center'});},150);
 var todayRecord=getRecords().find(function(r){return r.date===getLocalDateStr();});
 if(todayRecord)loadRecordToForm(todayRecord);
