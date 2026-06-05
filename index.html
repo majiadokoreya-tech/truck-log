@@ -54,6 +54,11 @@ input[type=number]{-moz-appearance:textfield;}
 .cal-cell.empty{background:transparent;border-color:transparent;}
 .cal-cell.has-data{border-color:var(--accent);background:rgba(245,166,35,0.07);cursor:pointer;}
 .cal-cell.has-data:active{background:rgba(245,166,35,0.2);}
+.cal-cell.rest-day{border-color:var(--green)!important;background:rgba(46,204,113,0.10)!important;}
+.cal-cell.rest-day:active{background:rgba(46,204,113,0.22)!important;}
+.cal-cell.half-paid-day{border-color:#9acd32!important;background:rgba(154,205,50,0.10)!important;}
+.record-card.rest-day{border-color:var(--green);background:rgba(46,204,113,0.08);}
+.record-card.half-paid-day{border-color:#9acd32;background:rgba(154,205,50,0.08);}
 .cal-day{font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;line-height:1.2;}
 .cal-emoji{font-size:13px;margin-top:3px;}
 .cal-time{font-size:9px;color:var(--muted);margin-top:2px;}
@@ -793,9 +798,11 @@ function renderRecords(){
     list.innerHTML=res.map(function(r){
       var d=new Date(r.date),wd=['日','月','火','水','木','金','土'][d.getDay()];
       var dc=getDateColor(r.date,d.getDay());
-      var je=(r.jobs||[]).map(function(j){return JOB_EMOJI[j]||'';}).join('');
+      var jobs=r.jobs||[];
+      var je=jobs.map(function(j){return JOB_EMOJI[j]||'';}).join('');
+      var cardCls='record-card'+(jobs.includes('休み')?' rest-day':jobs.includes('半日有給')?' half-paid-day':'');
       var tp=r.toxicPay||((r.toxicCount||0)*2500),dp=calcDistPay(r.distance),total=tp+(r.trailerPay||0)+dp;
-      return '<div class="record-card" onclick="showModal('+r.id+')"><div class="record-top"><div class="record-date" style="'+dc+'">'+r.date.replace(/-/g,'/')+'（'+wd+'）</div><div>'+je+'</div></div>'+(r.jobMemo?'<div style="font-size:12px;color:var(--muted);margin-top:4px;">📝 '+r.jobMemo+'</div>':'')+(total>0?'<div style="margin-top:6px;"><span class="badge">💰 '+total.toLocaleString()+'円</span></div>':'')+'</div>';
+      return '<div class="'+cardCls+'" onclick="showModal('+r.id+')"><div class="record-top"><div class="record-date" style="'+dc+'">'+r.date.replace(/-/g,'/')+'（'+wd+'）</div><div>'+je+'</div></div>'+(jobs.includes('休み')?'<div style="font-size:13px;color:var(--green);font-weight:700;margin-top:4px;">🏠 休み</div>':'')+(jobs.includes('半日有給')?'<div style="font-size:13px;color:#6b9b00;font-weight:700;margin-top:4px;">🌴 半日有給</div>':'')+(r.jobMemo?'<div style="font-size:12px;color:var(--muted);margin-top:4px;">📝 '+r.jobMemo+'</div>':'')+(total>0?'<div style="margin-top:6px;"><span class="badge">💰 '+total.toLocaleString()+'円</span></div>':'')+'</div>';
     }).join('');
     return;
   }
@@ -809,9 +816,10 @@ function renderRecords(){
   for(var day=1;day<=dim;day++){
     var ds=currentYear+'-'+String(currentMonth+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
     var dow=new Date(currentYear,currentMonth,day).getDay();
-    var r=rm[ds],hd=!!r,je=r?(r.jobs||[]).map(function(j){return JOB_EMOJI[j]||'';}).join(''):'';
+    var r=rm[ds],hd=!!r,jobs=r?(r.jobs||[]):[],je=r?jobs.map(function(j){return JOB_EMOJI[j]||'';}).join(''):'';
     var dc=getDateColor(ds,dow),ih=HOLIDAYS.has(ds);
-    var isToday=(ds===getLocalDateStr());html+='<div '+(isToday?'id="cal-today"':'')+' class="cal-cell '+(hd?'has-data':'')+'" onclick="'+(hd?'showModal('+r.id+')':"goToInput('"+ds+"')" )+'" style="'+(isToday?'outline:2px solid #3498db;outline-offset:-2px;':'')+'">'+
+    var dayCls='cal-cell '+(hd?'has-data ':'')+(jobs.includes('休み')?'rest-day ':jobs.includes('半日有給')?'half-paid-day ':'');
+    var isToday=(ds===getLocalDateStr());html+='<div '+(isToday?'id="cal-today"':'')+' class="'+dayCls+'" onclick="'+(hd?'showModal('+r.id+')':"goToInput('"+ds+"')" )+'" style="'+(isToday?'outline:2px solid #3498db;outline-offset:-2px;':'')+'">'+
       '<div class="cal-day" style="'+dc+'">'+day+(ih?'🎌':'')+'</div>'+
       (hd?('<div class="cal-emoji">'+(je||'—')+'</div>'+(r.startTime?'<div class="cal-time">出 '+r.startTime+'</div>':'')+(r.endTime?'<div class="cal-time">退 '+r.endTime+'</div>':'')+(r.overtime>0?'<div class="cal-time">残 '+r.overtime+'h</div>':'')+(r.jobMemo?'<div class="cal-memo">'+r.jobMemo+'</div>':'')):'')+
     '</div>';
