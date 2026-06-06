@@ -1293,9 +1293,9 @@ function swipeTab(dir){
   var next=idx+dir;
   if(next>=0&&next<TAB_ORDER.length)showTab(TAB_ORDER[next]);
 }
-addSwipe(document.getElementById('page-records'),function(){var sw=document.getElementById('searchBox');if(sw&&sw.value.trim()){changeMonth(1);}else{swipeTab(1);}},function(){var sw=document.getElementById('searchBox');if(sw&&sw.value.trim()){changeMonth(-1);}else{swipeTab(-1);}});
+addSwipe(document.getElementById('page-records'),function(){changeMonth(1);},function(){changeMonth(-1);});
 addSwipe(document.getElementById('page-input'),function(){swipeTab(1);},function(){swipeTab(-1);});
-addSwipe(document.getElementById('page-stats'),function(){swipeTab(1);},function(){swipeTab(-1);});
+addSwipe(document.getElementById('page-stats'),function(){changeStatsMonth(1);},function(){changeStatsMonth(-1);});
 
 var _today=new Date();
 buildHourBtns('start');buildHourBtns('end');buildOvertimeHourBtns();
