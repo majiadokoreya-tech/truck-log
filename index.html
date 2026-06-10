@@ -16,11 +16,11 @@
 :root{--bg:#f5f5f5;--surface:#ffffff;--surface2:#f0f0f0;--accent:#e8601c;--accent2:#c0440a;--text:#1a1a1a;--muted:#666666;--border:#dddddd;--green:#2ecc71;--red:#e74c3c;--radius:14px;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-serif;min-height:100dvh;padding-bottom:80px;}
-.header{background:linear-gradient(135deg,#f5f5f5 0%,#ffffff 100%);border-bottom:2px solid var(--accent);padding:16px 20px 12px;position:sticky;top:0;z-index:100;}
+.header{background:linear-gradient(135deg,#f5f5f5 0%,#ffffff 100%);border-bottom:2px solid var(--accent);padding:16px 20px 12px;position:sticky;top:0;z-index:500;}
 .header h1{font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;color:var(--accent);letter-spacing:2px;}
 .header-date{font-size:12px;color:var(--muted);margin-top:2px;}
-.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:72px;z-index:150;}
-.tab{flex:1;padding:12px 4px;text-align:center;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;}
+.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:72px;z-index:490;-webkit-user-select:none;user-select:none;}
+.tab{flex:1;padding:12px 4px;text-align:center;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;-webkit-user-select:none;user-select:none;touch-action:manipulation;}
 .tab.active{color:var(--accent);border-bottom-color:var(--accent);}
 .page{display:none;padding:16px;}.page.active{display:block;}
 .section{background:var(--surface);border-radius:var(--radius);padding:16px;margin-bottom:14px;border:1px solid var(--border);}
@@ -101,7 +101,7 @@ input[type=number]{-moz-appearance:textfield;}
 .accordion-body{display:none;margin-top:10px;border-top:1px solid var(--border);padding-top:10px;}
 .accordion-body.open{display:block;}
 .accordion-toggle{cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;}
-#page-input .accordion-toggle{position:sticky;top:168px;z-index:80;background:var(--surface);border-radius:10px;padding:4px 2px;}
+#page-input .accordion-toggle{position:sticky;top:168px;z-index:60;background:var(--surface);border-radius:10px;padding:4px 2px;}
 .accordion-toggle .arrow{font-size:12px;color:var(--muted);transition:transform 0.2s;}
 .accordion-toggle.open .arrow{transform:rotate(180deg);}
 
@@ -480,6 +480,20 @@ function saveLeaveStart(){var ms=getLeaveMonthKey();var y=parseFloat(document.ge
 function loadLeaveStart(){var ms=getLeaveMonthKey();var st=getLeaveStart(ms);var y=document.getElementById('leaveStartYukyu');var d=document.getElementById('leaveStartDaikyu');if(y)y.value=fmtLeave(st.yukyu);if(d)d.value=fmtLeave(st.daikyu);}
 function getHalfLeaveUsedBefore(){return 0;}
 function saveHalfLeaveUsedBefore(){}
+function loadHalfLeaveUsedBefore(){}
+function calcHalfLeaveYear(){var y=String(currentYear);var records=getRecords().filter(function(r){return r.date&&r.date.indexOf(y+'-')===0&&isHalfLeaveRecord(r);});var appUsed=records.length;var before=getHalfLeaveUsedBefore();var used=before+appUsed;var remain=12-used;if(remain<0)remain=0;return {before:before,appUsed:appUsed,used:used,remain:remain};}
+function calcLeaveMonth(){var ms=getLeaveMonthKey();var st=getLeaveStart(ms);var records=getRecords().filter(function(r){return r.date&&r.date.startsWith(ms);});var restDays=0,halfCount=0,halfDays=0,earned=0,shortHoliday=0;records.forEach(function(r){if(isRestRecord(r))restDays+=1;if(isHalfLeaveRecord(r)){halfCount+=1;halfDays+=0.5;}if(earnsDaikyuRecord(r))earned+=1;else if(r&&!isRestRecord(r)&&isHolidayLike(r.date)&&r.startTime&&r.endTime&&getWorkHoursNum(r)<8.25)shortHoliday+=1;});var availableDaikyu=st.daikyu+earned;var usedDaikyu=Math.min(restDays,availableDaikyu);var usedYukyu=Math.max(0,restDays-usedDaikyu);var currentDaikyu=Math.round((availableDaikyu-usedDaikyu)*10)/10;var currentYukyu=Math.round((st.yukyu-usedYukyu-halfDays)*10)/10;return {startYukyu:st.yukyu,startDaikyu:st.daikyu,restDays:restDays,halfCount:halfCount,halfDays:halfDays,earned:earned,shortHoliday:shortHoliday,usedDaikyu:usedDaikyu,usedYukyu:usedYukyu,currentYukyu:currentYukyu,currentDaikyu:currentDaikyu};}
+function renderLeavePanel(){if(!document.getElementById('leaveCurrentYukyu'))return;loadLeaveStart();loadHalfLeaveUsedBefore();var c=calcLeaveMonth();var hy=calcHalfLeaveYear();document.getElementById('leaveCurrentYukyu').innerHTML=fmtLeave(c.currentYukyu)+'<span class="stat-unit"> 日</span>';document.getElementById('leaveCurrentDaikyu').innerHTML=fmtLeave(c.currentDaikyu)+'<span class="stat-unit"> 日</span>';var hu=document.getElementById('halfLeaveUsedYear');if(hu)hu.innerHTML=hy.used+'<span class="stat-unit"> / 12回</span>';var hd=document.getElementById('halfLeaveUsedDetail');if(hd)hd.textContent='アプリ記録 '+hy.appUsed+'回';var hr=document.getElementById('halfLeaveRemainYear');if(hr)hr.innerHTML=hy.remain+'<span class="stat-unit"> 回</span>';var warn=hy.remain<=0?' <span style="color:var(--red);font-weight:700;">上限です</span>':'';var html='📋 今月内訳<br>🏠 休み '+fmtLeave(c.restDays)+'日（代休消化 '+fmtLeave(c.usedDaikyu)+'日 / 有給消化 '+fmtLeave(c.usedYukyu)+'日）<br>🌴 半日有給 '+c.halfCount+'回 = '+fmtLeave(c.halfDays)+'日<br>🔄 代休発生 '+fmtLeave(c.earned)+'日（祝日・青土曜で8.25h以上）';if(c.shortHoliday>0)html+='<br>⏰ 休日短時間出勤 '+c.shortHoliday+'日（代休なし・全て残業扱い）';html+='<br><br>📅 '+currentYear+'年 半日有給：アプリ記録 '+hy.appUsed+'回 = '+hy.used+' / 12回　残り '+hy.remain+'回'+warn;html+='<br><br>計算：有給 '+fmtLeave(c.startYukyu)+' - '+fmtLeave(c.usedYukyu)+' - '+fmtLeave(c.halfDays)+' = '+fmtLeave(c.currentYukyu)+' / 代休 '+fmtLeave(c.startDaikyu)+' + '+fmtLeave(c.earned)+' - '+fmtLeave(c.usedDaikyu)+' = '+fmtLeave(c.currentDaikyu);document.getElementById('leaveBreakdown').innerHTML=html;}
+
+function showTab(tab){
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  document.getElementById('page-'+tab).classList.add('active');
+  var idx=['input','records','stats'].indexOf(tab);
+  document.querySelectorAll('.tab')[idx].classList.add('active');
+  if(tab==='records'){renderRecords();setTimeout(function(){var t=document.getElementById('cal-today');if(t)t.scrollIntoView({behavior:'smooth',block:'center'});},150);}
+  if(tab==='stats')renderStats();
+}
 
 function updateTotalDistance(){
   var d1=parseFloat(document.getElementById('distance1').value)||0;
