@@ -9,6 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="application-name" content="運転日報">
 <title>🚛 運転日報</title>
+<!-- latest: input accordion sticky fixed -->
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
@@ -101,7 +102,8 @@ input[type=number]{-moz-appearance:textfield;}
 .accordion-body{display:none;margin-top:10px;border-top:1px solid var(--border);padding-top:10px;}
 .accordion-body.open{display:block;}
 .accordion-toggle{cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;}
-#page-input .accordion-toggle{position:sticky;top:168px;z-index:60;background:var(--surface);border-radius:10px;padding:4px 2px;}
+#page-input .section{overflow:visible;}
+#page-input .accordion-toggle{position:sticky;top:108px;z-index:120;background:var(--surface);padding:8px 4px;border-bottom:1px solid var(--border);border-radius:10px;}
 .accordion-toggle .arrow{font-size:12px;color:var(--muted);transition:transform 0.2s;}
 .accordion-toggle.open .arrow{transform:rotate(180deg);}
 
