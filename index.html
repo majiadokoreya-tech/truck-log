@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="application-name" content="運転日報">
 <title>🚛 運転日報</title>
-<!-- latest: salary rates fixed per saved record -->
+<!-- latest: salary rates fixed per saved record + save closes input accordion -->
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
@@ -132,7 +132,7 @@ input[type=number]{-moz-appearance:textfield}
           <div class="memo-btn" onclick="addMemoAndToxic2()">☠️ PM搭載</div>
           <div class="memo-btn" onclick="openFareTableForMemo()" style="background:rgba(52,152,219,.15);border-color:var(--blue);color:var(--blue);">📋 客先</div>
         </div>
-        <button onclick="saveRecord()" class="time-save-btn" style="width:100%;margin-bottom:8px;">💾 保存</button>
+        <button onclick="saveRecordAndClose('inputJobAccordion')" class="time-save-btn" style="width:100%;margin-bottom:8px;">💾 保存</button>
         <textarea class="input-field" id="jobMemo" rows="2" placeholder="例：○○工場→△△倉庫 など"></textarea>
       </div>
     </div>
@@ -144,7 +144,7 @@ input[type=number]{-moz-appearance:textfield}
     </div>
     <div class="accordion-body open" id="inputTimeAccordion" onclick="event.stopPropagation();">
       <div class="time-card time-card-start">
-        <div class="time-card-header"><div class="time-card-title">🚚 出勤時間</div><div class="time-card-value" id="startTimeDisplay">--:--</div><button class="time-save-btn" onclick="saveRecord()">💾 保存</button></div>
+        <div class="time-card-header"><div class="time-card-title">🚚 出勤時間</div><div class="time-card-value" id="startTimeDisplay">--:--</div><button class="time-save-btn" onclick="saveRecordAndClose('inputTimeAccordion')">💾 保存</button></div>
         <div class="time-subtitle">時間</div><div class="time-btn-row" id="startHourBtns"></div>
         <div class="time-subtitle">分</div><div class="time-btn-row" id="startMinBtns"><div class="time-btn" onclick="setMin('start',0)">00</div><div class="time-btn" onclick="setMin('start',30)">30</div></div>
       </div>
@@ -154,7 +154,7 @@ input[type=number]{-moz-appearance:textfield}
         <div class="time-subtitle">分</div><div class="time-btn-row" id="endMinBtns"><div class="time-btn" onclick="setMin('end',0)">00</div><div class="time-btn" onclick="setMin('end',15)">15</div><div class="time-btn" onclick="setMin('end',30)">30</div><div class="time-btn" onclick="setMin('end',45)">45</div></div>
       </div>
       <div class="time-card time-card-ot">
-        <div class="time-card-header"><div class="time-card-title">⏰ 残業時間</div><div class="time-card-value" id="overtimeDisplay">なし</div><button class="time-save-btn" onclick="saveRecord()">💾 保存</button></div>
+        <div class="time-card-header"><div class="time-card-title">⏰ 残業時間</div><div class="time-card-value" id="overtimeDisplay">なし</div><button class="time-save-btn" onclick="saveRecordAndClose('inputTimeAccordion')">💾 保存</button></div>
         <div class="time-subtitle">時間（0=残業なし）</div><div class="time-btn-row" id="overtimeHourBtns"></div>
         <div class="time-subtitle">分</div><div class="time-btn-row" id="overtimeMinBtns"><div class="time-btn" onclick="setOvertimeMin(0)">0</div><div class="time-btn" onclick="setOvertimeMin(15)">.25</div><div class="time-btn" onclick="setOvertimeMin(30)">.5</div><div class="time-btn" onclick="setOvertimeMin(45)">.75</div></div>
       </div>
@@ -167,7 +167,7 @@ input[type=number]{-moz-appearance:textfield}
       <div class="section-title" style="margin-bottom:0;">🛣️ 走行距離</div><span class="arrow">▼</span>
     </div>
     <div class="accordion-body" id="inputDistanceAccordion" onclick="event.stopPropagation();">
-      <button onclick="saveRecord()" class="time-save-btn" style="width:100%;margin-bottom:8px;">💾 保存</button>
+      <button onclick="saveRecordAndClose('inputDistanceAccordion')" class="time-save-btn" style="width:100%;margin-bottom:8px;">💾 保存</button>
       <div style="display:flex;flex-direction:column;gap:8px;">
         <div style="display:flex;align-items:center;gap:8px;"><div style="font-size:11px;color:var(--muted);min-width:36px;">1台目</div><input class="input-field" type="number" id="distance1" placeholder="0" oninput="updateTotalDistance()" style="flex:1;"><div style="font-size:11px;color:var(--muted);">km</div></div>
         <div style="display:flex;align-items:center;gap:8px;"><div style="font-size:11px;color:var(--muted);min-width:36px;">2台目</div><input class="input-field" type="number" id="distance2" placeholder="0" oninput="updateTotalDistance()" style="flex:1;"><div style="font-size:11px;color:var(--muted);">km</div></div>
@@ -188,7 +188,7 @@ input[type=number]{-moz-appearance:textfield}
           <div class="input-label">🛌 長距離手当（円）</div>
           <div class="money-input-wrap"><input class="input-field" type="number" id="longDistancePay" placeholder="0" style="padding-right:32px;"><span class="yen">円</span></div>
           <button onclick="openFareTable()" class="copy-btn" style="background:rgba(52,152,219,.15);border-color:var(--blue);color:var(--blue);">📋 運行料金表を見る</button>
-          <button onclick="saveRecord()" class="copy-btn" style="background:rgba(232,96,28,.15);border-color:var(--accent);color:var(--accent);">💾 保存</button>
+          <button onclick="saveRecordAndClose('inputPayAccordion')" class="copy-btn" style="background:rgba(232,96,28,.15);border-color:var(--accent);color:var(--accent);">💾 保存</button>
         </div>
         <div>
           <div class="input-label" style="margin-bottom:8px;">☠️ 毒手当（1回 2,500円）</div>
@@ -296,6 +296,19 @@ function calcWorkHours(s,e){if(!s||!e)return null;var sh=parseInt(s.split(':')[0
 function calcDistPay(km){km=parseFloat(km)||0;if(km<=0)return 0;if(km<=800)return Math.round(km*8);return Math.round(800*8+(km-800)*18);}
 function getDateColor(d,dow){if(HOLIDAYS.has(d)||dow===0)return'color:#e74c3c';if(COMPANY_SAT_OFF.has(d))return'color:#3498db';return'';}
 function showToast(msg,isErr){var t=document.getElementById('toast');t.textContent=msg;t.style.background=isErr?'var(--red)':'var(--green)';t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2500);}
+function closeInputAccordion(id){
+  var body=document.getElementById(id);
+  var toggle=document.getElementById(id+'Toggle');
+  if(!body)return;
+  body.classList.remove('open');
+  if(toggle)toggle.classList.remove('open');
+  saveInputAccordionState(id,false);
+}
+function saveRecordAndClose(id){
+  saveRecord();
+  if(id)setTimeout(function(){closeInputAccordion(id);},80);
+}
+
 function fmtLeave(n){n=Math.round((parseFloat(n)||0)*10)/10;return n%1===0?String(n):String(n.toFixed(1));}
 function getLeaveMonthKey(){return currentYear+'-'+String(currentMonth+1).padStart(2,'0');}
 function isHolidayLike(dateStr){var d=new Date(dateStr);return d.getDay()===0||HOLIDAYS.has(dateStr)||COMPANY_SAT_OFF.has(dateStr);}
