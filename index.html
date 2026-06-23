@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="application-name" content="運転日報">
 <title>🚛 運転日報</title>
-<!-- latest: keep selected date after save + sunday no daikyu -->
+<!-- latest: input swipe changes date + keep selected date after save -->
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
@@ -796,6 +796,24 @@ function formatJobMemoText(text){
 }
 function escapeHtml(s){return String(s==null?'':s).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]});}
 function escapeJs(s){return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,' ');}
+
+function changeInputDateBy(days){
+  var di=document.getElementById('inputDate');
+  if(!di)return;
+  var base=di.value||getLocalDateStr();
+  var d=new Date(base);
+  if(isNaN(d.getTime()))d=new Date(getLocalDateStr());
+  d.setDate(d.getDate()+days);
+  var next=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  di.value=next;
+  var ex=getRecords().find(function(r){return r.date===next;});
+  if(ex)loadRecordToForm(ex);
+  else resetForm(false);
+  updateInputProgress();
+  openOnlyNextRequiredAccordion();
+  showToast('📅 '+next.replace(/-/g,'/'));
+}
+
 var TAB_ORDER=['input','records','stats'];
 function swipeTab(dir){var cur=TAB_ORDER.find(function(t){return document.getElementById('page-'+t).classList.contains('active')});var idx=TAB_ORDER.indexOf(cur),next=idx+dir;if(next>=0&&next<TAB_ORDER.length)showTab(TAB_ORDER[next]);}
 var swX=0,swY=0;function addSwipe(el,onL,onR){el.addEventListener('touchstart',function(e){swX=e.touches[0].clientX;swY=e.touches[0].clientY},{passive:true});el.addEventListener('touchend',function(e){var dx=e.changedTouches[0].clientX-swX,dy=e.changedTouches[0].clientY-swY;if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>50){if(dx<0)onL();else onR()}},{passive:true});}
@@ -808,7 +826,7 @@ applyInputAccordionState();
 renderRecords();
 renderLeavePanel();
 addSwipe(document.getElementById('page-records'),function(){changeMonth(1)},function(){changeMonth(-1)});
-addSwipe(document.getElementById('page-input'),function(){swipeTab(1)},function(){swipeTab(-1)});
+addSwipe(document.getElementById('page-input'),function(){changeInputDateBy(1)},function(){changeInputDateBy(-1)});
 addSwipe(document.getElementById('page-stats'),function(){changeStatsMonth(1)},function(){changeStatsMonth(-1)});
 setTimeout(function(){var t=document.getElementById('cal-today');if(t)t.scrollIntoView({behavior:'smooth',block:'center'})},150);
 var todayRecord=getRecords().find(function(r){return r.date===getLocalDateStr()});if(todayRecord)loadRecordToForm(todayRecord);updateInputProgress();setTimeout(openOnlyNextRequiredAccordion,180);
