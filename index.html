@@ -454,7 +454,7 @@ function isSundayRecord(r){
 function isRestRecord(r){return r&&(r.jobs||[]).includes('休み');}
 function isHalfLeaveRecord(r){return r&&(r.jobs||[]).includes('半日有給');}
 function earnsDaikyuRecord(r){return r&&!isRestRecord(r)&&r.date&&(HOLIDAYS.has(r.date)||COMPANY_SAT_OFF.has(r.date))&&new Date(r.date).getDay()!==0&&getWorkHoursNum(r)>=8.25;}
-function getLeaveStart(ms){return getLeaveStartForMonth(ms);};}
+function getLeaveStart(ms){return getLeaveStartForMonth(ms);}
 function saveLeaveStart(){var ms=getLeaveMonthKey();var y=parseFloat(document.getElementById('leaveStartYukyu').value)||0;var d=parseFloat(document.getElementById('leaveStartDaikyu').value)||0;d=Math.floor(d);localStorage.setItem('leaveStartYukyu_'+ms,String(y));localStorage.setItem('leaveStartDaikyu_'+ms,String(d));renderLeavePanel();}
 function loadLeaveStart(){var ms=getLeaveMonthKey();var st=getLeaveStart(ms);var y=document.getElementById('leaveStartYukyu');var d=document.getElementById('leaveStartDaikyu');if(y)y.value=fmtLeave(st.yukyu);if(d)d.value=fmtLeave(st.daikyu);}
 function calcHalfLeaveYear(){var y=String(currentYear);var records=getRecords().filter(function(r){return r.date&&r.date.indexOf(y+'-')===0&&isHalfLeaveRecord(r);});var used=records.length;var remain=12-used;if(remain<0)remain=0;return {appUsed:records.length,used:used,remain:remain};}
