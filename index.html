@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="application-name" content="運転日報">
 <title>🚛 運転日報</title>
-<!-- latest: stable rebuild + fixed leave month-start carryover -->
+<!-- latest: calendar restored + leave carryover fixed -->
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
@@ -395,12 +395,7 @@ function getPrevMonthKeyFromKey(ms){
 function getLeaveStartRaw(ms){
   var y=localStorage.getItem('leaveStartYukyu_'+ms);
   var d=localStorage.getItem('leaveStartDaikyu_'+ms);
-  return {
-    hasYukyu:y!==null&&y!=='',
-    hasDaikyu:d!==null&&d!=='',
-    yukyu:parseFloat(y||'0')||0,
-    daikyu:Math.floor(parseFloat(d||'0')||0)
-  };
+  return {hasYukyu:y!==null&&y!=='',hasDaikyu:d!==null&&d!=='',yukyu:parseFloat(y||'0')||0,daikyu:Math.floor(parseFloat(d||'0')||0)};
 }
 function getKnownLeaveMonthKeys(){
   var map={};
@@ -437,19 +432,14 @@ function getLeaveStartForMonth(ms,visited){
   visited=visited||{};
   if(visited[ms])return {yukyu:0,daikyu:0};
   visited[ms]=true;
-
   var raw=getLeaveStartRaw(ms);
-  if(raw.hasYukyu||raw.hasDaikyu){
-    return {yukyu:raw.yukyu,daikyu:raw.daikyu};
-  }
-
+  if(raw.hasYukyu||raw.hasDaikyu)return {yukyu:raw.yukyu,daikyu:raw.daikyu};
   var earliest=getEarliestKnownLeaveMonth();
   if(ms<=earliest){
     var legacyY=localStorage.getItem('yukyuZan');
     var legacyD=localStorage.getItem('daikyuZan');
     return {yukyu:parseFloat(legacyY||'0')||0,daikyu:Math.floor(parseFloat(legacyD||'0')||0)};
   }
-
   var prevMs=getPrevMonthKeyFromKey(ms);
   var prevStart=getLeaveStartForMonth(prevMs,visited);
   var prevResult=calcLeaveMonthByKey(prevMs,prevStart);
@@ -894,8 +884,7 @@ addSwipe(document.getElementById('page-input'),function(){changeInputDateBy(1)},
 addSwipe(document.getElementById('page-stats'),function(){changeStatsMonth(1)},function(){changeStatsMonth(-1)});
 setTimeout(function(){var t=document.getElementById('cal-today');if(t)t.scrollIntoView({behavior:'smooth',block:'center'})},150);
 var todayRecord=getRecords().find(function(r){return r.date===getLocalDateStr()});if(todayRecord)loadRecordToForm(todayRecord);updateInputProgress();setTimeout(openOnlyNextRequiredAccordion,180);
+function earnsDaikyuRecord(r){return r&&!isRestRecord(r)&&r.date&&(HOLIDAYS.has(r.date)||COMPANY_SAT_OFF.has(r.date))&&(new Date(r.date).getDay()!==0)&&getWorkHoursNum(r)>=8.25;}
 </script>
 </body>
 </html>
-
-<script>function earnsDaikyuRecord(r){return r&&!isRestRecord(r)&&r.date&&(HOLIDAYS.has(r.date)||COMPANY_SAT_OFF.has(r.date))&&(new Date(r.date).getDay()!==0)&&getWorkHoursNum(r)>=8.25;}</script>
