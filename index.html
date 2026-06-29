@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="application-name" content="運転日報">
 <title>🚛 運転日報</title>
-<!-- latest: leave month-start carryover fixed only -->
+<!-- latest: leave month-start uses previous month balance -->
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
@@ -403,27 +403,14 @@ function getLeaveStartRaw(ms){
     manual:localStorage.getItem('leaveStartManual_'+ms)==='1'
   };
 }
-function getKnownLeaveMonthKeys(){
-  var map={};
-  getRecords().forEach(function(r){
-    if(r.date&&/^\d{4}-\d{2}-\d{2}$/.test(r.date)){
-      map[r.date.slice(0,7)]=true;
-    }
-  });
-  Object.keys(localStorage).forEach(function(k){
-    var m=k.match(/^leaveStart(?:Yukyu|Daikyu)_(\d{4}-\d{2})$/);
-    if(m)map[m[1]]=true;
-  });
-  return Object.keys(map).sort();
-}
-function getEarliestKnownLeaveMonth(){
-  var keys=getKnownLeaveMonthKeys();
-  return keys.length?keys[0]:getLeaveMonthKey();
+function hasLeaveMonthData(ms){
+  var raw=getLeaveStartRaw(ms);
+  if(raw.hasYukyu||raw.hasDaikyu)return true;
+  return getRecords().some(function(r){return r.date&&r.date.startsWith(ms);});
 }
 function calcLeaveMonthByKey(ms,st){
   var records=getRecords().filter(function(r){return r.date&&r.date.startsWith(ms);});
   var restDays=0,halfCount=0,halfDays=0,earned=0,shortHoliday=0;
-
   records.forEach(function(r){
     if(isRestRecord(r))restDays+=1;
     if(isHalfLeaveRecord(r)){
@@ -433,13 +420,11 @@ function calcLeaveMonthByKey(ms,st){
     if(earnsDaikyuRecord(r))earned+=1;
     else if(r&&!isRestRecord(r)&&isHolidayLike(r.date)&&r.startTime&&r.endTime&&getWorkHoursNum(r)<8.25)shortHoliday+=1;
   });
-
   var availableDaikyu=st.daikyu+earned;
   var usedDaikyu=Math.min(restDays,availableDaikyu);
   var usedYukyu=Math.max(0,restDays-usedDaikyu);
   var currentDaikyu=Math.round((availableDaikyu-usedDaikyu)*10)/10;
   var currentYukyu=Math.round((st.yukyu-usedYukyu-halfDays)*10)/10;
-
   return {
     startYukyu:st.yukyu,
     startDaikyu:st.daikyu,
@@ -460,31 +445,31 @@ function getLeaveStartForMonth(ms,visited){
   visited[ms]=true;
 
   var raw=getLeaveStartRaw(ms);
-  var earliest=getEarliestKnownLeaveMonth();
 
-  // 今後、手入力保存した月だけはその値を優先
+  // 保存ボタンで明示固定した月だけ、その月の月初残を優先
   if(raw.manual){
     return {yukyu:raw.yukyu,daikyu:raw.daikyu};
   }
 
-  // 一番古い月だけ起点として保存済み月初残を使う
-  if(ms===earliest&&(raw.hasYukyu||raw.hasDaikyu)){
+  // 前月データがある月は、前月末残を月初残として使う
+  // これで 5月末32.5 → 6月月初32.5 になる
+  var prevMs=getPrevMonthKeyFromKey(ms);
+  if(hasLeaveMonthData(prevMs)){
+    var prevStart=getLeaveStartForMonth(prevMs,visited);
+    var prevResult=calcLeaveMonthByKey(prevMs,prevStart);
+    return {yukyu:prevResult.currentYukyu,daikyu:prevResult.currentDaikyu};
+  }
+
+  // 前月データがない起点月は、その月に保存された月初残を使う
+  if(raw.hasYukyu||raw.hasDaikyu){
     return {yukyu:raw.yukyu,daikyu:raw.daikyu};
   }
 
-  // 起点月以前で保存値がない場合は旧設定を使う
-  if(ms<=earliest){
-    return {
-      yukyu:parseFloat(localStorage.getItem('yukyuZan')||'0')||0,
-      daikyu:Math.floor(parseFloat(localStorage.getItem('daikyuZan')||'0')||0)
-    };
-  }
-
-  // 未手入力月は前月末残を引き継ぐ
-  var prevMs=getPrevMonthKeyFromKey(ms);
-  var prevStart=getLeaveStartForMonth(prevMs,visited);
-  var prevResult=calcLeaveMonthByKey(prevMs,prevStart);
-  return {yukyu:prevResult.currentYukyu,daikyu:prevResult.currentDaikyu};
+  // それも無ければ旧設定値
+  return {
+    yukyu:parseFloat(localStorage.getItem('yukyuZan')||'0')||0,
+    daikyu:Math.floor(parseFloat(localStorage.getItem('daikyuZan')||'0')||0)
+  };
 }
 function getLeaveStart(ms){return getLeaveStartForMonth(ms);}
 function saveLeaveStart(){
@@ -496,15 +481,7 @@ function saveLeaveStart(){
   localStorage.setItem('leaveStartDaikyu_'+ms,String(d));
   localStorage.setItem('leaveStartManual_'+ms,'1');
   renderLeavePanel();
-  showToast('✅ この月の月初残を手入力値として保存しました');
-}
-function clearManualLeaveStartThisMonth(){
-  var ms=getLeaveMonthKey();
-  localStorage.removeItem('leaveStartManual_'+ms);
-  localStorage.removeItem('leaveStartYukyu_'+ms);
-  localStorage.removeItem('leaveStartDaikyu_'+ms);
-  renderLeavePanel();
-  showToast('🔄 前月末残から再計算しました');
+  showToast('✅ この月の月初残を固定しました');
 }
 function loadLeaveStart(){
   var ms=getLeaveMonthKey();
