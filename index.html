@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="application-name" content="運転日報">
 <title>🚛 運転日報</title>
-<!-- latest: input swipe changes date + keep selected date after save -->
+<!-- latest: paid leave month-start carryover fixed -->
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
@@ -237,6 +237,7 @@ input[type=number]{-moz-appearance:textfield}
       <div class="stat-card" style="padding:12px;background:rgba(154,205,50,.10);border-color:#9acd32;"><div class="stat-label">🌴 半日有給 使用合計</div><div class="stat-value" id="halfLeaveUsedYear" style="color:#6b9b00;">0<span class="stat-unit"> / 12回</span></div><div id="halfLeaveUsedDetail" style="font-size:10px;color:var(--muted);margin-top:4px;line-height:1.5;">アプリ記録 0回</div></div>
       <div class="stat-card" style="padding:12px;background:rgba(52,152,219,.08);border-color:var(--blue);"><div class="stat-label">📅 半日有給 残り</div><div class="stat-value" id="halfLeaveRemainYear" style="color:var(--blue);">12<span class="stat-unit"> 回</span></div></div>
     </div>
+    <button onclick="clearLeaveStartManualThisMonth()" class="copy-btn" style="background:rgba(52,152,219,.12);border-color:var(--blue);color:var(--blue);margin-top:10px;">🔄 この月を前月末残から自動計算に戻す</button>
     <div id="leaveBreakdown" style="margin-top:12px;font-size:12px;color:var(--muted);line-height:1.8;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px;"></div>
   </div>
 </div>
@@ -382,8 +383,40 @@ function saveRecordAndMoveNext(id){
   setTimeout(function(){openOnlyNextRequiredAccordion();},120);
 }
 
+
 function fmtLeave(n){n=Math.round((parseFloat(n)||0)*10)/10;return n%1===0?String(n):String(n.toFixed(1));}
 function getLeaveMonthKey(){return currentYear+'-'+String(currentMonth+1).padStart(2,'0');}
+function getPrevMonthKeyFromKey(ms){
+  var p=ms.split('-');
+  var y=parseInt(p[0],10),m=parseInt(p[1],10);
+  m--;
+  if(m<1){m=12;y--;}
+  return y+'-'+String(m).padStart(2,'0');
+}
+function getLeaveStartRaw(ms){
+  var y=localStorage.getItem('leaveStartYukyu_'+ms);
+  var d=localStorage.getItem('leaveStartDaikyu_'+ms);
+  return {
+    hasYukyu:y!==null&&y!=='',
+    hasDaikyu:d!==null&&d!=='',
+    yukyu:parseFloat(y||'0')||0,
+    daikyu:Math.floor(parseFloat(d||'0')||0),
+    manual:localStorage.getItem('leaveStartManual_'+ms)==='1'
+  };
+}
+function getLeaveStorageKeys(){return Object.keys(localStorage);}
+function getLeaveKnownMonthKeys(){
+  var map={};
+  getRecords().forEach(function(r){
+    if(r.date&&/^\d{4}-\d{2}-\d{2}$/.test(r.date)){map[r.date.slice(0,7)]=true;}
+  });
+  getLeaveStorageKeys().forEach(function(k){
+    var m=k.match(/^leaveStart(?:Yukyu|Daikyu|Manual)_(\d{4}-\d{2})$/);
+    if(m)map[m[1]]=true;
+  });
+  return Object.keys(map).sort();
+}
+function getEarliestLeaveMonth(){var keys=getLeaveKnownMonthKeys();return keys.length?keys[0]:getLeaveMonthKey();}
 function isHolidayLike(dateStr){var d=new Date(dateStr);return d.getDay()===0||HOLIDAYS.has(dateStr)||COMPANY_SAT_OFF.has(dateStr);}
 function getWorkHoursNum(r){if(!r||!r.startTime||!r.endTime)return 0;var sh=parseInt(r.startTime.split(':')[0]),sm=parseInt(r.startTime.split(':')[1]),eh=parseInt(r.endTime.split(':')[0]),em=parseInt(r.endTime.split(':')[1]);var mins=(eh*60+em)-(sh*60+sm);if(mins<0)mins+=24*60;return Math.round((mins/60)*100)/100;}
 function calcSundayBreakHours(workH){
@@ -394,23 +427,70 @@ function calcSundayBreakHours(workH){
   var extra=Math.floor((workH-8.25)/4)*0.5;
   return Math.round((1+extra)*100)/100;
 }
-function calcSundayAllowanceHours(r){
-  var workH=getWorkHoursNum(r);
-  var breakH=calcSundayBreakHours(workH);
-  return Math.max(0,Math.round((workH-breakH)*100)/100);
-}
-function isSundayRecord(r){
-  return r&&r.date&&new Date(r.date).getDay()===0;
-}
-
+function calcSundayAllowanceHours(r){var workH=getWorkHoursNum(r);var breakH=calcSundayBreakHours(workH);return Math.max(0,Math.round((workH-breakH)*100)/100);}
+function isSundayRecord(r){return r&&r.date&&new Date(r.date).getDay()===0;}
 function isRestRecord(r){return r&&(r.jobs||[]).includes('休み');}
 function isHalfLeaveRecord(r){return r&&(r.jobs||[]).includes('半日有給');}
 function earnsDaikyuRecord(r){return r&&!isRestRecord(r)&&r.date&&(HOLIDAYS.has(r.date)||COMPANY_SAT_OFF.has(r.date))&&new Date(r.date).getDay()!==0&&getWorkHoursNum(r)>=8.25;}
-function getLeaveStart(ms){return {yukyu:parseFloat(localStorage.getItem('leaveStartYukyu_'+ms)||localStorage.getItem('yukyuZan')||'0')||0,daikyu:parseFloat(localStorage.getItem('leaveStartDaikyu_'+ms)||localStorage.getItem('daikyuZan')||'0')||0};}
-function saveLeaveStart(){var ms=getLeaveMonthKey();var y=parseFloat(document.getElementById('leaveStartYukyu').value)||0;var d=parseFloat(document.getElementById('leaveStartDaikyu').value)||0;d=Math.floor(d);localStorage.setItem('leaveStartYukyu_'+ms,String(y));localStorage.setItem('leaveStartDaikyu_'+ms,String(d));renderLeavePanel();}
-function loadLeaveStart(){var ms=getLeaveMonthKey();var st=getLeaveStart(ms);var y=document.getElementById('leaveStartYukyu');var d=document.getElementById('leaveStartDaikyu');if(y)y.value=fmtLeave(st.yukyu);if(d)d.value=fmtLeave(st.daikyu);}
+function calcLeaveMonthByKey(ms,st){
+  var records=getRecords().filter(function(r){return r.date&&r.date.startsWith(ms);});
+  var restDays=0,halfCount=0,halfDays=0,earned=0,shortHoliday=0;
+  records.forEach(function(r){
+    if(isRestRecord(r))restDays+=1;
+    if(isHalfLeaveRecord(r)){halfCount+=1;halfDays+=0.5;}
+    if(earnsDaikyuRecord(r))earned+=1;
+    else if(r&&!isRestRecord(r)&&isHolidayLike(r.date)&&r.startTime&&r.endTime&&getWorkHoursNum(r)<8.25)shortHoliday+=1;
+  });
+  var availableDaikyu=st.daikyu+earned;
+  var usedDaikyu=Math.min(restDays,availableDaikyu);
+  var usedYukyu=Math.max(0,restDays-usedDaikyu);
+  var currentDaikyu=Math.round((availableDaikyu-usedDaikyu)*10)/10;
+  var currentYukyu=Math.round((st.yukyu-usedYukyu-halfDays)*10)/10;
+  return {startYukyu:st.yukyu,startDaikyu:st.daikyu,restDays:restDays,halfCount:halfCount,halfDays:halfDays,earned:earned,shortHoliday:shortHoliday,usedDaikyu:usedDaikyu,usedYukyu:usedYukyu,currentYukyu:currentYukyu,currentDaikyu:currentDaikyu};
+}
+function getLeaveStartForMonth(ms,visited){
+  visited=visited||{};
+  if(visited[ms])return {yukyu:0,daikyu:0};
+  visited[ms]=true;
+  var raw=getLeaveStartRaw(ms);
+  if(raw.manual){return {yukyu:raw.yukyu,daikyu:raw.daikyu};}
+  var earliest=getEarliestLeaveMonth();
+  if(ms===earliest&&(raw.hasYukyu||raw.hasDaikyu)){return {yukyu:raw.yukyu,daikyu:raw.daikyu};}
+  if(ms<=earliest){return {yukyu:parseFloat(localStorage.getItem('yukyuZan')||'0')||0,daikyu:Math.floor(parseFloat(localStorage.getItem('daikyuZan')||'0')||0)};}
+  var prevMs=getPrevMonthKeyFromKey(ms);
+  var prevStart=getLeaveStartForMonth(prevMs,visited);
+  var prevResult=calcLeaveMonthByKey(prevMs,prevStart);
+  return {yukyu:prevResult.currentYukyu,daikyu:prevResult.currentDaikyu};
+}
+function getLeaveStart(ms){return getLeaveStartForMonth(ms);}
+function saveLeaveStart(){
+  var ms=getLeaveMonthKey();
+  var y=parseFloat(document.getElementById('leaveStartYukyu').value)||0;
+  var d=parseFloat(document.getElementById('leaveStartDaikyu').value)||0;
+  d=Math.floor(d);
+  localStorage.setItem('leaveStartYukyu_'+ms,String(y));
+  localStorage.setItem('leaveStartDaikyu_'+ms,String(d));
+  localStorage.setItem('leaveStartManual_'+ms,'1');
+  renderLeavePanel();
+  showToast('✅ この月の月初残を固定しました');
+}
+function clearLeaveStartManualThisMonth(){
+  var ms=getLeaveMonthKey();
+  localStorage.removeItem('leaveStartManual_'+ms);
+  renderLeavePanel();
+  showToast('🔄 前月末残から自動計算に戻しました');
+}
+function loadLeaveStart(){
+  var ms=getLeaveMonthKey();
+  var st=getLeaveStart(ms);
+  var y=document.getElementById('leaveStartYukyu');
+  var d=document.getElementById('leaveStartDaikyu');
+  if(y)y.value=fmtLeave(st.yukyu);
+  if(d)d.value=fmtLeave(st.daikyu);
+}
 function calcHalfLeaveYear(){var y=String(currentYear);var records=getRecords().filter(function(r){return r.date&&r.date.indexOf(y+'-')===0&&isHalfLeaveRecord(r);});var used=records.length;var remain=12-used;if(remain<0)remain=0;return {appUsed:records.length,used:used,remain:remain};}
-function calcLeaveMonth(){var ms=getLeaveMonthKey();var st=getLeaveStart(ms);var records=getRecords().filter(function(r){return r.date&&r.date.startsWith(ms);});var restDays=0,halfCount=0,halfDays=0,earned=0,shortHoliday=0;records.forEach(function(r){if(isRestRecord(r))restDays+=1;if(isHalfLeaveRecord(r)){halfCount+=1;halfDays+=0.5;}if(earnsDaikyuRecord(r))earned+=1;else if(r&&!isRestRecord(r)&&isHolidayLike(r.date)&&r.startTime&&r.endTime&&getWorkHoursNum(r)<8.25)shortHoliday+=1;});var availableDaikyu=st.daikyu+earned;var usedDaikyu=Math.min(restDays,availableDaikyu);var usedYukyu=Math.max(0,restDays-usedDaikyu);var currentDaikyu=Math.round((availableDaikyu-usedDaikyu)*10)/10;var currentYukyu=Math.round((st.yukyu-usedYukyu-halfDays)*10)/10;return {startYukyu:st.yukyu,startDaikyu:st.daikyu,restDays:restDays,halfCount:halfCount,halfDays:halfDays,earned:earned,shortHoliday:shortHoliday,usedDaikyu:usedDaikyu,usedYukyu:usedYukyu,currentYukyu:currentYukyu,currentDaikyu:currentDaikyu};}
+function calcLeaveMonth(){var ms=getLeaveMonthKey();var st=getLeaveStart(ms);return calcLeaveMonthByKey(ms,st);}
+
 function renderLeavePanel(){if(!document.getElementById('leaveCurrentYukyu'))return;loadLeaveStart();var c=calcLeaveMonth();var hy=calcHalfLeaveYear();document.getElementById('leaveCurrentYukyu').innerHTML=fmtLeave(c.currentYukyu)+'<span class="stat-unit"> 日</span>';document.getElementById('leaveCurrentDaikyu').innerHTML=fmtLeave(c.currentDaikyu)+'<span class="stat-unit"> 日</span>';document.getElementById('halfLeaveUsedYear').innerHTML=hy.used+'<span class="stat-unit"> / 12回</span>';document.getElementById('halfLeaveUsedDetail').textContent='アプリ記録 '+hy.appUsed+'回';document.getElementById('halfLeaveRemainYear').innerHTML=hy.remain+'<span class="stat-unit"> 回</span>';var warn=hy.remain<=0?' <span style="color:var(--red);font-weight:700;">上限です</span>':'';var html='📋 今月内訳<br>🏠 休み '+fmtLeave(c.restDays)+'日（代休消化 '+fmtLeave(c.usedDaikyu)+'日 / 有給消化 '+fmtLeave(c.usedYukyu)+'日）<br>🌴 半日有給 '+c.halfCount+'回 = '+fmtLeave(c.halfDays)+'日<br>🔄 代休発生 '+fmtLeave(c.earned)+'日（祝日・青土曜で8.25h以上／日曜は対象外）';if(c.shortHoliday>0)html+='<br>⏰ 休日短時間出勤 '+c.shortHoliday+'日（代休なし・全て残業扱い）';html+='<br><br>📅 '+currentYear+'年 半日有給：アプリ記録 '+hy.appUsed+'回 = '+hy.used+' / 12回　残り '+hy.remain+'回'+warn;html+='<br><br>計算：有給 '+fmtLeave(c.startYukyu)+' - '+fmtLeave(c.usedYukyu)+' - '+fmtLeave(c.halfDays)+' = '+fmtLeave(c.currentYukyu)+' / 代休 '+fmtLeave(c.startDaikyu)+' + '+fmtLeave(c.earned)+' - '+fmtLeave(c.usedDaikyu)+' = '+fmtLeave(c.currentDaikyu);document.getElementById('leaveBreakdown').innerHTML=html;}
 function showTab(tab){document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});document.getElementById('page-'+tab).classList.add('active');var idx=['input','records','stats'].indexOf(tab);document.querySelectorAll('.tab')[idx].classList.add('active');if(tab==='records')renderRecords();if(tab==='stats')renderStats();}
 function updateTotalDistance(){var d1=parseFloat(document.getElementById('distance1').value)||0,d2=parseFloat(document.getElementById('distance2').value)||0,d3=parseFloat(document.getElementById('distance3').value)||0,total=d1+d2+d3;document.getElementById('distance').value=total||'';document.getElementById('distanceTotal').innerHTML=total.toLocaleString()+' <span style="font-size:12px;color:var(--muted);">km</span>';updateInputProgress();}
