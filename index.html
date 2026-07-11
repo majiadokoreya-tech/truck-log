@@ -7,9 +7,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1923">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="application-name" content="運転日報 DEV">
-<title>🧪 運転日報 DEV</title>
-<!-- latest: DEV saturday and holiday overtime after 8.25h -->
+<meta name="application-name" content="運転日報">
+<title>🚛 運転日報</title>
+<!-- latest: PROD saturday and holiday overtime after 8.25h + paid leave carryover fix -->
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
@@ -93,7 +93,7 @@ input[type=number]{-moz-appearance:textfield}
 <body>
 <div class="header">
   <div style="display:flex;justify-content:space-between;align-items:center;">
-    <h1>🧪 運転日報 DEV</h1>
+    <h1>🚛 運転日報</h1>
     <button onclick="openSettings()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:4px;">⚙️</button>
   </div>
   <div class="header-date" id="headerDate"></div>
@@ -274,12 +274,6 @@ input[type=number]{-moz-appearance:textfield}
 
 <script>
 
-var STORAGE_PREFIX='DEV_';
-function devKey(key){return STORAGE_PREFIX+String(key);}
-function devGetItem(key){return localStorage.getItem(devKey(key));}
-function devSetItem(key,value){return localStorage.setItem(devKey(key),value);}
-function devRemoveItem(key){return localStorage.removeItem(devKey(key));}
-function devStorageKeys(){return Object.keys(localStorage).filter(function(k){return k.indexOf(STORAGE_PREFIX)===0;}).map(function(k){return k.slice(STORAGE_PREFIX.length);});}
 
 var JOB_EMOJI={'地場':'🚛','長距離':'🛌','毒手当':'☠️','毒×2':'☠️☠️','トレーラー':'🚜','半日有給':'🌴','休み':'🏠'};
 var HOLIDAYS=new Set([
@@ -295,10 +289,10 @@ var timeState={start:{h:null,m:null},end:{h:null,m:null}};
 var otState={h:null,m:null};
 
 function getLocalDateStr(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-function getRecords(){try{return JSON.parse(devGetItem('truckRecords')||'[]');}catch(e){return []}}
-function saveRecords(r){devSetItem('truckRecords',JSON.stringify(r));}
-function getCurrentOTRate(){return parseInt(devGetItem('otRate'))||1938;}
-function getCurrentHolidayRate(){return parseInt(devGetItem('holRate'))||2060;}
+function getRecords(){try{return JSON.parse(localStorage.getItem('truckRecords')||'[]');}catch(e){return []}}
+function saveRecords(r){localStorage.setItem('truckRecords',JSON.stringify(r));}
+function getCurrentOTRate(){return parseInt(localStorage.getItem('otRate'))||1938;}
+function getCurrentHolidayRate(){return parseInt(localStorage.getItem('holRate'))||2060;}
 function getRateForRecord(r){return {otRate:parseInt(r&&r.otRate)||getCurrentOTRate(),holidayRate:parseInt(r&&r.holidayRate)||getCurrentHolidayRate()};}
 function migrateRecordRates(){
   var changed=false,ot=getCurrentOTRate(),hol=getCurrentHolidayRate();
@@ -402,17 +396,17 @@ function getPrevMonthKeyFromKey(ms){
   return y+'-'+String(m).padStart(2,'0');
 }
 function getLeaveStartRaw(ms){
-  var y=devGetItem('leaveStartYukyu_'+ms);
-  var d=devGetItem('leaveStartDaikyu_'+ms);
+  var y=localStorage.getItem('leaveStartYukyu_'+ms);
+  var d=localStorage.getItem('leaveStartDaikyu_'+ms);
   return {
     hasYukyu:y!==null&&y!=='',
     hasDaikyu:d!==null&&d!=='',
     yukyu:parseFloat(y||'0')||0,
     daikyu:Math.floor(parseFloat(d||'0')||0),
-    manual:devGetItem('leaveStartManual_'+ms)==='1'
+    manual:localStorage.getItem('leaveStartManual_'+ms)==='1'
   };
 }
-function getLeaveStorageKeys(){return devStorageKeys();}
+function getLeaveStorageKeys(){return Object.keys(localStorage);}
 function getLeaveKnownMonthKeys(){
   var map={};
   getRecords().forEach(function(r){
@@ -478,7 +472,7 @@ function getLeaveStartForMonth(ms,visited){
   if(raw.manual){return {yukyu:raw.yukyu,daikyu:raw.daikyu};}
   var earliest=getEarliestLeaveMonth();
   if(ms===earliest&&(raw.hasYukyu||raw.hasDaikyu)){return {yukyu:raw.yukyu,daikyu:raw.daikyu};}
-  if(ms<=earliest){return {yukyu:parseFloat(devGetItem('yukyuZan')||'0')||0,daikyu:Math.floor(parseFloat(devGetItem('daikyuZan')||'0')||0)};}
+  if(ms<=earliest){return {yukyu:parseFloat(localStorage.getItem('yukyuZan')||'0')||0,daikyu:Math.floor(parseFloat(localStorage.getItem('daikyuZan')||'0')||0)};}
   var prevMs=getPrevMonthKeyFromKey(ms);
   var prevStart=getLeaveStartForMonth(prevMs,visited);
   var prevResult=calcLeaveMonthByKey(prevMs,prevStart);
@@ -490,15 +484,15 @@ function saveLeaveStart(){
   var y=parseFloat(document.getElementById('leaveStartYukyu').value)||0;
   var d=parseFloat(document.getElementById('leaveStartDaikyu').value)||0;
   d=Math.floor(d);
-  devSetItem('leaveStartYukyu_'+ms,String(y));
-  devSetItem('leaveStartDaikyu_'+ms,String(d));
-  devSetItem('leaveStartManual_'+ms,'1');
+  localStorage.setItem('leaveStartYukyu_'+ms,String(y));
+  localStorage.setItem('leaveStartDaikyu_'+ms,String(d));
+  localStorage.setItem('leaveStartManual_'+ms,'1');
   renderLeavePanel();
   showToast('✅ この月の月初残を固定しました');
 }
 function clearLeaveStartManualThisMonth(){
   var ms=getLeaveMonthKey();
-  devRemoveItem('leaveStartManual_'+ms);
+  localStorage.removeItem('leaveStartManual_'+ms);
   renderLeavePanel();
   showToast('🔄 前月末残から自動計算に戻しました');
 }
@@ -621,8 +615,8 @@ function closeModal(e){if(e.target===document.getElementById('modalOverlay'))clo
 function closeModalDirect(){document.getElementById('modalOverlay').classList.remove('open');activeModal=null;deleteConfirmMode=false;}
 function editFromModal(){var r=getRecords().find(function(rec){return String(rec.id)===String(activeModal)});if(!r)return;closeModalDirect();showTab('input');document.getElementById('inputDate').value=r.date;loadRecordToForm(r);}
 function deleteRecord(){if(activeModal===null)return;if(!deleteConfirmMode){deleteConfirmMode=true;var btn=document.querySelector('.modal-delete');btn.textContent='⚠️ もう一度タップで削除';btn.style.background='rgba(231,76,60,.4)';setTimeout(function(){deleteConfirmMode=false;if(btn){btn.textContent='🗑️ 削除';btn.style.background='rgba(231,76,60,.15)'}},3000);return}var records=getRecords().filter(function(r){return String(r.id)!==String(activeModal)});saveRecords(records);closeModalDirect();renderRecords();showToast('🗑️ 削除しました');}
-function saveInputAccordionState(id,isOpen){if(!id||id.indexOf('input')!==0)return;var state={};try{state=JSON.parse(devGetItem('truckInputAccordionState')||'{}')}catch(e){state={}}state[id]=!!isOpen;devSetItem('truckInputAccordionState',JSON.stringify(state));}
-function applyInputAccordionState(){var state={};try{state=JSON.parse(devGetItem('truckInputAccordionState')||'{}')}catch(e){state={}}['inputJobAccordion','inputTimeAccordion','inputDistanceAccordion','inputPayAccordion'].forEach(function(id){if(state[id]===undefined)return;var body=document.getElementById(id),toggle=document.getElementById(id+'Toggle');if(!body)return;body.classList.toggle('open',!!state[id]);if(toggle)toggle.classList.toggle('open',!!state[id])});}
+function saveInputAccordionState(id,isOpen){if(!id||id.indexOf('input')!==0)return;var state={};try{state=JSON.parse(localStorage.getItem('truckInputAccordionState')||'{}')}catch(e){state={}}state[id]=!!isOpen;localStorage.setItem('truckInputAccordionState',JSON.stringify(state));}
+function applyInputAccordionState(){var state={};try{state=JSON.parse(localStorage.getItem('truckInputAccordionState')||'{}')}catch(e){state={}}['inputJobAccordion','inputTimeAccordion','inputDistanceAccordion','inputPayAccordion'].forEach(function(id){if(state[id]===undefined)return;var body=document.getElementById(id),toggle=document.getElementById(id+'Toggle');if(!body)return;body.classList.toggle('open',!!state[id]);if(toggle)toggle.classList.toggle('open',!!state[id])});}
 function toggleAccordion(el){var id=el.getAttribute?el.getAttribute('data-id'):el,body=document.getElementById(id),toggle=document.getElementById(id+'Toggle');if(!body)return;body.classList.toggle('open');if(toggle)toggle.classList.toggle('open',body.classList.contains('open'));saveInputAccordionState(id,body.classList.contains('open'));}
 var FARE_DATA=[
   {cat:'エステル',name:'BASFジャパン㈱ 磯原',start:'13:00',end:'20:30',pay:23000},
@@ -882,10 +876,10 @@ function closeFareTableDirect(){document.getElementById('fareOverlay').classList
 function renderFareCategoryBtns(){var cats=[...new Set(FARE_DATA.map(function(d){return d.cat}))];document.getElementById('fareCategoryBtns').innerHTML='<button onclick="fareSelectedCat=\'\';renderFareTable();renderFareCategoryBtns();" style="background:'+(fareSelectedCat===''?'var(--accent)':'var(--surface2)')+';border:1.5px solid '+(fareSelectedCat===''?'var(--accent)':'var(--border)')+';border-radius:8px;padding:5px 12px;color:'+(fareSelectedCat===''?'#fff':'var(--text)')+';font-size:12px;cursor:pointer;">すべて</button>'+cats.map(function(c){return '<button onclick="fareSelectedCat=\''+escapeJs(c)+'\';renderFareTable();renderFareCategoryBtns();" style="background:'+(fareSelectedCat===c?'var(--accent)':'var(--surface2)')+';border:1.5px solid '+(fareSelectedCat===c?'var(--accent)':'var(--border)')+';border-radius:8px;padding:5px 12px;color:'+(fareSelectedCat===c?'#fff':'var(--text)')+';font-size:12px;cursor:pointer;">'+escapeHtml(c)+'</button>'}).join('');}
 function renderFareTable(){var sw=document.getElementById('fareSearch').value.trim().toLowerCase();var data=FARE_DATA.filter(function(d){return(!fareSelectedCat||d.cat===fareSelectedCat)&&(!sw||d.name.toLowerCase().includes(sw)||d.cat.toLowerCase().includes(sw))});if(!data.length){document.getElementById('fareList').innerHTML='<div class="empty" style="padding:20px;font-size:13px;">該当なし</div>';return}document.getElementById('fareList').innerHTML=data.map(function(d){var safeName=escapeJs(d.name);return '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;" onclick="selectFare('+d.pay+',\''+safeName+'\')"><div style="font-size:12px;color:var(--muted);margin-bottom:4px;">'+escapeHtml(d.cat)+'</div><div style="font-size:14px;font-weight:600;margin-bottom:6px;">'+escapeHtml(d.name)+'</div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);gap:8px;"><span>出発 '+escapeHtml(d.start||'-')+'　到着 '+escapeHtml(d.end||'-')+'</span>'+(d.pay>0?'<span style="color:var(--accent);font-family:\'Oswald\',sans-serif;font-size:16px;white-space:nowrap;">'+d.pay.toLocaleString()+'円</span>':'<span style="color:var(--muted);">要確認</span>')+'</div></div>'}).join('');}
 function selectFare(pay,name){if(fareMode==='memo'){addMemo(name);if(pay>0){document.getElementById('longDistancePay').value=pay;updateInputProgress();}closeFareTableDirect();showToast('📝 '+name+(pay>0?' / '+pay.toLocaleString()+'円':''))}else{if(pay>0){document.getElementById('longDistancePay').value=pay;updateInputProgress();closeFareTableDirect();showToast('💰 '+pay.toLocaleString()+'円をセットしました')}}}
-function openSettings(){document.getElementById('settingOTRate').value=devGetItem('otRate')||'';document.getElementById('settingHolidayRate').value=devGetItem('holRate')||'';document.getElementById('settingsOverlay').classList.add('open');}
+function openSettings(){document.getElementById('settingOTRate').value=localStorage.getItem('otRate')||'';document.getElementById('settingHolidayRate').value=localStorage.getItem('holRate')||'';document.getElementById('settingsOverlay').classList.add('open');}
 function closeSettings(e){if(e.target===document.getElementById('settingsOverlay'))closeSettingsDirect();}
 function closeSettingsDirect(){document.getElementById('settingsOverlay').classList.remove('open');}
-function saveSettings(){var ot=parseInt(document.getElementById('settingOTRate').value),hol=parseInt(document.getElementById('settingHolidayRate').value);if(ot>0)devSetItem('otRate',String(ot));if(hol>0)devSetItem('holRate',String(hol));closeSettingsDirect();showToast('✅ 単価を保存しました。過去データは変わりません');}
+function saveSettings(){var ot=parseInt(document.getElementById('settingOTRate').value),hol=parseInt(document.getElementById('settingHolidayRate').value);if(ot>0)localStorage.setItem('otRate',String(ot));if(hol>0)localStorage.setItem('holRate',String(hol));closeSettingsDirect();showToast('✅ 単価を保存しました。過去データは変わりません');}
 
 function normalizeJobMemoText(text){
   var s=String(text||'');
