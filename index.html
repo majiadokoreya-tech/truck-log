@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="application-name" content="運転日報">
 <title>🚛 運転日報</title>
-<!-- latest: PROD enhanced backup preview and safe restore -->
+<!-- latest: PROD rest selection marks all input items complete -->
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
@@ -351,12 +351,15 @@ function isJobInputDone(){
   return selectedJobs.length>0;
 }
 function isTimeInputDone(){
+  if(selectedJobs.includes('休み'))return true;
   return !!(document.getElementById('startTime').value&&document.getElementById('endTime').value);
 }
 function isDistanceInputDone(){
+  if(selectedJobs.includes('休み'))return true;
   return (parseFloat(document.getElementById('distance').value)||0)>0;
 }
 function isPayInputDone(){
+  if(selectedJobs.includes('休み'))return true;
   return !hasLongDistanceJob() || (parseInt(document.getElementById('longDistancePay').value)||0)>0;
 }
 function getNextRequiredAccordion(){
@@ -545,7 +548,7 @@ function addMemo(text){
     showToast('💰 長距離手当 8,000円をセットしました');
   }
 }
-function toggleJob(el){var j=el.dataset.job;if(selectedJobs.includes(j)){selectedJobs=selectedJobs.filter(function(x){return x!==j});el.classList.remove('selected');if(j==='毒手当'&&toxicCount===1)selectToxic(1);if(j==='毒×2'&&toxicCount===2)selectToxic(2);if(j==='トレーラー'&&trailerOn)toggleTrailer();if(j==='半日有給'){clearTimePicker('end');clearOvertimePicker();removeMemo('半日有給')}if(j==='休み')removeMemo('休み');}else{if(j==='休み'){selectedJobs=[];document.querySelectorAll('.job-btn').forEach(function(b){b.classList.remove('selected')});toxicCount=0;trailerOn=false;document.getElementById('toxicBtn1').classList.remove('selected');document.getElementById('toxicBtn2').classList.remove('selected');document.getElementById('toxicDisplay').textContent='未選択';document.getElementById('trailerBtn').classList.remove('selected');document.getElementById('trailerStatus').textContent='タップでON';clearTimePicker('start');clearTimePicker('end');clearOvertimePicker();selectedJobs.push(j);el.classList.add('selected');addMemo('休み');return;}if(selectedJobs.includes('休み')){selectedJobs=selectedJobs.filter(function(x){return x!=='休み'});document.querySelectorAll('.job-btn').forEach(function(b){if(b.dataset.job==='休み')b.classList.remove('selected')});removeMemo('休み')}if(j==='毒手当'&&selectedJobs.includes('毒×2'))return;if(j==='毒×2'&&selectedJobs.includes('毒手当'))return;selectedJobs.push(j);el.classList.add('selected');if(j==='毒手当')selectToxic(1);if(j==='毒×2')selectToxic(2);if(j==='トレーラー'&&!trailerOn)toggleTrailer();if(j==='半日有給'){setTimePicker('end','12:00');addMemo('半日有給')}}if(timeState.start.h!==null&&timeState.start.m!==null)autoCalcOvertime();
+function toggleJob(el){var j=el.dataset.job;if(selectedJobs.includes(j)){selectedJobs=selectedJobs.filter(function(x){return x!==j});el.classList.remove('selected');if(j==='毒手当'&&toxicCount===1)selectToxic(1);if(j==='毒×2'&&toxicCount===2)selectToxic(2);if(j==='トレーラー'&&trailerOn)toggleTrailer();if(j==='半日有給'){clearTimePicker('end');clearOvertimePicker();removeMemo('半日有給')}if(j==='休み')removeMemo('休み');}else{if(j==='休み'){selectedJobs=[];document.querySelectorAll('.job-btn').forEach(function(b){b.classList.remove('selected')});toxicCount=0;trailerOn=false;document.getElementById('toxicBtn1').classList.remove('selected');document.getElementById('toxicBtn2').classList.remove('selected');document.getElementById('toxicDisplay').textContent='未選択';document.getElementById('trailerBtn').classList.remove('selected');document.getElementById('trailerStatus').textContent='タップでON';clearTimePicker('start');clearTimePicker('end');clearOvertimePicker();selectedJobs.push(j);el.classList.add('selected');addMemo('休み');updateInputProgress();['inputJobAccordion','inputTimeAccordion','inputDistanceAccordion','inputPayAccordion'].forEach(function(id){closeInputAccordion(id);});return;}if(selectedJobs.includes('休み')){selectedJobs=selectedJobs.filter(function(x){return x!=='休み'});document.querySelectorAll('.job-btn').forEach(function(b){if(b.dataset.job==='休み')b.classList.remove('selected')});removeMemo('休み')}if(j==='毒手当'&&selectedJobs.includes('毒×2'))return;if(j==='毒×2'&&selectedJobs.includes('毒手当'))return;selectedJobs.push(j);el.classList.add('selected');if(j==='毒手当')selectToxic(1);if(j==='毒×2')selectToxic(2);if(j==='トレーラー'&&!trailerOn)toggleTrailer();if(j==='半日有給'){setTimePicker('end','12:00');addMemo('半日有給')}}if(timeState.start.h!==null&&timeState.start.m!==null)autoCalcOvertime();
   updateInputProgress();
   if(hasLongDistanceJob()&&!isPayInputDone())openInputAccordion('inputPayAccordion');
   if(!hasLongDistanceJob())closeInputAccordion('inputPayAccordion');
