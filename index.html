@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="application-name" content="運転日報">
 <title>🚛 運転日報</title>
-<!-- latest: PROD custom company holiday management -->
+<!-- latest: PROD half-day paid leave sets end time to 12:00 and calculates early overtime correctly -->
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
@@ -788,6 +788,14 @@ function setHour(which,h){if(timeState[which].h===h){clearTimePicker(which);retu
 function setMin(which,m){if(timeState[which].m===m){timeState[which].m=null;document.getElementById(which+'MinBtns').querySelectorAll('.time-btn').forEach(function(b){b.classList.remove('selected')});document.getElementById(which+'TimeDisplay').textContent=timeState[which].h!==null?String(timeState[which].h).padStart(2,'0')+':--':'--:--';document.getElementById(which+'Time').value='';return}timeState[which].m=m;var btns=document.getElementById(which+'MinBtns').querySelectorAll('.time-btn');btns.forEach(function(b){b.classList.remove('selected')});var opts=which==='start'?[0,30]:[0,15,30,45];var idx=opts.indexOf(m);if(idx>=0&&btns[idx])btns[idx].classList.add('selected');updateTimeValue(which);}
 function updateTimeValue(which){var s=timeState[which];if(s.h!==null&&s.m!==null){var v=String(s.h).padStart(2,'0')+':'+String(s.m).padStart(2,'0');document.getElementById(which+'Time').value=v;document.getElementById(which+'TimeDisplay').textContent=v;updateInputProgress()}else if(s.h!==null){document.getElementById(which+'TimeDisplay').textContent=String(s.h).padStart(2,'0')+':--'}if(timeState.start.h!==null&&timeState.start.m!==null&&timeState.end.h!==null&&timeState.end.m!==null)autoCalcOvertime();}
 var OT_TABLE={};
+function calcHalfLeaveOvertimeHours(){
+  var sh=timeState.start.h,sm=timeState.start.m;
+  if(sh===null||sm===null)return 0;
+  var startMins=sh*60+sm;
+  var halfLeaveStart=8*60;
+  return Math.max(0,Math.floor((halfLeaveStart-startMins)/15)*0.25);
+}
+
 function autoCalcOvertime(){
   var dateStr=document.getElementById('inputDate').value;
   var currentRecord={
@@ -797,6 +805,13 @@ function autoCalcOvertime(){
     endTime:document.getElementById('endTime').value,
     jobMemo:document.getElementById('jobMemo').value
   };
+
+  // 半日有給は曜日・会社休日より優先し、8:00より前の早出分だけを残業にする。
+  // 例：5:30出勤 → 2.5時間。半日有給選択時の終業時刻は12:00。
+  if(selectedJobs.includes('半日有給')){
+    setOvertimePicker(calcHalfLeaveOvertimeHours());
+    return;
+  }
 
   if(dateStr&&new Date(dateStr).getDay()===0&&selectedJobs.includes('長距離')){
     setOvertimePicker(calcLongDistanceOvertimeHours(currentRecord));
@@ -825,7 +840,6 @@ function autoCalcOvertime(){
   var workH=(endMins-startMins)/60;
   var kyukei=workH<=4?0:workH<=5.75?.5:1;
   var ot=Math.max(0,Math.floor((workH-kyukei-7.25)*4)/4);
-  if(selectedJobs.includes('半日有給'))ot=Math.max(0,Math.floor((8*60-startMins)/15)*15/60);
   setOvertimePicker(ot);
 }
 function setTimePicker(which,val){if(!val){clearTimePicker(which);return}var p=val.split(':'),hh=parseInt(p[0]),mm=parseInt(p[1]);timeState[which]={h:hh,m:mm};document.querySelectorAll('#'+which+'HourBtns .time-btn').forEach(function(b){b.classList.remove('selected')});var hb=document.getElementById(which+'H'+hh);if(hb)hb.classList.add('selected');var opts=which==='start'?[0,30]:[0,15,30,45],btns=document.getElementById(which+'MinBtns').querySelectorAll('.time-btn');btns.forEach(function(b){b.classList.remove('selected')});var idx=opts.indexOf(mm);if(idx>=0&&btns[idx])btns[idx].classList.add('selected');updateTimeValue(which);}
@@ -1415,6 +1429,9 @@ var todayRecord=getRecords().find(function(r){return r.date===getLocalDateStr()}
 
 <!--
 変更履歴
+- 本番版：半日有給を選択すると終業時刻を12:00に自動設定
+- 本番版：半日有給の残業を8:00より前の早出分として15分単位で計算
+- 本番版：半日有給の残業計算を土曜・祝日・会社休日判定より優先
 - 会社休日管理を設定画面に追加
 - お盆休み・年末年始・GWなどの会社休日を日付と名称で登録可能
 - 登録済み会社休日の編集・削除に対応
