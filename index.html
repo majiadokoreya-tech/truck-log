@@ -7,14 +7,14 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1923">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="application-name" content="運転日報">
-<title>🚛 運転日報</title>
-<!-- latest: PROD payroll-rule audit: holiday short work, daikyu, overtime, distance, export order -->
+<meta name="application-name" content="運転日報 DEV">
+<title>🚚 運転日報 DEV</title>
+<!-- latest: PROD holiday work threshold corrected to 8.25h -->
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#f5f5f5;--surface:#ffffff;--surface2:#f0f0f0;--accent:#e8601c;--accent2:#c0440a;--text:#1a1a1a;--muted:#666666;--border:#dddddd;--green:#2ecc71;--red:#e74c3c;--blue:#3498db;--radius:14px;}
+:root{--bg:#f5f7fb;--surface:#ffffff;--surface2:#eef1f7;--accent:#6c5ce7;--accent2:#4b3fc0;--text:#1a1a1a;--muted:#666666;--border:#dddddd;--green:#2ecc71;--red:#e74c3c;--blue:#3498db;--radius:14px;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-serif;min-height:100dvh;padding-bottom:80px}
 .header{background:linear-gradient(135deg,#f5f5f5 0%,#ffffff 100%);border-bottom:2px solid var(--accent);padding:16px 20px 12px;position:sticky;top:0;z-index:500}
@@ -107,7 +107,7 @@ input[type=number]{-moz-appearance:textfield}
 <body>
 <div class="header">
   <div style="display:flex;justify-content:space-between;align-items:center;">
-    <h1>🚛 運転日報</h1>
+    <h1>🚚 運転日報</h1>
     <button onclick="openSettings()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:4px;">⚙️</button>
   </div>
   <div class="header-date" id="headerDate"></div>
@@ -310,13 +310,20 @@ input[type=number]{-moz-appearance:textfield}
   <div class="modal">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><div class="modal-title" style="margin-bottom:0;">👀 バックアップ内容確認</div><button onclick="closeBackupPreviewDirect()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;">✕</button></div>
     <div id="backupPreviewContent"></div>
-    <div class="rate-note" style="margin-top:12px;color:var(--red);">復元すると現在の本番データは選択した内容に置き換わります。</div>
+    <div class="rate-note" style="margin-top:12px;color:var(--red);">復元すると現在のテスト版データは選択した内容に置き換わります。</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;"><button onclick="closeBackupPreviewDirect()" class="copy-btn" style="margin-top:0;">キャンセル</button><button onclick="confirmRestoreBackup()" class="main-btn accent" style="margin-top:0;">この内容で復元</button></div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
 
 <script>
+
+var STORAGE_PREFIX='';
+function devKey(key){return STORAGE_PREFIX+String(key);}
+function devGetItem(key){return localStorage.getItem(devKey(key));}
+function devSetItem(key,value){return localStorage.setItem(devKey(key),value);}
+function devRemoveItem(key){return localStorage.removeItem(devKey(key));}
+function devStorageKeys(){return Object.keys(localStorage).filter(function(k){return k.indexOf(STORAGE_PREFIX)===0;}).map(function(k){return k.slice(STORAGE_PREFIX.length);});}
 
 
 var JOB_EMOJI={'地場':'🚛','長距離':'🛌','毒手当':'☠️','毒×2':'☠️☠️','トレーラー':'🚜','半日有給':'🌴','休み':'🏠'};
@@ -333,10 +340,10 @@ var timeState={start:{h:null,m:null},end:{h:null,m:null}};
 var otState={h:null,m:null};
 
 function getLocalDateStr(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-function getRecords(){try{return JSON.parse(localStorage.getItem('truckRecords')||'[]');}catch(e){return []}}
-function saveRecords(r){localStorage.setItem('truckRecords',JSON.stringify(r));}
-function getCurrentOTRate(){return parseInt(localStorage.getItem('otRate'))||1938;}
-function getCurrentHolidayRate(){return parseInt(localStorage.getItem('holRate'))||2060;}
+function getRecords(){try{return JSON.parse(devGetItem('truckRecords')||'[]');}catch(e){return []}}
+function saveRecords(r){devSetItem('truckRecords',JSON.stringify(r));}
+function getCurrentOTRate(){return parseInt(devGetItem('otRate'))||1938;}
+function getCurrentHolidayRate(){return parseInt(devGetItem('holRate'))||2060;}
 function getRateForRecord(r){return {otRate:parseInt(r&&r.otRate)||getCurrentOTRate(),holidayRate:parseInt(r&&r.holidayRate)||getCurrentHolidayRate()};}
 function migrateRecordRates(){
   var changed=false,ot=getCurrentOTRate(),hol=getCurrentHolidayRate();
@@ -357,11 +364,11 @@ function calcDistPay(km){
 }
 function getCompanyHolidays(){
   try{
-    var data=JSON.parse(localStorage.getItem('companyHolidays')||'{}');
+    var data=JSON.parse(devGetItem('companyHolidays')||'{}');
     return data&&typeof data==='object'&&!Array.isArray(data)?data:{};
   }catch(e){return {}}
 }
-function saveCompanyHolidays(data){localStorage.setItem('companyHolidays',JSON.stringify(data||{}));}
+function saveCompanyHolidays(data){devSetItem('companyHolidays',JSON.stringify(data||{}));}
 function getCompanyHolidayName(dateStr){return getCompanyHolidays()[dateStr]||'';}
 function isCompanyHoliday(dateStr){return !!getCompanyHolidayName(dateStr);}
 function saveCompanyHoliday(){
@@ -575,17 +582,17 @@ function getPrevMonthKeyFromKey(ms){
   return y+'-'+String(m).padStart(2,'0');
 }
 function getLeaveStartRaw(ms){
-  var y=localStorage.getItem('leaveStartYukyu_'+ms);
-  var d=localStorage.getItem('leaveStartDaikyu_'+ms);
+  var y=devGetItem('leaveStartYukyu_'+ms);
+  var d=devGetItem('leaveStartDaikyu_'+ms);
   return {
     hasYukyu:y!==null&&y!=='',
     hasDaikyu:d!==null&&d!=='',
     yukyu:parseFloat(y||'0')||0,
     daikyu:Math.floor(parseFloat(d||'0')||0),
-    manual:localStorage.getItem('leaveStartManual_'+ms)==='1'
+    manual:devGetItem('leaveStartManual_'+ms)==='1'
   };
 }
-function getLeaveStorageKeys(){return Object.keys(localStorage);}
+function getLeaveStorageKeys(){return devStorageKeys();}
 function getLeaveKnownMonthKeys(){
   var map={};
   getRecords().forEach(function(r){
@@ -676,12 +683,12 @@ function isSaturdayOrHolidayRecordDate(dateStr){
 function calcHolidayShortBreakHours(workH){
   workH=parseFloat(workH)||0;
   if(workH<=4)return 0;
-  if(workH<=5)return 0.5;
-  return 0;
+  if(workH<=5.75)return 0.5;
+  return 1;
 }
 function calcHolidayShortAllowanceHours(r){
   var workH=getWorkHoursNum(r);
-  if(workH<=0||workH>5)return 0;
+  if(workH<=0||workH>=8.25)return 0;
   var breakH=calcHolidayShortBreakHours(workH);
   return Math.max(0,Math.floor((workH-breakH)*4)/4);
 }
@@ -691,11 +698,11 @@ function calcSaturdayHolidayOvertimeHours(r){
   if(workH<=0)return 0;
 
   // 青土曜・祝日・会社休日
-  // 5時間以下：実働すべてを休日手当（4h超なら0.5h休憩）
-  if(workH<=5)return calcHolidayShortAllowanceHours(r);
+  // 8.25h未満：必要休憩を引いた実働すべてを休日手当。
+  if(workH<8.25)return calcHolidayShortAllowanceHours(r);
 
-  // 5時間超：実運用では必ず8.25h以上勤務。
-  // 通常出勤日と同じ残業計算を行い、その残業を休日単価で支給。
+  // 8.25h以上：通常勤務と同じ残業計算。
+  // 残業分は休日単価、代休+1。
   return calcNormalOvertimeHoursFromRecord(r);
 }
 
@@ -728,10 +735,11 @@ function calcEffectiveOvertimeHours(r){
   // 長距離は客先設定時間基準。日曜長距離は代休特例を別途維持。
   if(isLongDistanceRecord(r))return calcLongDistanceOvertimeHours(r);
 
-  // 日曜：5h以下は実働すべて休日手当、5h超は通常残業計算＋休日単価
+  // 日曜：8.25h未満は必要休憩を引いた実働すべて休日手当。
+  // 8.25h以上は通常残業計算＋休日単価。
   if(isSundayRecord(r)){
     var sundayWork=getWorkHoursNum(r);
-    if(sundayWork<=5)return calcHolidayShortAllowanceHours(r);
+    if(sundayWork<8.25)return calcHolidayShortAllowanceHours(r);
     return calcNormalOvertimeHoursFromRecord(r);
   }
 
@@ -756,8 +764,8 @@ function earnsDaikyuRecord(r){
   if(dow===0&&isLongDistanceRecord(r))return true;
 
   // 青土曜・祝日・会社休日・日曜：
-  // 5時間以下は代休なし。5時間を超えた勤務は代休+1。
-  if(isHolidayWorkDate(r.date))return getWorkHoursNum(r)>5;
+  // 8.25h未満は代休なし。8.25h以上で代休+1。
+  if(isHolidayWorkDate(r.date))return getWorkHoursNum(r)>=8.25;
 
   return false;
 }
@@ -768,7 +776,7 @@ function calcLeaveMonthByKey(ms,st){
     if(isRestRecord(r))restDays+=1;
     if(isHalfLeaveRecord(r)){halfCount+=1;halfDays+=0.5;}
     if(earnsDaikyuRecord(r))earned+=1;
-    else if(r&&!isRestRecord(r)&&!isHalfLeaveRecord(r)&&isHolidayLike(r.date)&&r.startTime&&r.endTime&&getWorkHoursNum(r)<=5)shortHoliday+=1;
+    else if(r&&!isRestRecord(r)&&!isHalfLeaveRecord(r)&&isHolidayLike(r.date)&&r.startTime&&r.endTime&&getWorkHoursNum(r)<8.25)shortHoliday+=1;
   });
   var availableDaikyu=st.daikyu+earned;
   var usedDaikyu=Math.min(restDays,availableDaikyu);
@@ -785,7 +793,7 @@ function getLeaveStartForMonth(ms,visited){
   if(raw.manual){return {yukyu:raw.yukyu,daikyu:raw.daikyu};}
   var earliest=getEarliestLeaveMonth();
   if(ms===earliest&&(raw.hasYukyu||raw.hasDaikyu)){return {yukyu:raw.yukyu,daikyu:raw.daikyu};}
-  if(ms<=earliest){return {yukyu:parseFloat(localStorage.getItem('yukyuZan')||'0')||0,daikyu:Math.floor(parseFloat(localStorage.getItem('daikyuZan')||'0')||0)};}
+  if(ms<=earliest){return {yukyu:parseFloat(devGetItem('yukyuZan')||'0')||0,daikyu:Math.floor(parseFloat(devGetItem('daikyuZan')||'0')||0)};}
   var prevMs=getPrevMonthKeyFromKey(ms);
   var prevStart=getLeaveStartForMonth(prevMs,visited);
   var prevResult=calcLeaveMonthByKey(prevMs,prevStart);
@@ -797,15 +805,15 @@ function saveLeaveStart(){
   var y=parseFloat(document.getElementById('leaveStartYukyu').value)||0;
   var d=parseFloat(document.getElementById('leaveStartDaikyu').value)||0;
   d=Math.floor(d);
-  localStorage.setItem('leaveStartYukyu_'+ms,String(y));
-  localStorage.setItem('leaveStartDaikyu_'+ms,String(d));
-  localStorage.setItem('leaveStartManual_'+ms,'1');
+  devSetItem('leaveStartYukyu_'+ms,String(y));
+  devSetItem('leaveStartDaikyu_'+ms,String(d));
+  devSetItem('leaveStartManual_'+ms,'1');
   renderLeavePanel();
   showToast('✅ この月の月初残を固定しました');
 }
 function clearLeaveStartManualThisMonth(){
   var ms=getLeaveMonthKey();
-  localStorage.removeItem('leaveStartManual_'+ms);
+  devRemoveItem('leaveStartManual_'+ms);
   renderLeavePanel();
   showToast('🔄 前月末残から自動計算に戻しました');
 }
@@ -820,7 +828,7 @@ function loadLeaveStart(){
 function calcHalfLeaveYear(){var y=String(currentYear);var records=getRecords().filter(function(r){return r.date&&r.date.indexOf(y+'-')===0&&isHalfLeaveRecord(r);});var used=records.length;var remain=12-used;if(remain<0)remain=0;return {appUsed:records.length,used:used,remain:remain};}
 function calcLeaveMonth(){var ms=getLeaveMonthKey();var st=getLeaveStart(ms);return calcLeaveMonthByKey(ms,st);}
 
-function renderLeavePanel(){if(!document.getElementById('leaveCurrentYukyu'))return;loadLeaveStart();var c=calcLeaveMonth();var hy=calcHalfLeaveYear();document.getElementById('leaveCurrentYukyu').innerHTML=fmtLeave(c.currentYukyu)+'<span class="stat-unit"> 日</span>';document.getElementById('leaveCurrentDaikyu').innerHTML=fmtLeave(c.currentDaikyu)+'<span class="stat-unit"> 日</span>';document.getElementById('halfLeaveUsedYear').innerHTML=hy.used+'<span class="stat-unit"> / 12回</span>';document.getElementById('halfLeaveUsedDetail').textContent='アプリ記録 '+hy.appUsed+'回';document.getElementById('halfLeaveRemainYear').innerHTML=hy.remain+'<span class="stat-unit"> 回</span>';var warn=hy.remain<=0?' <span style="color:var(--red);font-weight:700;">上限です</span>':'';var html='📋 今月内訳<br>🏠 休み '+fmtLeave(c.restDays)+'日（代休消化 '+fmtLeave(c.usedDaikyu)+'日 / 有給消化 '+fmtLeave(c.usedYukyu)+'日）<br>🌴 半日有給 '+c.halfCount+'回 = '+fmtLeave(c.halfDays)+'日<br>🔄 代休発生 '+fmtLeave(c.earned)+'日（青土曜・祝日・会社休日・日曜で5h超／日曜長距離）';if(c.shortHoliday>0)html+='<br>⏰ 休日短時間出勤 '+c.shortHoliday+'日（5h以下・代休なし・休憩控除後を休日手当）';html+='<br><br>📅 '+currentYear+'年 半日有給：アプリ記録 '+hy.appUsed+'回 = '+hy.used+' / 12回　残り '+hy.remain+'回'+warn;html+='<br><br>計算：有給 '+fmtLeave(c.startYukyu)+' - '+fmtLeave(c.usedYukyu)+' - '+fmtLeave(c.halfDays)+' = '+fmtLeave(c.currentYukyu)+' / 代休 '+fmtLeave(c.startDaikyu)+' + '+fmtLeave(c.earned)+' - '+fmtLeave(c.usedDaikyu)+' = '+fmtLeave(c.currentDaikyu);document.getElementById('leaveBreakdown').innerHTML=html;}
+function renderLeavePanel(){if(!document.getElementById('leaveCurrentYukyu'))return;loadLeaveStart();var c=calcLeaveMonth();var hy=calcHalfLeaveYear();document.getElementById('leaveCurrentYukyu').innerHTML=fmtLeave(c.currentYukyu)+'<span class="stat-unit"> 日</span>';document.getElementById('leaveCurrentDaikyu').innerHTML=fmtLeave(c.currentDaikyu)+'<span class="stat-unit"> 日</span>';document.getElementById('halfLeaveUsedYear').innerHTML=hy.used+'<span class="stat-unit"> / 12回</span>';document.getElementById('halfLeaveUsedDetail').textContent='アプリ記録 '+hy.appUsed+'回';document.getElementById('halfLeaveRemainYear').innerHTML=hy.remain+'<span class="stat-unit"> 回</span>';var warn=hy.remain<=0?' <span style="color:var(--red);font-weight:700;">上限です</span>':'';var html='📋 今月内訳<br>🏠 休み '+fmtLeave(c.restDays)+'日（代休消化 '+fmtLeave(c.usedDaikyu)+'日 / 有給消化 '+fmtLeave(c.usedYukyu)+'日）<br>🌴 半日有給 '+c.halfCount+'回 = '+fmtLeave(c.halfDays)+'日<br>🔄 代休発生 '+fmtLeave(c.earned)+'日（青土曜・祝日・会社休日・日曜で8.25h以上／日曜長距離）';if(c.shortHoliday>0)html+='<br>⏰ 休日短時間出勤 '+c.shortHoliday+'日（8.25h未満・代休なし・休憩控除後を休日手当）';html+='<br><br>📅 '+currentYear+'年 半日有給：アプリ記録 '+hy.appUsed+'回 = '+hy.used+' / 12回　残り '+hy.remain+'回'+warn;html+='<br><br>計算：有給 '+fmtLeave(c.startYukyu)+' - '+fmtLeave(c.usedYukyu)+' - '+fmtLeave(c.halfDays)+' = '+fmtLeave(c.currentYukyu)+' / 代休 '+fmtLeave(c.startDaikyu)+' + '+fmtLeave(c.earned)+' - '+fmtLeave(c.usedDaikyu)+' = '+fmtLeave(c.currentDaikyu);document.getElementById('leaveBreakdown').innerHTML=html;}
 function showTab(tab){document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});document.getElementById('page-'+tab).classList.add('active');var idx=['input','records','stats'].indexOf(tab);document.querySelectorAll('.tab')[idx].classList.add('active');if(tab==='records')renderRecords();if(tab==='stats')renderStats();}
 function updateTotalDistance(){var d1=parseFloat(document.getElementById('distance1').value)||0,d2=parseFloat(document.getElementById('distance2').value)||0,d3=parseFloat(document.getElementById('distance3').value)||0,total=d1+d2+d3;document.getElementById('distance').value=total||'';document.getElementById('distanceTotal').innerHTML=total.toLocaleString()+' <span style="font-size:12px;color:var(--muted);">km</span>';updateInputProgress();}
 function addMemoAndToxic2(){addMemo('PM搭載');selectedJobs=selectedJobs.filter(function(j){return j!=='毒手当'&&j!=='毒×2'});selectedJobs.push('毒×2');document.querySelectorAll('.job-btn').forEach(function(b){if(b.dataset.job==='毒×2')b.classList.add('selected');if(b.dataset.job==='毒手当')b.classList.remove('selected')});selectToxic(2);}
@@ -863,7 +871,56 @@ function addMemo(text){
     }
   }
 }
-function toggleJob(el){var j=el.dataset.job;if(selectedJobs.includes(j)){selectedJobs=selectedJobs.filter(function(x){return x!==j});el.classList.remove('selected');if(j==='毒手当'&&toxicCount===1)selectToxic(1);if(j==='毒×2'&&toxicCount===2)selectToxic(2);if(j==='トレーラー'&&trailerOn)toggleTrailer();if(j==='半日有給'){clearTimePicker('end');clearOvertimePicker();removeMemo('半日有給')}if(j==='休み')removeMemo('休み');}else{if(j==='休み'){selectedJobs=[];document.querySelectorAll('.job-btn').forEach(function(b){b.classList.remove('selected')});toxicCount=0;trailerOn=false;document.getElementById('toxicBtn1').classList.remove('selected');document.getElementById('toxicBtn2').classList.remove('selected');document.getElementById('toxicDisplay').textContent='未選択';document.getElementById('trailerBtn').classList.remove('selected');document.getElementById('trailerStatus').textContent='タップでON';clearTimePicker('start');clearTimePicker('end');clearOvertimePicker();selectedJobs.push(j);el.classList.add('selected');addMemo('休み');updateInputProgress();['inputJobAccordion','inputTimeAccordion','inputDistanceAccordion','inputPayAccordion'].forEach(function(id){closeInputAccordion(id);});return;}if(selectedJobs.includes('休み')){selectedJobs=selectedJobs.filter(function(x){return x!=='休み'});document.querySelectorAll('.job-btn').forEach(function(b){if(b.dataset.job==='休み')b.classList.remove('selected')});removeMemo('休み')}if(j==='毒手当'&&selectedJobs.includes('毒×2'))return;if(j==='毒×2'&&selectedJobs.includes('毒手当'))return;selectedJobs.push(j);el.classList.add('selected');if(j==='毒手当')selectToxic(1);if(j==='毒×2')selectToxic(2);if(j==='トレーラー'&&!trailerOn)toggleTrailer();if(j==='半日有給'){setTimePicker('end','12:00');addMemo('半日有給')}}if(timeState.start.h!==null&&timeState.start.m!==null)autoCalcOvertime();
+function toggleJob(el){
+  var j=el.dataset.job;
+  if(selectedJobs.includes(j)){
+    selectedJobs=selectedJobs.filter(function(x){return x!==j});
+    el.classList.remove('selected');
+    if(j==='毒手当'&&toxicCount===1)selectToxic(1);
+    if(j==='毒×2'&&toxicCount===2)selectToxic(2);
+    if(j==='トレーラー'&&trailerOn)toggleTrailer();
+    if(j==='半日有給')removeMemo('半日有給');
+    if(j==='休み')removeMemo('休み');
+  }else{
+    if(j==='休み'){
+      selectedJobs=[];
+      document.querySelectorAll('.job-btn').forEach(function(b){b.classList.remove('selected')});
+      toxicCount=0;
+      trailerOn=false;
+      document.getElementById('toxicBtn1').classList.remove('selected');
+      document.getElementById('toxicBtn2').classList.remove('selected');
+      document.getElementById('toxicDisplay').textContent='未選択';
+      document.getElementById('trailerBtn').classList.remove('selected');
+      document.getElementById('trailerStatus').textContent='タップでON';
+      clearTimePicker('start');
+      clearTimePicker('end');
+      clearOvertimePicker();
+      selectedJobs.push(j);
+      el.classList.add('selected');
+      addMemo('休み');
+      updateInputProgress();
+      ['inputJobAccordion','inputTimeAccordion','inputDistanceAccordion','inputPayAccordion'].forEach(function(id){closeInputAccordion(id);});
+      return;
+    }
+    if(selectedJobs.includes('休み')){
+      selectedJobs=selectedJobs.filter(function(x){return x!=='休み'});
+      document.querySelectorAll('.job-btn').forEach(function(b){if(b.dataset.job==='休み')b.classList.remove('selected')});
+      removeMemo('休み');
+    }
+    if(j==='毒手当'&&selectedJobs.includes('毒×2'))return;
+    if(j==='毒×2'&&selectedJobs.includes('毒手当'))return;
+    selectedJobs.push(j);
+    el.classList.add('selected');
+    if(j==='毒手当')selectToxic(1);
+    if(j==='毒×2')selectToxic(2);
+    if(j==='トレーラー'&&!trailerOn)toggleTrailer();
+    if(j==='半日有給'){
+      setTimePicker('end','12:00');
+      addMemo('半日有給');
+      showToast('🌴 半日有給を設定しました（終業時刻 12:00）');
+    }
+  }
+  if(timeState.start.h!==null&&timeState.start.m!==null)autoCalcOvertime();
   updateInputProgress();
   if(hasLongDistanceJob()&&!isPayInputDone())openInputAccordion('inputPayAccordion');
   if(!hasLongDistanceJob())closeInputAccordion('inputPayAccordion');
@@ -1085,29 +1142,29 @@ function copyExport(){navigator.clipboard.writeText(document.getElementById('exp
 function fixAllRecords(){var r=getRecords().map(function(r){var oldRate=getRateForRecord(r);return Object.assign({},r,{overtime:Math.round((parseFloat(r.overtime)||0)*100)/100,distance:parseFloat(r.distance)||0,longDistancePay:parseInt(r.longDistancePay)||0,toxicCount:parseInt(r.toxicCount)||0,toxicPay:parseInt(r.toxicPay)||0,trailerPay:parseInt(r.trailerPay)||0,otherPay:0,otRate:oldRate.otRate,holidayRate:oldRate.holidayRate})});saveRecords(r);renderRecords();renderStats();showToast('✅ 全データを修正しました！');}
 
 var pendingBackupRestore=null;
-function getDevStorageSnapshot(){var s={};Object.keys(localStorage).forEach(function(k){var v=localStorage.getItem(k);if(v!==null)s[k]=v;});return s;}
+function getDevStorageSnapshot(){var s={};devStorageKeys().forEach(function(k){var v=devGetItem(k);if(v!==null)s[k]=v;});return s;}
 function getBackupMonthSummary(){var l=calcLeaveMonth();return {month:getLeaveMonthKey(),currentYukyu:l.currentYukyu,currentDaikyu:l.currentDaikyu,halfLeaveUsedYear:calcHalfLeaveYear().used};}
 function makeCompleteBackupPayload(){return {app:'truck-log',environment:'PROD',version:5,exportedAt:new Date().toISOString(),records:getRecords(),settings:{otRate:getCurrentOTRate(),holidayRate:getCurrentHolidayRate()},leaveSummary:getBackupMonthSummary(),storage:getDevStorageSnapshot()};}
 function formatBackupDate(iso){if(!iso)return '不明';var d=new Date(iso);if(isNaN(d.getTime()))return String(iso);return d.getFullYear()+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
-function backupData(){try{var p=makeCompleteBackupPayload(),j=JSON.stringify(p,null,2),b=new Blob([j],{type:'application/json;charset=utf-8'}),a=document.createElement('a'),n=new Date(),st=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0')+'_'+String(n.getHours()).padStart(2,'0')+'-'+String(n.getMinutes()).padStart(2,'0');a.href=URL.createObjectURL(b);a.download='truck-log_'+st+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href);},1000);localStorage.setItem('lastBackupAt',p.exportedAt);updateBackupStatus();showToast('💾 完全バックアップを作成しました');}catch(e){console.error(e);showToast('❌ バックアップ作成に失敗しました',true);}}
+function backupData(){try{var p=makeCompleteBackupPayload(),j=JSON.stringify(p,null,2),b=new Blob([j],{type:'application/json;charset=utf-8'}),a=document.createElement('a'),n=new Date(),st=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0')+'_'+String(n.getHours()).padStart(2,'0')+'-'+String(n.getMinutes()).padStart(2,'0');a.href=URL.createObjectURL(b);a.download='truck-log-test_'+st+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href);},1000);devSetItem('lastBackupAt',p.exportedAt);updateBackupStatus();showToast('💾 完全バックアップを作成しました');}catch(e){console.error(e);showToast('❌ バックアップ作成に失敗しました',true);}}
 function normalizeBackupData(d){if(Array.isArray(d))return {app:'truck-log',environment:'legacy',version:1,exportedAt:null,records:d,settings:{},storage:{truckRecords:JSON.stringify(d)}};if(!d||typeof d!=='object')throw new Error('invalid');var r=Array.isArray(d.records)?d.records:[],s=d.storage&&typeof d.storage==='object'?d.storage:{};if(!s.truckRecords)s.truckRecords=JSON.stringify(r);if(d.settings){if(d.settings.otRate!==undefined&&!s.otRate)s.otRate=String(d.settings.otRate);if(d.settings.holidayRate!==undefined&&!s.holRate)s.holRate=String(d.settings.holidayRate);}return {app:d.app||'truck-log',environment:d.environment||'legacy',version:d.version||2,exportedAt:d.exportedAt||null,records:r,settings:d.settings||{},leaveSummary:d.leaveSummary||null,storage:s};}
 function previewBackupFile(input){var f=input.files&&input.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(e){try{var d=normalizeBackupData(JSON.parse(e.target.result));pendingBackupRestore={data:d,fileName:f.name};renderBackupPreview(d,f.name);document.getElementById('backupPreviewOverlay').classList.add('open');}catch(err){console.error(err);pendingBackupRestore=null;showToast('❌ バックアップファイルが正しくありません',true);input.value='';}};rd.onerror=function(){pendingBackupRestore=null;showToast('❌ ファイルを読み込めませんでした',true);input.value='';};rd.readAsText(f,'UTF-8');}
 function renderBackupPreview(d,n){var l=d.leaveSummary||{},c=Object.keys(d.storage||{}).length,e=d.environment==='PROD'?'本番版':(d.environment==='DEV'?'テスト版':'旧形式'),w=d.environment==='PROD'?'<div class="rate-note" style="margin-top:10px;color:var(--red);">⚠️ 本番版のバックアップです。</div>':'';var h='<div class="backup-info"><b>ファイル：</b>'+escapeHtml(n)+'<br><b>作成日時：</b>'+escapeHtml(formatBackupDate(d.exportedAt))+'<br><b>形式：</b>バージョン '+escapeHtml(d.version)+' / '+e+'</div><div class="backup-preview-grid"><div class="backup-preview-card"><div class="backup-preview-label">日報件数</div><div class="backup-preview-value">'+d.records.length+'件</div></div><div class="backup-preview-card"><div class="backup-preview-label">保存項目</div><div class="backup-preview-value">'+c+'個</div></div><div class="backup-preview-card"><div class="backup-preview-label">有給残</div><div class="backup-preview-value">'+(l.currentYukyu!==undefined?fmtLeave(l.currentYukyu)+'日':'確認不可')+'</div></div><div class="backup-preview-card"><div class="backup-preview-label">代休残</div><div class="backup-preview-value">'+(l.currentDaikyu!==undefined?fmtLeave(l.currentDaikyu)+'日':'確認不可')+'</div></div></div>'+w;document.getElementById('backupPreviewContent').innerHTML=h;}
 function closeBackupPreview(e){if(e.target===document.getElementById('backupPreviewOverlay'))closeBackupPreviewDirect();}
 function closeBackupPreviewDirect(){document.getElementById('backupPreviewOverlay').classList.remove('open');pendingBackupRestore=null;var i=document.getElementById('settingsRestoreFile');if(i)i.value='';}
-function saveRestoreSafetySnapshot(){localStorage.setItem('PROD_RESTORE_SAFETY',JSON.stringify({savedAt:new Date().toISOString(),storage:getDevStorageSnapshot()}));}
-function clearCurrentDevStorage(){Object.keys(localStorage).forEach(function(k){localStorage.removeItem(k);});}
-function confirmRestoreBackup(){if(!pendingBackupRestore){showToast('❌ 復元データがありません',true);return;}try{var d=pendingBackupRestore.data;saveRestoreSafetySnapshot();clearCurrentDevStorage();Object.keys(d.storage||{}).forEach(function(k){var v=d.storage[k];if(v!==undefined&&v!==null)localStorage.setItem(k,String(v));});if(!localStorage.getItem('truckRecords'))saveRecords(d.records||[]);migrateRecordRates();closeBackupPreviewDirect();renderRecords();renderStats();renderLeavePanel();updateBackupStatus();showToast('✅ '+getRecords().length+'件を安全に復元しました');}catch(e){console.error(e);showToast('❌ 復元に失敗しました',true);}}
+function saveRestoreSafetySnapshot(){devSetItem('DEV_RESTORE_SAFETY',JSON.stringify({savedAt:new Date().toISOString(),storage:getDevStorageSnapshot()}));}
+function clearCurrentDevStorage(){devStorageKeys().forEach(function(k){devRemoveItem(k);});}
+function confirmRestoreBackup(){if(!pendingBackupRestore){showToast('❌ 復元データがありません',true);return;}try{var d=pendingBackupRestore.data;saveRestoreSafetySnapshot();clearCurrentDevStorage();Object.keys(d.storage||{}).forEach(function(k){var v=d.storage[k];if(v!==undefined&&v!==null)devSetItem(k,String(v));});if(!devGetItem('truckRecords'))saveRecords(d.records||[]);migrateRecordRates();closeBackupPreviewDirect();renderRecords();renderStats();renderLeavePanel();updateBackupStatus();showToast('✅ '+getRecords().length+'件を安全に復元しました');}catch(e){console.error(e);showToast('❌ 復元に失敗しました',true);}}
 function restoreData(input){previewBackupFile(input);}
-function updateBackupStatus(){var e=document.getElementById('backupLastStatus');if(!e)return;var l=localStorage.getItem('lastBackupAt');e.textContent=l?'前回のバックアップ：'+formatBackupDate(l):'まだこの端末でバックアップを作成していません';}
+function updateBackupStatus(){var e=document.getElementById('backupLastStatus');if(!e)return;var l=devGetItem('lastBackupAt');e.textContent=l?'前回のバックアップ：'+formatBackupDate(l):'まだこの端末でバックアップを作成していません';}
 
 function showModal(id){var r=getRecords().find(function(rec){return String(rec.id)===String(id)});if(!r)return;activeModal=r.id;deleteConfirmMode=false;var d=new Date(r.date),wd=['日','月','火','水','木','金','土'][d.getDay()];document.getElementById('modalTitle').textContent=r.date.replace(/-/g,'/')+'（'+wd+'） '+(r.jobs||[]).map(function(j){return JOB_EMOJI[j]||''}).join('');var tc=r.toxicCount||0,tp=r.toxicPay||(tc*2500),trp=r.trailerPay||0,dp=calcDistPay(r.distance),total=tp+trp+dp,rate=getRateForRecord(r),html='';if(r.startTime)html+='<div class="modal-row"><span class="modal-row-label">出勤</span><span>'+r.startTime+'</span></div>';if(r.endTime)html+='<div class="modal-row"><span class="modal-row-label">退勤</span><span>'+r.endTime+'</span></div>';var effectiveOt=calcEffectiveOvertimeHours(r);if(effectiveOt>0)html+='<div class="modal-row"><span class="modal-row-label">残業/休日対象</span><span>'+formatHour(effectiveOt)+'時間</span></div>';if(isSundayRecord(r)&&r.startTime&&r.endTime)html+='<div class="modal-row"><span class="modal-row-label">日曜休憩計算</span><span>実働 '+formatHour(getWorkHoursNum(r))+'h - 休憩 '+formatHour(calcSundayBreakHours(getWorkHoursNum(r)))+'h</span></div>';if(effectiveOt>0)html+='<div class="modal-row"><span class="modal-row-label">固定単価</span><span>時間外 '+rate.otRate.toLocaleString()+'円 / 休日 '+rate.holidayRate.toLocaleString()+'円</span></div>';if(r.distance>0)html+='<div class="modal-row"><span class="modal-row-label">走行距離</span><span>'+r.distance.toLocaleString()+' km</span></div>';if(r.longDistancePay>0)html+='<div class="modal-row"><span class="modal-row-label">🛌 長距離手当</span><span>'+r.longDistancePay.toLocaleString()+' 円</span></div>';if(tp>0)html+='<div class="modal-row"><span class="modal-row-label">☠️ 毒手当（×'+tc+'）</span><span>'+tp.toLocaleString()+' 円</span></div>';if(trp>0)html+='<div class="modal-row"><span class="modal-row-label">🚜 トレーラー手当</span><span>'+trp.toLocaleString()+' 円</span></div>';if(dp>0)html+='<div class="modal-row"><span class="modal-row-label">🛣️ 走行距離手当</span><span>'+dp.toLocaleString()+' 円</span></div>';if(total>0)html+='<div class="modal-row" style="font-weight:700;"><span class="modal-row-label">💰 ワンマン手当</span><span style="color:var(--accent)">'+total.toLocaleString()+' 円</span></div>';if(r.jobMemo)html+='<div class="modal-row"><span class="modal-row-label">📝 仕事内容</span><span style="text-align:right;max-width:65%;">'+escapeHtml(formatJobMemoText(r.jobMemo))+'</span></div>';document.getElementById('modalContent').innerHTML=html;document.getElementById('modalOverlay').classList.add('open');}
 function closeModal(e){if(e.target===document.getElementById('modalOverlay'))closeModalDirect();}
 function closeModalDirect(){document.getElementById('modalOverlay').classList.remove('open');activeModal=null;deleteConfirmMode=false;}
 function editFromModal(){var r=getRecords().find(function(rec){return String(rec.id)===String(activeModal)});if(!r)return;closeModalDirect();showTab('input');document.getElementById('inputDate').value=r.date;loadRecordToForm(r);}
 function deleteRecord(){if(activeModal===null)return;if(!deleteConfirmMode){deleteConfirmMode=true;var btn=document.querySelector('.modal-delete');btn.textContent='⚠️ もう一度タップで削除';btn.style.background='rgba(231,76,60,.4)';setTimeout(function(){deleteConfirmMode=false;if(btn){btn.textContent='🗑️ 削除';btn.style.background='rgba(231,76,60,.15)'}},3000);return}var records=getRecords().filter(function(r){return String(r.id)!==String(activeModal)});saveRecords(records);closeModalDirect();renderRecords();showToast('🗑️ 削除しました');}
-function saveInputAccordionState(id,isOpen){if(!id||id.indexOf('input')!==0)return;var state={};try{state=JSON.parse(localStorage.getItem('truckInputAccordionState')||'{}')}catch(e){state={}}state[id]=!!isOpen;localStorage.setItem('truckInputAccordionState',JSON.stringify(state));}
-function applyInputAccordionState(){var state={};try{state=JSON.parse(localStorage.getItem('truckInputAccordionState')||'{}')}catch(e){state={}}['inputJobAccordion','inputTimeAccordion','inputDistanceAccordion','inputPayAccordion'].forEach(function(id){if(state[id]===undefined)return;var body=document.getElementById(id),toggle=document.getElementById(id+'Toggle');if(!body)return;body.classList.toggle('open',!!state[id]);if(toggle)toggle.classList.toggle('open',!!state[id])});}
+function saveInputAccordionState(id,isOpen){if(!id||id.indexOf('input')!==0)return;var state={};try{state=JSON.parse(devGetItem('truckInputAccordionState')||'{}')}catch(e){state={}}state[id]=!!isOpen;devSetItem('truckInputAccordionState',JSON.stringify(state));}
+function applyInputAccordionState(){var state={};try{state=JSON.parse(devGetItem('truckInputAccordionState')||'{}')}catch(e){state={}}['inputJobAccordion','inputTimeAccordion','inputDistanceAccordion','inputPayAccordion'].forEach(function(id){if(state[id]===undefined)return;var body=document.getElementById(id),toggle=document.getElementById(id+'Toggle');if(!body)return;body.classList.toggle('open',!!state[id]);if(toggle)toggle.classList.toggle('open',!!state[id])});}
 function toggleAccordion(el){var id=el.getAttribute?el.getAttribute('data-id'):el,body=document.getElementById(id),toggle=document.getElementById(id+'Toggle');if(!body)return;body.classList.toggle('open');if(toggle)toggle.classList.toggle('open',body.classList.contains('open'));saveInputAccordionState(id,body.classList.contains('open'));}
 var FARE_DATA=[
   {cat:'エステル',name:'BASFジャパン㈱ 磯原',start:'13:00',end:'20:30',pay:23000},
@@ -1409,10 +1466,10 @@ function selectFare(pay,name){
   if((fare&&fare.pay>0)||pay>0)details.push(((fare&&fare.pay)||pay).toLocaleString()+'円');
   showToast((fareMode==='memo'?'📝 ':'💰 ')+name+(details.length?' / '+details.join(' / '):''));
 }
-function openSettings(){document.getElementById('settingOTRate').value=localStorage.getItem('otRate')||'';document.getElementById('settingHolidayRate').value=localStorage.getItem('holRate')||'';clearCompanyHolidayEditor();renderCompanyHolidayList();updateBackupStatus();document.getElementById('settingsOverlay').classList.add('open');}
+function openSettings(){document.getElementById('settingOTRate').value=devGetItem('otRate')||'';document.getElementById('settingHolidayRate').value=devGetItem('holRate')||'';clearCompanyHolidayEditor();renderCompanyHolidayList();updateBackupStatus();document.getElementById('settingsOverlay').classList.add('open');}
 function closeSettings(e){if(e.target===document.getElementById('settingsOverlay'))closeSettingsDirect();}
 function closeSettingsDirect(){document.getElementById('settingsOverlay').classList.remove('open');}
-function saveSettings(){var ot=parseInt(document.getElementById('settingOTRate').value),hol=parseInt(document.getElementById('settingHolidayRate').value);if(ot>0)localStorage.setItem('otRate',String(ot));if(hol>0)localStorage.setItem('holRate',String(hol));closeSettingsDirect();showToast('✅ 単価を保存しました。過去データは変わりません');}
+function saveSettings(){var ot=parseInt(document.getElementById('settingOTRate').value),hol=parseInt(document.getElementById('settingHolidayRate').value);if(ot>0)devSetItem('otRate',String(ot));if(hol>0)devSetItem('holRate',String(hol));closeSettingsDirect();showToast('✅ 単価を保存しました。過去データは変わりません');}
 
 function normalizeJobMemoText(text){
   var s=String(text||'');
@@ -1478,24 +1535,37 @@ var todayRecord=getRecords().find(function(r){return r.date===getLocalDateStr()}
 
 <!--
 変更履歴
-- 本番版：青土曜・祝日・会社休日・日曜の休日勤務ルールを再点検・統一
-- 本番版：休日勤務5h以下は4hまで休憩なし、4h超〜5hは0.5h休憩控除後を休日手当
-- 本番版：休日勤務5h超は通常勤務と同じ残業計算、残業分は休日単価、代休+1
-- 本番版：日曜長距離は従来どおり代休+1、客先設定終業超過のみ残業
-- 本番版：白土曜は平日と同じ通常勤務扱い
-- 本番版：半日有給は8:00以前の早出分、終業12:00を維持
-- 本番版：距離手当は800kmまで8円/km、超過分18円/kmを確認
-- 本番版：総走行距離の数値合計を強化
-- 本番版：スプレッドシート出力を月初→月末順、残業欄も共通計算に統一
-- 本番版：残業計算をcalcEffectiveOvertimeHoursへ一本化
-- 本番版：青土曜のみ休日扱い、白土曜は通常出勤日扱いに変更
-- 本番版：半日有給を最優先し、8:00より前の早出分だけ残業
-- 本番版：半日有給選択時の終業時刻12:00自動設定を維持
-- 本番版：カレンダー・記録詳細・月合計・集計を同じ残業計算へ統一
-- 本番版：手動会社休日を休日手当・代休判定へ統一反映
-- 本番版：半日有給を選択すると終業時刻を12:00に自動設定
-- 本番版：半日有給の残業を8:00より前の早出分として15分単位で計算
-- 本番版：半日有給の残業計算を土曜・祝日・会社休日判定より優先
+- 本番反映：休日勤務8.25h未満は休憩控除後の実働すべてを休日手当
+- 本番反映：休日勤務8.25h以上は通常残業計算＋休日単価＋代休1日
+- 本番反映：休日休憩は4hまで0、4h超〜5.75hは0.5h、5.75h超は1h
+- 本番反映：2026/07/05 6:00〜13:15 は休日6.25hとして確認済み
+- 本番反映：7月集計 時間外30h・休日9.5h・合計39.5h を確認済み
+- 休日勤務の分岐を5h基準から8.25h基準へ修正
+- 休日8.25h未満は休憩控除後の実働すべてを休日手当
+- 休日8.25h以上は通常残業計算＋休日単価＋代休1日
+- 休日休憩：4hまで0、4h超〜5.75hは0.5h、5.75h超は1h
+- 2026/07/05 6:00〜13:15 を休日6.25hとして再現確認
+- 青土曜・祝日・会社休日・日曜の休日勤務ルールを再点検・統一
+- 休日勤務5h以下：4hまでは休憩なし、4h超〜5hは0.5h休憩を控除し残り全て休日手当
+- 休日勤務5h超：通常出勤日と同じ残業計算、残業分は休日単価、代休+1
+- 日曜長距離：従来どおり代休+1、客先設定終業超過のみ残業
+- 白土曜：平日と同じ通常勤務扱い
+- 半日有給：8:00以前の早出分、終業12:00を維持
+- 距離手当：800kmまで8円/km、超過分18円/kmを確認
+- 総走行距離の数値合計を強化
+- スプレッドシート残業欄も共通残業計算に統一
+- スプレッドシート用コピーを日付の古い順（月初→月末）に変更
+- 残業計算をcalcEffectiveOvertimeHoursへ一本化
+- 青土曜のみ休日扱い、白土曜は通常出勤日扱いに変更
+- 半日有給を最優先し、8:00より前の早出分だけ残業
+- 半日有給選択時の終業時刻12:00自動設定を維持
+- カレンダー・記録詳細・月合計・集計を同じ残業計算へ統一
+- 手動会社休日を休日手当・代休判定へ統一反映
+- 半日有給を選択したとき、終業時刻を自動で12:00に設定するよう変更
+- 5:30出勤の場合の残業2.5時間計算は維持
+- 半日有給を後から選択した際、土曜・祝日判定より半日有給計算を優先するよう修正
+- 半日有給の残業を「8:00より前の早出時間」で15分単位計算（5:30出勤は2.5時間）
+- 半日有給の選択・解除時に、入力済みの終業時刻を勝手に変更・消去しないよう修正
 - 会社休日管理を設定画面に追加
 - お盆休み・年末年始・GWなどの会社休日を日付と名称で登録可能
 - 登録済み会社休日の編集・削除に対応
