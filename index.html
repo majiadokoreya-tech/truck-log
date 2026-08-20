@@ -7,14 +7,14 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1923">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="application-name" content="運転日報 DEV">
-<title>🚚 運転日報 DEV</title>
-<!-- latest: PROD holiday work threshold corrected to 8.25h -->
+<meta name="application-name" content="運転日報">
+<title>🚛 運転日報</title>
+<!-- latest: PROD holiday 8.25h rules + production orange theme restored -->
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#f5f7fb;--surface:#ffffff;--surface2:#eef1f7;--accent:#6c5ce7;--accent2:#4b3fc0;--text:#1a1a1a;--muted:#666666;--border:#dddddd;--green:#2ecc71;--red:#e74c3c;--blue:#3498db;--radius:14px;}
+:root{--bg:#f5f5f5;--surface:#ffffff;--surface2:#f0f0f0;--accent:#e8601c;--accent2:#c0440a;--text:#1a1a1a;--muted:#666666;--border:#dddddd;--green:#2ecc71;--red:#e74c3c;--blue:#3498db;--radius:14px;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-serif;min-height:100dvh;padding-bottom:80px}
 .header{background:linear-gradient(135deg,#f5f5f5 0%,#ffffff 100%);border-bottom:2px solid var(--accent);padding:16px 20px 12px;position:sticky;top:0;z-index:500}
@@ -107,7 +107,7 @@ input[type=number]{-moz-appearance:textfield}
 <body>
 <div class="header">
   <div style="display:flex;justify-content:space-between;align-items:center;">
-    <h1>🚚 運転日報</h1>
+    <h1>🚛 運転日報</h1>
     <button onclick="openSettings()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:4px;">⚙️</button>
   </div>
   <div class="header-date" id="headerDate"></div>
@@ -1535,6 +1535,9 @@ var todayRecord=getRecords().find(function(r){return r.date===getLocalDateStr()}
 
 <!--
 変更履歴
+- 本番テーマをオレンジ系へ復元
+- TEST用の紫背景・紫アクセントを本番配色へ修正
+- 休日8.25hルール・残業・距離・代休など計算ロジックは変更なし
 - 本番反映：休日勤務8.25h未満は休憩控除後の実働すべてを休日手当
 - 本番反映：休日勤務8.25h以上は通常残業計算＋休日単価＋代休1日
 - 本番反映：休日休憩は4hまで0、4h超〜5.75hは0.5h、5.75h超は1h
