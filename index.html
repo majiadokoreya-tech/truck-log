@@ -611,9 +611,27 @@ function calcSundayBreakHours(workH){
   workH=parseFloat(workH)||0;
   if(workH<=4)return 0;
   if(workH<=5.75)return 0.5;
-  if(workH<=8.25)return 1;
-  var extra=Math.floor((workH-8.25)/4)*0.5;
-  return Math.round((1+extra)*100)/100;
+  return 1;
+}
+
+function calcRequiredBreakHours(r){
+  var workH=getWorkHoursNum(r);
+  if(workH<=4)return 0;
+  if(workH<=5.75)return 0.5;
+  var breakH=1;
+  if(r&&r.end){
+    var endMins=timeToMins(r.end);
+    if(endMins!==null){
+      var standardEnd=14*60+15;
+      if(endMins<standardEnd&&r.start){
+        var startMins=timeToMins(r.start);
+        if(startMins!==null&&endMins<startMins)endMins+=24*60;
+      }
+      var lateMins=Math.max(0,endMins-standardEnd);
+      if(lateMins>=4*60)breakH+=0.5;
+    }
+  }
+  return breakH;
 }
 function calcSundayAllowanceHours(r){var workH=getWorkHoursNum(r);var breakH=calcSundayBreakHours(workH);return Math.max(0,Math.round((workH-breakH)*100)/100);}
 
@@ -689,12 +707,15 @@ function calcHolidayShortBreakHours(workH){
 function calcHolidayAllowanceHours(r){
   var workH=getWorkHoursNum(r);
   if(workH<=0)return 0;
-  var breakH=calcHolidayShortBreakHours(workH);
+  var breakH=calcRequiredBreakHours(r);
   return Math.max(0,Math.floor((workH-breakH)*4)/4);
 }
 function calcSaturdayHolidayOvertimeHours(r){
   if(!r||!r.date||new Date(r.date).getDay()===0||!isSaturdayOrHolidayRecordDate(r.date))return 0;
-  return calcHolidayAllowanceHours(r);
+  var workH=getWorkHoursNum(r);
+  if(workH<=0)return 0;
+  if(workH<8.25)return calcHolidayAllowanceHours(r);
+  return calcNormalOvertimeHoursFromRecord(r);
 }
 
 function isSundayRecord(r){return r&&r.date&&new Date(r.date).getDay()===0;}
@@ -1523,6 +1544,12 @@ var todayRecord=getRecords().find(function(r){return r.date===getLocalDateStr()}
 
 <!--
 変更履歴
+- 日曜と青土曜・祝日の休日計算を分離
+- 日曜は拘束時間－休憩時間を休日手当対象として計算
+- 青土曜・祝日・会社休日は短時間勤務と通常勤務で従来ルールを維持
+- 4.0hまで休憩なし、4.25hから0.5h、6.0hから1.0h
+- 追加0.5h休憩は14:15以降の残業4.0h到達時のみ。早出は含めない
+- 白土曜・半休・長距離・距離手当・代休・バックアップ・スプシ出力を維持
 - 休日手当計算を「拘束時間－休憩時間＝休日対象時間」に一本化
 - 日曜・青土曜・祝日・会社休日は実働時間すべてを休日手当対象に変更
 - 2026/08/30 05:00〜13:45 は7.75hとして計算
