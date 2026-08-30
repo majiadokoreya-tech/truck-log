@@ -8,8 +8,8 @@
 <meta name="theme-color" content="#0f1923">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="application-name" content="運転日報">
-<title>🧪 TEST 運転日報</title>
-<!-- TEST build: work-rule integration and draft validation -->
+<title>🚛 運転日報</title>
+<!-- latest: PROD complete work-rule integration v7 -->
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
@@ -110,10 +110,9 @@ input[type=number]{-moz-appearance:textfield}
 </style>
 </head>
 <body>
-<div class="test-banner">🧪 TEST版 - 本番データとは別保存</div>
 <div class="header">
   <div style="display:flex;justify-content:space-between;align-items:center;">
-    <h1>🧪 TEST 運転日報</h1>
+    <h1>🚛 運転日報</h1>
     <button onclick="openSettings()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:4px;">⚙️</button>
   </div>
   <div class="header-date" id="headerDate"></div>
@@ -329,7 +328,7 @@ input[type=number]{-moz-appearance:textfield}
 
 <script>
 
-var STORAGE_PREFIX='trucklog_TEST_v7_';
+var STORAGE_PREFIX='';
 function devKey(key){return STORAGE_PREFIX+String(key);}
 function devGetItem(key){return localStorage.getItem(devKey(key));}
 function devSetItem(key,value){return localStorage.setItem(devKey(key),value);}
@@ -1270,9 +1269,9 @@ function fixAllRecords(){var r=getRecords().map(function(r){var oldRate=getRateF
 var pendingBackupRestore=null;
 function getDevStorageSnapshot(){var s={};devStorageKeys().forEach(function(k){var v=devGetItem(k);if(v!==null)s[k]=v;});return s;}
 function getBackupMonthSummary(){var l=calcLeaveMonth();return {month:getLeaveMonthKey(),currentYukyu:l.currentYukyu,currentDaikyu:l.currentDaikyu,halfLeaveUsedYear:calcHalfLeaveYear().used};}
-function makeCompleteBackupPayload(){return {app:'truck-log',environment:'TEST',version:7,exportedAt:new Date().toISOString(),records:getRecords(),settings:{otRate:getCurrentOTRate(),holidayRate:getCurrentHolidayRate()},leaveSummary:getBackupMonthSummary(),storage:getDevStorageSnapshot()};}
+function makeCompleteBackupPayload(){return {app:'truck-log',environment:'PROD',version:7,exportedAt:new Date().toISOString(),records:getRecords(),settings:{otRate:getCurrentOTRate(),holidayRate:getCurrentHolidayRate()},leaveSummary:getBackupMonthSummary(),storage:getDevStorageSnapshot()};}
 function formatBackupDate(iso){if(!iso)return '不明';var d=new Date(iso);if(isNaN(d.getTime()))return String(iso);return d.getFullYear()+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
-function backupData(){try{var p=makeCompleteBackupPayload(),j=JSON.stringify(p,null,2),b=new Blob([j],{type:'application/json;charset=utf-8'}),a=document.createElement('a'),n=new Date(),st=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0')+'_'+String(n.getHours()).padStart(2,'0')+'-'+String(n.getMinutes()).padStart(2,'0');a.href=URL.createObjectURL(b);a.download='truck-log-test_'+st+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href);},1000);devSetItem('lastBackupAt',p.exportedAt);updateBackupStatus();showToast('💾 完全バックアップを作成しました');}catch(e){console.error(e);showToast('❌ バックアップ作成に失敗しました',true);}}
+function backupData(){try{var p=makeCompleteBackupPayload(),j=JSON.stringify(p,null,2),b=new Blob([j],{type:'application/json;charset=utf-8'}),a=document.createElement('a'),n=new Date(),st=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0')+'_'+String(n.getHours()).padStart(2,'0')+'-'+String(n.getMinutes()).padStart(2,'0');a.href=URL.createObjectURL(b);a.download='truck-log-prod_'+st+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href);},1000);devSetItem('lastBackupAt',p.exportedAt);updateBackupStatus();showToast('💾 完全バックアップを作成しました');}catch(e){console.error(e);showToast('❌ バックアップ作成に失敗しました',true);}}
 function normalizeBackupData(d){if(Array.isArray(d))return {app:'truck-log',environment:'legacy',version:1,exportedAt:null,records:d,settings:{},storage:{truckRecords:JSON.stringify(d)}};if(!d||typeof d!=='object')throw new Error('invalid');var r=Array.isArray(d.records)?d.records:[],s=d.storage&&typeof d.storage==='object'?d.storage:{};if(!s.truckRecords)s.truckRecords=JSON.stringify(r);if(d.settings){if(d.settings.otRate!==undefined&&!s.otRate)s.otRate=String(d.settings.otRate);if(d.settings.holidayRate!==undefined&&!s.holRate)s.holRate=String(d.settings.holidayRate);}return {app:d.app||'truck-log',environment:d.environment||'legacy',version:d.version||2,exportedAt:d.exportedAt||null,records:r,settings:d.settings||{},leaveSummary:d.leaveSummary||null,storage:s};}
 function previewBackupFile(input){var f=input.files&&input.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(e){try{var d=normalizeBackupData(JSON.parse(e.target.result));pendingBackupRestore={data:d,fileName:f.name};renderBackupPreview(d,f.name);document.getElementById('backupPreviewOverlay').classList.add('open');}catch(err){console.error(err);pendingBackupRestore=null;showToast('❌ バックアップファイルが正しくありません',true);input.value='';}};rd.onerror=function(){pendingBackupRestore=null;showToast('❌ ファイルを読み込めませんでした',true);input.value='';};rd.readAsText(f,'UTF-8');}
 function renderBackupPreview(d,n){var l=d.leaveSummary||{},c=Object.keys(d.storage||{}).length,e=d.environment==='PROD'?'本番版':(d.environment==='DEV'?'テスト版':'旧形式'),w=d.environment==='PROD'?'<div class="rate-note" style="margin-top:10px;color:var(--red);">⚠️ 本番版のバックアップです。</div>':'';var h='<div class="backup-info"><b>ファイル：</b>'+escapeHtml(n)+'<br><b>作成日時：</b>'+escapeHtml(formatBackupDate(d.exportedAt))+'<br><b>形式：</b>バージョン '+escapeHtml(d.version)+' / '+e+'</div><div class="backup-preview-grid"><div class="backup-preview-card"><div class="backup-preview-label">日報件数</div><div class="backup-preview-value">'+d.records.length+'件</div></div><div class="backup-preview-card"><div class="backup-preview-label">保存項目</div><div class="backup-preview-value">'+c+'個</div></div><div class="backup-preview-card"><div class="backup-preview-label">有給残</div><div class="backup-preview-value">'+(l.currentYukyu!==undefined?fmtLeave(l.currentYukyu)+'日':'確認不可')+'</div></div><div class="backup-preview-card"><div class="backup-preview-label">代休残</div><div class="backup-preview-value">'+(l.currentDaikyu!==undefined?fmtLeave(l.currentDaikyu)+'日':'確認不可')+'</div></div></div>'+w;document.getElementById('backupPreviewContent').innerHTML=h;}
@@ -1667,7 +1666,7 @@ var todayRecord=getRecords().find(function(r){return r.date===getLocalDateStr()}
 
 <!--
 変更履歴
-- 2026/08/31 テスト版：本番と分離した専用保存領域 trucklog_TEST_v7_ を使用
+- 2026/08/31 本番版：テスト済みの勤務ルール・仮保存・入力保持を完全統合し、従来の本番データを継続使用
 - 未入力のまま保存できる仮保存を追加し、未入力項目・未確定件数を継続表示
 - 残業0時間を確定値として保存できるようにし、手入力値と15時間超の手入力を再表示・再集計時も保持
 - 「自動計算に戻す」を追加し、手入力から明示的に自動計算へ戻せるように変更
