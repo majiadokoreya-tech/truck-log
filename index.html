@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="application-name" content="運転日報">
 <title>🚛 運転日報</title>
-<!-- latest: PROD holiday 8.25h rules + production orange theme restored -->
+<!-- latest: PROD holiday allowance = actual work hours after break -->
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
@@ -686,24 +686,15 @@ function calcHolidayShortBreakHours(workH){
   if(workH<=5.75)return 0.5;
   return 1;
 }
-function calcHolidayShortAllowanceHours(r){
+function calcHolidayAllowanceHours(r){
   var workH=getWorkHoursNum(r);
-  if(workH<=0||workH>=8.25)return 0;
+  if(workH<=0)return 0;
   var breakH=calcHolidayShortBreakHours(workH);
   return Math.max(0,Math.floor((workH-breakH)*4)/4);
 }
 function calcSaturdayHolidayOvertimeHours(r){
   if(!r||!r.date||new Date(r.date).getDay()===0||!isSaturdayOrHolidayRecordDate(r.date))return 0;
-  var workH=getWorkHoursNum(r);
-  if(workH<=0)return 0;
-
-  // 青土曜・祝日・会社休日
-  // 8.25h未満：必要休憩を引いた実働すべてを休日手当。
-  if(workH<8.25)return calcHolidayShortAllowanceHours(r);
-
-  // 8.25h以上：通常勤務と同じ残業計算。
-  // 残業分は休日単価、代休+1。
-  return calcNormalOvertimeHoursFromRecord(r);
+  return calcHolidayAllowanceHours(r);
 }
 
 function isSundayRecord(r){return r&&r.date&&new Date(r.date).getDay()===0;}
@@ -735,12 +726,9 @@ function calcEffectiveOvertimeHours(r){
   // 長距離は客先設定時間基準。日曜長距離は代休特例を別途維持。
   if(isLongDistanceRecord(r))return calcLongDistanceOvertimeHours(r);
 
-  // 日曜：8.25h未満は必要休憩を引いた実働すべて休日手当。
-  // 8.25h以上は通常残業計算＋休日単価。
+  // 日曜は、拘束時間から必要休憩を引いた実働すべてを休日手当対象にする。
   if(isSundayRecord(r)){
-    var sundayWork=getWorkHoursNum(r);
-    if(sundayWork<8.25)return calcHolidayShortAllowanceHours(r);
-    return calcNormalOvertimeHoursFromRecord(r);
+    return calcHolidayAllowanceHours(r);
   }
 
   // 青土曜・祝日・手動会社休日
@@ -1535,6 +1523,11 @@ var todayRecord=getRecords().find(function(r){return r.date===getLocalDateStr()}
 
 <!--
 変更履歴
+- 休日手当計算を「拘束時間－休憩時間＝休日対象時間」に一本化
+- 日曜・青土曜・祝日・会社休日は実働時間すべてを休日手当対象に変更
+- 2026/08/30 05:00〜13:45 は7.75hとして計算
+- 2026/07/05 06:00〜13:15 は6.25hを維持
+- 代休判定・白土曜・半休・長距離・距離手当・スプシ出力は既存仕様を維持
 - 本番テーマをオレンジ系へ復元
 - TEST用の紫背景・紫アクセントを本番配色へ修正
 - 休日8.25hルール・残業・距離・代休など計算ロジックは変更なし
