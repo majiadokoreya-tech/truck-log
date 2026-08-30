@@ -26,6 +26,58 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#f5f5f5}
   var frame=document.getElementById('appFrame');
   var boot=document.getElementById('boot');
 
+
+  function customizeMemoButtons(d,w){
+    if(!d||!w)return;
+
+    var memoArea=d.querySelector('#inputJobAccordion .memo-btn');
+    if(!memoArea)return;
+
+    var wrap=memoArea.parentElement;
+    if(!wrap||wrap.dataset.customizedMemoButtons==='1')return;
+    wrap.dataset.customizedMemoButtons='1';
+
+    function findButtonByText(txt){
+      return Array.prototype.find.call(wrap.querySelectorAll('.memo-btn'),function(el){
+        return el.textContent.trim().indexOf(txt)>=0;
+      });
+    }
+
+    var gas=findButtonByText('ガス');
+    var ester=findButtonByText('エステル');
+    var chlorine=findButtonByText('塩素');
+    var load=findButtonByText('搭載');
+    var chlorineOnly=findButtonByText('塩素搭載のみ');
+    var chlorineDelivery=findButtonByText('塩素搭載＋配送');
+    var environment=findButtonByText('環境整備');
+    var kaneka=findButtonByText('カネカ');
+    var pm=findButtonByText('PM搭載');
+    var customer=findButtonByText('客先');
+
+    if(chlorine)chlorine.remove();
+    if(load)load.remove();
+
+    if(ester){
+      ester.innerHTML='🧪 エステル搭載';
+      ester.onclick=function(){
+        w.addMemo('エステル');
+        w.addMemo('搭載');
+        if(typeof w.updateInputProgress==='function')w.updateInputProgress();
+      };
+    }
+
+    if(chlorineOnly){
+      chlorineOnly.innerHTML='⚗️ 塩素搭載';
+    }
+
+    if(environment){
+      environment.innerHTML='🧹 環境整備';
+    }
+
+    var ordered=[gas,ester,chlorineOnly,chlorineDelivery,environment,pm,kaneka,customer].filter(Boolean);
+    ordered.forEach(function(el){wrap.appendChild(el);});
+  }
+
   function injectReferenceUI(d){
     if(!d || d.getElementById('overtimeReferenceBtn'))return;
 
@@ -170,6 +222,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#f5f5f5}
 
     frame.onload=function(){
       try{
+        customizeMemoButtons(frame.contentDocument,frame.contentWindow);
         injectReferenceUI(frame.contentDocument);
         boot.style.display='none';
       }catch(e){
@@ -214,6 +267,13 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#f5f5f5}
 
 <!--
 変更履歴
+- 2026/08/31 本番版：仕事内容メモのボタン構成と並び順を整理
+- 「塩素」「搭載」の単独ボタンを削除
+- 「エステル」を「エステル搭載」へ変更
+- 「塩素搭載のみ」を「塩素搭載」へ変更
+- 「環境整備（雑用）」を「環境整備」へ変更
+- 並び順を「ガス / エステル搭載 / 塩素搭載 / 塩素搭載＋配送 / 環境整備 / PM搭載 / カネカ / 客先」に変更
+- 既存の仕事内容メモ・自動処理・残業・集計・バックアップ等の機能は維持
 - 2026/08/31 本番版：残業時間欄に「会社の時間外早見表を見る」ボタンを追加
 - 本番版の早見表表示を、画像表示からテスト版と同じ見やすい表形式へ変更
 - 4:30〜6:00、7:00〜8:00、9:00〜10:00、12:00〜13:00の4区分を表示
