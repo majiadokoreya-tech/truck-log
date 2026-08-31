@@ -27,6 +27,90 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#f5f5f5}
   var boot=document.getElementById('boot');
 
 
+
+  function fixLongDistanceAutoTimeCompletion(d,w){
+    if(!d||!w)return;
+
+    function patchTimeDone(){
+      if(typeof w.isTimeInputDone!=='function')return;
+      if(w.__longDistanceTimeDonePatched)return;
+      w.__longDistanceTimeDonePatched=true;
+
+      var original=w.isTimeInputDone;
+      w.isTimeInputDone=function(){
+        try{
+          var jobs=Array.isArray(w.selectedJobs)?w.selectedJobs:[];
+          if(jobs.includes('休み'))return true;
+
+          var startEl=d.getElementById('startTime');
+          var endEl=d.getElementById('endTime');
+          var hasStart=!!(startEl&&startEl.value);
+          var hasEnd=!!(endEl&&endEl.value);
+
+          if(jobs.includes('長距離')){
+            return hasStart&&hasEnd;
+          }
+
+          return original.apply(w,arguments);
+        }catch(e){
+          return original.apply(w,arguments);
+        }
+      };
+    }
+
+    function patchMissingFields(){
+      if(typeof w.getMissingFieldsForRecord!=='function')return;
+      if(w.__longDistanceMissingFieldsPatched)return;
+      w.__longDistanceMissingFieldsPatched=true;
+
+      var original=w.getMissingFieldsForRecord;
+      w.getMissingFieldsForRecord=function(r){
+        var missing=original.call(w,r);
+        if(!r)return missing;
+
+        var jobs=r.jobs||[];
+        if(jobs.includes('長距離')&&r.startTime&&r.endTime){
+          missing=missing.filter(function(x){
+            return x!=='出勤時間'&&x!=='退勤時間';
+          });
+          if(r.overtimeConfirmed!==true&&!missing.includes('残業時間')){
+            missing.push('残業時間');
+          }
+        }
+        return missing;
+      };
+    }
+
+    function patchFareSelect(){
+      if(typeof w.selectFare!=='function')return;
+      if(w.__longDistanceFareSelectPatched)return;
+      w.__longDistanceFareSelectPatched=true;
+
+      var original=w.selectFare;
+      w.selectFare=function(){
+        var result=original.apply(w,arguments);
+
+        setTimeout(function(){
+          try{
+            var start=d.getElementById('startTime');
+            var end=d.getElementById('endTime');
+
+            if(start&&end&&start.value&&end.value){
+              if(typeof w.updateInputProgress==='function')w.updateInputProgress();
+              if(typeof w.renderInputSummary==='function')w.renderInputSummary();
+            }
+          }catch(e){}
+        },0);
+
+        return result;
+      };
+    }
+
+    patchTimeDone();
+    patchMissingFields();
+    patchFareSelect();
+  }
+
   function customizeMemoButtons(d,w){
     if(!d||!w)return;
 
@@ -223,6 +307,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#f5f5f5}
     frame.onload=function(){
       try{
         customizeMemoButtons(frame.contentDocument,frame.contentWindow);
+        fixLongDistanceAutoTimeCompletion(frame.contentDocument,frame.contentWindow);
         injectReferenceUI(frame.contentDocument);
         boot.style.display='none';
       }catch(e){
@@ -267,6 +352,10 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#f5f5f5}
 
 <!--
 変更履歴
+- 2026/08/31 本番版：長距離で客先選択時に出勤・退勤時間が自動入力されても「時間未入力」扱いになる不具合を修正
+- 長距離は出勤・退勤の両方が自動入力済みなら「時間」は入力済みとして判定
+- 残業時間が未確定の場合は「時間未入力」ではなく「残業時間未入力」として管理
+- 客先選択直後に入力進捗と入力サマリーを再描画
 - 2026/08/31 本番版：仕事内容メモのボタン構成と並び順を整理
 - 「塩素」「搭載」の単独ボタンを削除
 - 「エステル」を「エステル搭載」へ変更
