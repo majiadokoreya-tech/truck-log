@@ -313,7 +313,7 @@ input[type=number]{-moz-appearance:textfield}
       <div class="backup-info">
         日報・単価・有給・代休・入力状態など、本番版の保存データをまとめて保存します。復元前に内容を確認できます。<br>
         <b>🔒 毎日1回 自動バックアップ：ON</b><br>
-        その日の最初の操作時に、JSONバックアップを端末のダウンロードフォルダへ自動保存します。
+        その日の最初の操作時に、JSONバックアップを端末のダウンロードフォルダへ自動保存します。ファイル名は「運転日報_自動バックアップ_日付_時刻.json」です。
       </div>
       <button onclick="backupData()" class="copy-btn" style="background:rgba(46,204,113,.15);border-color:var(--green);color:var(--green);">💾 完全バックアップを作成</button>
       <label style="width:100%;display:block;text-align:center;background:rgba(52,152,219,.15);border:1.5px solid var(--blue);border-radius:10px;padding:12px;color:var(--blue);font-size:14px;cursor:pointer;">📂 バックアップを選んで内容確認<input type="file" id="settingsRestoreFile" accept=".json,application/json" style="display:none;" onchange="previewBackupFile(this)"></label>
@@ -1213,7 +1213,7 @@ function backupData(options){
         n=new Date(),
         st=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0')+'_'+String(n.getHours()).padStart(2,'0')+'-'+String(n.getMinutes()).padStart(2,'0');
     a.href=URL.createObjectURL(b);
-    a.download='truck-log_'+st+'.json';
+    a.download=(options.auto?'運転日報_自動バックアップ_':'運転日報_手動バックアップ_')+st+'.json';
     document.body.appendChild(a);
     a.click();
     var objectUrl=a.href;
@@ -1671,6 +1671,9 @@ var todayRecord=getRecords().find(function(r){return r.date===getLocalDateStr()}
 
 <!--
 変更履歴
+- 2026/09/07 PROD：バックアップファイル名を分かりやすく変更
+- 自動バックアップ：運転日報_自動バックアップ_YYYY-MM-DD_HH-MM.json
+- 手動バックアップ：運転日報_手動バックアップ_YYYY-MM-DD_HH-MM.json
 - 2026/09/06 PROD：半日有給「アプリ開始前の使用回数」を手入力できるよう追加
 - 半日有給使用合計を「手入力＋アプリ記録」で自動計算
 - 半日有給残り回数（12回上限）も手入力分を含めて自動更新
