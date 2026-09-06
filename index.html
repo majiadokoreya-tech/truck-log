@@ -247,17 +247,27 @@ input[type=number]{-moz-appearance:textfield}
   <div class="section" style="margin-top:10px;" id="leaveSection">
     <div class="section-title">📅 残日数管理</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-      <div><div class="input-label" style="margin-bottom:6px;">🌴 月初有給残（日）</div><input class="input-field" type="number" id="leaveStartYukyu" placeholder="0" step="0.5" style="font-size:20px;text-align:center;" oninput="saveLeaveStart()" min="0"></div>
-      <div><div class="input-label" style="margin-bottom:6px;">🔄 月初代休残（日）</div><input class="input-field" type="number" id="leaveStartDaikyu" placeholder="0" step="1" style="font-size:20px;text-align:center;" oninput="saveLeaveStart()" min="0"></div>
+      <div><div class="input-label" style="margin-bottom:6px;">🌴 月初有給残（日）</div><input class="input-field" type="number" id="leaveStartYukyu" placeholder="0" step="0.5" inputmode="decimal" style="font-size:20px;text-align:center;" oninput="saveLeaveStart(false)" onblur="saveLeaveStart(true)" min="0"></div>
+      <div><div class="input-label" style="margin-bottom:6px;">🔄 月初代休残（日）</div><input class="input-field" type="number" id="leaveStartDaikyu" placeholder="0" step="1" inputmode="numeric" style="font-size:20px;text-align:center;" oninput="saveLeaveStart(false)" onblur="saveLeaveStart(true)" min="0"></div>
     </div>
     <div style="border-top:1px solid var(--border);padding-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <div class="stat-card" style="padding:12px;background:rgba(232,96,28,.08);border-color:var(--accent);"><div class="stat-label">🌴 現在有給残</div><div class="stat-value" id="leaveCurrentYukyu">0<span class="stat-unit"> 日</span></div></div>
       <div class="stat-card" style="padding:12px;background:rgba(46,204,113,.08);border-color:var(--green);"><div class="stat-label">🔄 現在代休残</div><div class="stat-value" id="leaveCurrentDaikyu" style="color:var(--green);">0<span class="stat-unit"> 日</span></div></div>
     </div>
     <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div class="stat-card" style="padding:12px;background:rgba(154,205,50,.10);border-color:#9acd32;"><div class="stat-label">🌴 半日有給 使用合計</div><div class="stat-value" id="halfLeaveUsedYear" style="color:#6b9b00;">0<span class="stat-unit"> / 12回</span></div><div id="halfLeaveUsedDetail" style="font-size:10px;color:var(--muted);margin-top:4px;line-height:1.5;">アプリ記録 0回</div></div>
+      <div class="stat-card" style="padding:12px;background:rgba(154,205,50,.10);border-color:#9acd32;"><div class="stat-label">🌴 半日有給 使用合計</div><div class="stat-value" id="halfLeaveUsedYear" style="color:#6b9b00;">0<span class="stat-unit"> / 12回</span></div><div id="halfLeaveUsedDetail" style="font-size:10px;color:var(--muted);margin-top:4px;line-height:1.5;">手入力 0回 ＋ アプリ記録 0回</div></div>
       <div class="stat-card" style="padding:12px;background:rgba(52,152,219,.08);border-color:var(--blue);"><div class="stat-label">📅 半日有給 残り</div><div class="stat-value" id="halfLeaveRemainYear" style="color:var(--blue);">12<span class="stat-unit"> 回</span></div></div>
     </div>
+
+    <div style="margin-top:10px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;">
+      <div class="input-label" style="margin-bottom:6px;">🌴 アプリ開始前の半日有給 使用回数</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input class="input-field" type="number" id="halfLeaveManualUsed" placeholder="0" step="1" min="0" max="12" inputmode="numeric" style="font-size:20px;text-align:center;" oninput="saveHalfLeaveManualUsed(false)" onblur="saveHalfLeaveManualUsed(true)">
+        <span style="font-size:13px;color:var(--muted);white-space:nowrap;">回</span>
+      </div>
+      <div id="halfLeaveManualYearLabel" style="font-size:10px;color:var(--muted);margin-top:6px;line-height:1.5;">今年、アプリを使い始める前に取得した回数を入力</div>
+    </div>
+
     <button onclick="clearLeaveStartManualThisMonth()" class="copy-btn" style="background:rgba(52,152,219,.12);border-color:var(--blue);color:var(--blue);margin-top:10px;">🔄 この月を前月末残から自動計算に戻す</button>
     <div id="leaveBreakdown" style="margin-top:12px;font-size:12px;color:var(--muted);line-height:1.8;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px;"></div>
   </div>
@@ -300,7 +310,11 @@ input[type=number]{-moz-appearance:textfield}
 
       <hr style="border:none;border-top:1px solid var(--border);">
       <div class="section-title" style="margin-bottom:0;">💾 バックアップ</div>
-      <div class="backup-info">日報・単価・有給・代休・入力状態など、本番版の保存データをまとめて保存します。復元前に内容を確認できます。</div>
+      <div class="backup-info">
+        日報・単価・有給・代休・入力状態など、本番版の保存データをまとめて保存します。復元前に内容を確認できます。<br>
+        <b>🔒 毎日1回 自動バックアップ：ON</b><br>
+        その日の最初の操作時に、JSONバックアップを端末のダウンロードフォルダへ自動保存します。
+      </div>
       <button onclick="backupData()" class="copy-btn" style="background:rgba(46,204,113,.15);border-color:var(--green);color:var(--green);">💾 完全バックアップを作成</button>
       <label style="width:100%;display:block;text-align:center;background:rgba(52,152,219,.15);border:1.5px solid var(--blue);border-radius:10px;padding:12px;color:var(--blue);font-size:14px;cursor:pointer;">📂 バックアップを選んで内容確認<input type="file" id="settingsRestoreFile" accept=".json,application/json" style="display:none;" onchange="previewBackupFile(this)"></label>
       <div id="backupLastStatus" style="font-size:11px;color:var(--muted);line-height:1.6;"></div>
@@ -756,16 +770,34 @@ function getLeaveStartForMonth(ms,visited){
   return {yukyu:prevResult.currentYukyu,daikyu:prevResult.currentDaikyu};
 }
 function getLeaveStart(ms){return getLeaveStartForMonth(ms);}
-function saveLeaveStart(){
+function saveLeaveStart(finalize){
   var ms=getLeaveMonthKey();
-  var y=parseFloat(document.getElementById('leaveStartYukyu').value)||0;
-  var d=parseFloat(document.getElementById('leaveStartDaikyu').value)||0;
+  var yEl=document.getElementById('leaveStartYukyu');
+  var dEl=document.getElementById('leaveStartDaikyu');
+  if(!yEl||!dEl)return;
+
+  var yRaw=String(yEl.value||'').replace('，','.').replace(',','.').replace('．','.');
+  var dRaw=String(dEl.value||'').replace('，','.').replace(',','.').replace('．','.');
+
+  var y=parseFloat(yRaw);
+  var d=parseFloat(dRaw);
+  if(!isFinite(y))y=0;
+  if(!isFinite(d))d=0;
+
+  // 有給は0.5日単位を許可。代休は従来どおり整数日。
+  y=Math.round(y*2)/2;
   d=Math.floor(d);
+
   devSetItem('leaveStartYukyu_'+ms,String(y));
   devSetItem('leaveStartDaikyu_'+ms,String(d));
   devSetItem('leaveStartManual_'+ms,'1');
-  renderLeavePanel();
-  showToast('✅ この月の月初残を固定しました');
+
+  // 入力途中は再描画しない。
+  // 例：「30.」の時点で30へ戻されると「30.5」が入力できないため。
+  if(finalize===true){
+    renderLeavePanel();
+    showToast('✅ この月の月初残を固定しました');
+  }
 }
 function clearLeaveStartManualThisMonth(){
   var ms=getLeaveMonthKey();
@@ -781,10 +813,63 @@ function loadLeaveStart(){
   if(y)y.value=fmtLeave(st.yukyu);
   if(d)d.value=fmtLeave(st.daikyu);
 }
-function calcHalfLeaveYear(){var y=String(currentYear);var records=getRecords().filter(function(r){return r.date&&r.date.indexOf(y+'-')===0&&isHalfLeaveRecord(r);});var used=records.length;var remain=12-used;if(remain<0)remain=0;return {appUsed:records.length,used:used,remain:remain};}
+function getHalfLeaveManualUsed(year){
+  var v=parseInt(devGetItem('halfLeaveManualUsed_'+String(year)),10);
+  if(!isFinite(v)||v<0)v=0;
+  if(v>12)v=12;
+  return v;
+}
+function saveHalfLeaveManualUsed(finalize){
+  var el=document.getElementById('halfLeaveManualUsed');
+  if(!el)return;
+  var v=parseInt(el.value,10);
+  if(!isFinite(v)||v<0)v=0;
+  if(v>12)v=12;
+  devSetItem('halfLeaveManualUsed_'+String(currentYear),String(v));
+  if(finalize===true){
+    el.value=String(v);
+    renderLeavePanel();
+    showToast('✅ 半日有給の使用回数を保存しました');
+  }
+}
+function calcHalfLeaveYear(){
+  var y=String(currentYear);
+  var records=getRecords().filter(function(r){
+    return r.date&&r.date.indexOf(y+'-')===0&&isHalfLeaveRecord(r);
+  });
+  var manualUsed=getHalfLeaveManualUsed(currentYear);
+  var appUsed=records.length;
+  var used=manualUsed+appUsed;
+  var remain=12-used;
+  if(remain<0)remain=0;
+  return {manualUsed:manualUsed,appUsed:appUsed,used:used,remain:remain};
+}
 function calcLeaveMonth(){var ms=getLeaveMonthKey();var st=getLeaveStart(ms);return calcLeaveMonthByKey(ms,st);}
 
-function renderLeavePanel(){if(!document.getElementById('leaveCurrentYukyu'))return;loadLeaveStart();var c=calcLeaveMonth();var hy=calcHalfLeaveYear();document.getElementById('leaveCurrentYukyu').innerHTML=fmtLeave(c.currentYukyu)+'<span class="stat-unit"> 日</span>';document.getElementById('leaveCurrentDaikyu').innerHTML=fmtLeave(c.currentDaikyu)+'<span class="stat-unit"> 日</span>';document.getElementById('halfLeaveUsedYear').innerHTML=hy.used+'<span class="stat-unit"> / 12回</span>';document.getElementById('halfLeaveUsedDetail').textContent='アプリ記録 '+hy.appUsed+'回';document.getElementById('halfLeaveRemainYear').innerHTML=hy.remain+'<span class="stat-unit"> 回</span>';var warn=hy.remain<=0?' <span style="color:var(--red);font-weight:700;">上限です</span>':'';var html='📋 今月内訳<br>🏠 休み '+fmtLeave(c.restDays)+'日（代休消化 '+fmtLeave(c.usedDaikyu)+'日 / 有給消化 '+fmtLeave(c.usedYukyu)+'日）<br>🌴 半日有給 '+c.halfCount+'回 = '+fmtLeave(c.halfDays)+'日<br>🔄 代休発生 '+fmtLeave(c.earned)+'日（祝日・青土曜で8.25h以上／日曜長距離）';if(c.shortHoliday>0)html+='<br>⏰ 休日短時間出勤 '+c.shortHoliday+'日（代休なし・全て残業扱い）';html+='<br><br>📅 '+currentYear+'年 半日有給：アプリ記録 '+hy.appUsed+'回 = '+hy.used+' / 12回　残り '+hy.remain+'回'+warn;html+='<br><br>計算：有給 '+fmtLeave(c.startYukyu)+' - '+fmtLeave(c.usedYukyu)+' - '+fmtLeave(c.halfDays)+' = '+fmtLeave(c.currentYukyu)+' / 代休 '+fmtLeave(c.startDaikyu)+' + '+fmtLeave(c.earned)+' - '+fmtLeave(c.usedDaikyu)+' = '+fmtLeave(c.currentDaikyu);document.getElementById('leaveBreakdown').innerHTML=html;}
+function renderLeavePanel(){
+  if(!document.getElementById('leaveCurrentYukyu'))return;
+  loadLeaveStart();
+  var c=calcLeaveMonth();
+  var hy=calcHalfLeaveYear();
+
+  document.getElementById('leaveCurrentYukyu').innerHTML=fmtLeave(c.currentYukyu)+'<span class="stat-unit"> 日</span>';
+  document.getElementById('leaveCurrentDaikyu').innerHTML=fmtLeave(c.currentDaikyu)+'<span class="stat-unit"> 日</span>';
+  document.getElementById('halfLeaveUsedYear').innerHTML=hy.used+'<span class="stat-unit"> / 12回</span>';
+  document.getElementById('halfLeaveUsedDetail').textContent='手入力 '+hy.manualUsed+'回 ＋ アプリ記録 '+hy.appUsed+'回';
+  document.getElementById('halfLeaveRemainYear').innerHTML=hy.remain+'<span class="stat-unit"> 回</span>';
+
+  var manualEl=document.getElementById('halfLeaveManualUsed');
+  if(manualEl&&document.activeElement!==manualEl)manualEl.value=String(hy.manualUsed);
+  var yearLabel=document.getElementById('halfLeaveManualYearLabel');
+  if(yearLabel)yearLabel.textContent=currentYear+'年：アプリを使い始める前に取得した回数を入力';
+
+  var warn=hy.remain<=0?' <span style="color:var(--red);font-weight:700;">上限です</span>':'';
+  var html='📋 今月内訳<br>🏠 休み '+fmtLeave(c.restDays)+'日（代休消化 '+fmtLeave(c.usedDaikyu)+'日 / 有給消化 '+fmtLeave(c.usedYukyu)+'日）<br>🌴 半日有給 '+c.halfCount+'回 = '+fmtLeave(c.halfDays)+'日<br>🔄 代休発生 '+fmtLeave(c.earned)+'日（祝日・青土曜で8.25h以上／日曜長距離）';
+  if(c.shortHoliday>0)html+='<br>⏰ 休日短時間出勤 '+c.shortHoliday+'日（代休なし・全て残業扱い）';
+  html+='<br><br>📅 '+currentYear+'年 半日有給：手入力 '+hy.manualUsed+'回 ＋ アプリ記録 '+hy.appUsed+'回 = '+hy.used+' / 12回　残り '+hy.remain+'回'+warn;
+  html+='<br><br>計算：有給 '+fmtLeave(c.startYukyu)+' - '+fmtLeave(c.usedYukyu)+' - '+fmtLeave(c.halfDays)+' = '+fmtLeave(c.currentYukyu)+' / 代休 '+fmtLeave(c.startDaikyu)+' + '+fmtLeave(c.earned)+' - '+fmtLeave(c.usedDaikyu)+' = '+fmtLeave(c.currentDaikyu);
+  document.getElementById('leaveBreakdown').innerHTML=html;
+}
 function showTab(tab){document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});document.getElementById('page-'+tab).classList.add('active');var idx=['input','records','stats'].indexOf(tab);document.querySelectorAll('.tab')[idx].classList.add('active');if(tab==='records')renderRecords();if(tab==='stats')renderStats();}
 function updateTotalDistance(){var d1=parseFloat(document.getElementById('distance1').value)||0,d2=parseFloat(document.getElementById('distance2').value)||0,d3=parseFloat(document.getElementById('distance3').value)||0,total=d1+d2+d3;document.getElementById('distance').value=total||'';document.getElementById('distanceTotal').innerHTML=total.toLocaleString()+' <span style="font-size:12px;color:var(--muted);">km</span>';updateInputProgress();}
 function getMemoParts(){var el=document.getElementById('jobMemo');var normalized=normalizeJobMemoText(el?el.value:'');return normalized?normalized.split('　').filter(function(p){return p!=='';}):[];}
@@ -1114,7 +1199,80 @@ function getDevStorageSnapshot(){var s={};devStorageKeys().forEach(function(k){v
 function getBackupMonthSummary(){var l=calcLeaveMonth();return {month:getLeaveMonthKey(),currentYukyu:l.currentYukyu,currentDaikyu:l.currentDaikyu,halfLeaveUsedYear:calcHalfLeaveYear().used};}
 function makeCompleteBackupPayload(){return {app:'truck-log',environment:'PROD',version:5,exportedAt:new Date().toISOString(),records:getRecords(),settings:{otRate:getCurrentOTRate(),holidayRate:getCurrentHolidayRate()},leaveSummary:getBackupMonthSummary(),storage:getDevStorageSnapshot()};}
 function formatBackupDate(iso){if(!iso)return '不明';var d=new Date(iso);if(isNaN(d.getTime()))return String(iso);return d.getFullYear()+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
-function backupData(){try{var p=makeCompleteBackupPayload(),j=JSON.stringify(p,null,2),b=new Blob([j],{type:'application/json;charset=utf-8'}),a=document.createElement('a'),n=new Date(),st=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0')+'_'+String(n.getHours()).padStart(2,'0')+'-'+String(n.getMinutes()).padStart(2,'0');a.href=URL.createObjectURL(b);a.download='truck-log-test_'+st+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href);},1000);devSetItem('lastBackupAt',p.exportedAt);updateBackupStatus();showToast('💾 完全バックアップを作成しました');}catch(e){console.error(e);showToast('❌ バックアップ作成に失敗しました',true);}}
+function getLocalDateKey(){
+  var n=new Date();
+  return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');
+}
+function backupData(options){
+  options=options||{};
+  try{
+    var p=makeCompleteBackupPayload(),
+        j=JSON.stringify(p,null,2),
+        b=new Blob([j],{type:'application/json;charset=utf-8'}),
+        a=document.createElement('a'),
+        n=new Date(),
+        st=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0')+'_'+String(n.getHours()).padStart(2,'0')+'-'+String(n.getMinutes()).padStart(2,'0');
+    a.href=URL.createObjectURL(b);
+    a.download='truck-log_'+st+'.json';
+    document.body.appendChild(a);
+    a.click();
+    var objectUrl=a.href;
+    a.remove();
+    setTimeout(function(){URL.revokeObjectURL(objectUrl);},1000);
+
+    devSetItem('lastBackupAt',p.exportedAt);
+    devSetItem('lastDailyBackupDate',getLocalDateKey());
+    updateBackupStatus();
+
+    if(options.auto){
+      showToast('🔒 今日の自動バックアップを保存しました');
+    }else{
+      showToast('💾 完全バックアップを作成しました');
+    }
+    return true;
+  }catch(e){
+    console.error(e);
+    showToast('❌ バックアップ作成に失敗しました',true);
+    return false;
+  }
+}
+
+var dailyBackupArmed=false;
+function needsDailyBackup(){
+  return devGetItem('lastDailyBackupDate')!==getLocalDateKey();
+}
+function runDailyBackupOnFirstAction(){
+  if(!needsDailyBackup()){
+    dailyBackupArmed=false;
+    return;
+  }
+  dailyBackupArmed=false;
+  backupData({auto:true});
+}
+function armDailyBackup(){
+  if(dailyBackupArmed||!needsDailyBackup())return;
+  dailyBackupArmed=true;
+
+  function once(){
+    document.removeEventListener('pointerdown',once,true);
+    document.removeEventListener('keydown',once,true);
+    setTimeout(runDailyBackupOnFirstAction,0);
+  }
+
+  document.addEventListener('pointerdown',once,true);
+  document.addEventListener('keydown',once,true);
+}
+function initDailyBackup(){
+  armDailyBackup();
+
+  setInterval(function(){
+    if(needsDailyBackup())armDailyBackup();
+  },60000);
+
+  document.addEventListener('visibilitychange',function(){
+    if(!document.hidden&&needsDailyBackup())armDailyBackup();
+  });
+}
 function normalizeBackupData(d){if(Array.isArray(d))return {app:'truck-log',environment:'legacy',version:1,exportedAt:null,records:d,settings:{},storage:{truckRecords:JSON.stringify(d)}};if(!d||typeof d!=='object')throw new Error('invalid');var r=Array.isArray(d.records)?d.records:[],s=d.storage&&typeof d.storage==='object'?d.storage:{};if(!s.truckRecords)s.truckRecords=JSON.stringify(r);if(d.settings){if(d.settings.otRate!==undefined&&!s.otRate)s.otRate=String(d.settings.otRate);if(d.settings.holidayRate!==undefined&&!s.holRate)s.holRate=String(d.settings.holidayRate);}return {app:d.app||'truck-log',environment:d.environment||'legacy',version:d.version||2,exportedAt:d.exportedAt||null,records:r,settings:d.settings||{},leaveSummary:d.leaveSummary||null,storage:s};}
 function previewBackupFile(input){var f=input.files&&input.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(e){try{var d=normalizeBackupData(JSON.parse(e.target.result));pendingBackupRestore={data:d,fileName:f.name};renderBackupPreview(d,f.name);document.getElementById('backupPreviewOverlay').classList.add('open');}catch(err){console.error(err);pendingBackupRestore=null;showToast('❌ バックアップファイルが正しくありません',true);input.value='';}};rd.onerror=function(){pendingBackupRestore=null;showToast('❌ ファイルを読み込めませんでした',true);input.value='';};rd.readAsText(f,'UTF-8');}
 function renderBackupPreview(d,n){var l=d.leaveSummary||{},c=Object.keys(d.storage||{}).length,e=d.environment==='PROD'?'本番版':(d.environment==='DEV'?'テスト版':'旧形式'),w=d.environment==='PROD'?'<div class="rate-note" style="margin-top:10px;color:var(--red);">⚠️ 本番版のバックアップです。</div>':'';var h='<div class="backup-info"><b>ファイル：</b>'+escapeHtml(n)+'<br><b>作成日時：</b>'+escapeHtml(formatBackupDate(d.exportedAt))+'<br><b>形式：</b>バージョン '+escapeHtml(d.version)+' / '+e+'</div><div class="backup-preview-grid"><div class="backup-preview-card"><div class="backup-preview-label">日報件数</div><div class="backup-preview-value">'+d.records.length+'件</div></div><div class="backup-preview-card"><div class="backup-preview-label">保存項目</div><div class="backup-preview-value">'+c+'個</div></div><div class="backup-preview-card"><div class="backup-preview-label">有給残</div><div class="backup-preview-value">'+(l.currentYukyu!==undefined?fmtLeave(l.currentYukyu)+'日':'確認不可')+'</div></div><div class="backup-preview-card"><div class="backup-preview-label">代休残</div><div class="backup-preview-value">'+(l.currentDaikyu!==undefined?fmtLeave(l.currentDaikyu)+'日':'確認不可')+'</div></div></div>'+w;document.getElementById('backupPreviewContent').innerHTML=h;}
@@ -1124,7 +1282,15 @@ function saveRestoreSafetySnapshot(){devSetItem('PROD_RESTORE_SAFETY',JSON.strin
 function clearCurrentDevStorage(){devStorageKeys().forEach(function(k){devRemoveItem(k);});}
 function confirmRestoreBackup(){if(!pendingBackupRestore){showToast('❌ 復元データがありません',true);return;}try{var d=pendingBackupRestore.data;saveRestoreSafetySnapshot();clearCurrentDevStorage();Object.keys(d.storage||{}).forEach(function(k){var v=d.storage[k];if(v!==undefined&&v!==null)devSetItem(k,String(v));});if(!devGetItem('truckRecords'))saveRecords(d.records||[]);migrateRecordRates();closeBackupPreviewDirect();renderRecords();renderStats();renderLeavePanel();updateBackupStatus();showToast('✅ '+getRecords().length+'件を安全に復元しました');}catch(e){console.error(e);showToast('❌ 復元に失敗しました',true);}}
 function restoreData(input){previewBackupFile(input);}
-function updateBackupStatus(){var e=document.getElementById('backupLastStatus');if(!e)return;var l=devGetItem('lastBackupAt');e.textContent=l?'前回のバックアップ：'+formatBackupDate(l):'まだこの端末でバックアップを作成していません';}
+function updateBackupStatus(){
+  var e=document.getElementById('backupLastStatus');
+  if(!e)return;
+  var l=devGetItem('lastBackupAt');
+  var todayDone=devGetItem('lastDailyBackupDate')===getLocalDateKey();
+  var line1=l?'前回のバックアップ：'+formatBackupDate(l):'まだこの端末でバックアップを作成していません';
+  var line2=todayDone?'✅ 今日の自動バックアップ：完了':'⏳ 今日の自動バックアップ：次の操作時に保存';
+  e.textContent=line1+'　／　'+line2;
+}
 
 function showModal(id){var r=getRecords().find(function(rec){return String(rec.id)===String(id)});if(!r)return;activeModal=r.id;deleteConfirmMode=false;var d=new Date(r.date),wd=['日','月','火','水','木','金','土'][d.getDay()];document.getElementById('modalTitle').textContent=r.date.replace(/-/g,'/')+'（'+wd+'） '+(r.jobs||[]).map(function(j){return JOB_EMOJI[j]||''}).join('');var tc=r.toxicCount||0,tp=r.toxicPay||(tc*2500),trp=r.trailerPay||0,dp=calcDistPay(r.distance),total=tp+trp+dp,rate=getRateForRecord(r),html='';if(r.startTime)html+='<div class="modal-row"><span class="modal-row-label">出勤</span><span>'+r.startTime+'</span></div>';if(r.endTime)html+='<div class="modal-row"><span class="modal-row-label">退勤</span><span>'+r.endTime+'</span></div>';var effectiveOt=calcEffectiveOvertimeHours(r);if(effectiveOt>0)html+='<div class="modal-row"><span class="modal-row-label">残業/休日対象</span><span>'+formatHour(effectiveOt)+'時間</span></div>';if(isSundayRecord(r)&&r.startTime&&r.endTime)html+='<div class="modal-row"><span class="modal-row-label">日曜休憩計算</span><span>実働 '+formatHour(getWorkHoursNum(r))+'h - 休憩 '+formatHour(calcSundayBreakHours(getWorkHoursNum(r)))+'h</span></div>';if(effectiveOt>0)html+='<div class="modal-row"><span class="modal-row-label">固定単価</span><span>時間外 '+rate.otRate.toLocaleString()+'円 / 休日 '+rate.holidayRate.toLocaleString()+'円</span></div>';if(r.distance>0)html+='<div class="modal-row"><span class="modal-row-label">走行距離</span><span>'+r.distance.toLocaleString()+' km</span></div>';if(r.longDistancePay>0)html+='<div class="modal-row"><span class="modal-row-label">🛌 長距離手当</span><span>'+r.longDistancePay.toLocaleString()+' 円</span></div>';if(tp>0)html+='<div class="modal-row"><span class="modal-row-label">☠️ 毒手当（×'+tc+'）</span><span>'+tp.toLocaleString()+' 円</span></div>';if(trp>0)html+='<div class="modal-row"><span class="modal-row-label">🚜 トレーラー手当</span><span>'+trp.toLocaleString()+' 円</span></div>';if(dp>0)html+='<div class="modal-row"><span class="modal-row-label">🛣️ 走行距離手当</span><span>'+dp.toLocaleString()+' 円</span></div>';if(total>0)html+='<div class="modal-row" style="font-weight:700;"><span class="modal-row-label">💰 ワンマン手当</span><span style="color:var(--accent)">'+total.toLocaleString()+' 円</span></div>';if(r.jobMemo)html+='<div class="modal-row"><span class="modal-row-label">📝 仕事内容</span><span style="text-align:right;max-width:65%;">'+escapeHtml(formatJobMemoText(r.jobMemo))+'</span></div>';document.getElementById('modalContent').innerHTML=html;document.getElementById('modalOverlay').classList.add('open');}
 function closeModal(e){if(e.target===document.getElementById('modalOverlay'))closeModalDirect();}
@@ -1435,7 +1601,8 @@ function selectFare(pay,name){
   if((fare&&fare.pay>0)||pay>0)details.push(((fare&&fare.pay)||pay).toLocaleString()+'円');
   showToast((fareMode==='memo'?'📝 ':'💰 ')+name+(details.length?' / '+details.join(' / '):''));
 }
-function openSettings(){document.getElementById('settingOTRate').value=devGetItem('otRate')||'';document.getElementById('settingHolidayRate').value=devGetItem('holRate')||'';clearCompanyHolidayEditor();renderCompanyHolidayList();updateBackupStatus();document.getElementById('settingsOverlay').classList.add('open');}
+function openSettings(){document.getElementById('settingOTRate').value=devGetItem('otRate')||'';document.getElementById('settingHolidayRate').value=devGetItem('holRate')||'';clearCompanyHolidayEditor();renderCompanyHolidayList();updateBackupStatus();
+initDailyBackup();document.getElementById('settingsOverlay').classList.add('open');}
 function closeSettings(e){if(e.target===document.getElementById('settingsOverlay'))closeSettingsDirect();}
 function closeSettingsDirect(){document.getElementById('settingsOverlay').classList.remove('open');}
 function saveSettings(){var ot=parseInt(document.getElementById('settingOTRate').value),hol=parseInt(document.getElementById('settingHolidayRate').value);if(ot>0)devSetItem('otRate',String(ot));if(hol>0)devSetItem('holRate',String(hol));closeSettingsDirect();showToast('✅ 単価を保存しました。過去データは変わりません');}
@@ -1504,6 +1671,20 @@ var todayRecord=getRecords().find(function(r){return r.date===getLocalDateStr()}
 
 <!--
 変更履歴
+- 2026/09/06 PROD：半日有給「アプリ開始前の使用回数」を手入力できるよう追加
+- 半日有給使用合計を「手入力＋アプリ記録」で自動計算
+- 半日有給残り回数（12回上限）も手入力分を含めて自動更新
+- 手入力値は年ごとに保存し、バックアップ・復元対象に含める
+- 2026/09/06 PROD：記録画面「月初有給残」で30.5などの小数を入力できない問題を修正
+- 入力途中の再描画を止め、「30.」入力時に30へ戻されないよう変更
+- 月初有給残は0.5日単位で保存、Android向け decimal キーボード指定を追加
+- 月初代休残は従来どおり整数日
+- 2026/09/06 PROD：毎日1回の自動バックアップを追加
+- その日の最初の操作時にJSONバックアップを端末へ自動保存
+- アプリを開いたまま日付が変わった場合も、次の操作時に1回保存
+- 自動バックアップの完了状態を設定画面に表示
+- 手動バックアップも当日のバックアップ完了として扱う
+- 本番バックアップファイル名を truck-log_YYYY-MM-DD_HH-MM.json に修正
 - 2026/09/01 PROD 完全統合版：TEST確認済み版を本番用へ昇格
 - iframe/app-v7.html依存なし、index.html単体で動作
 - 本番保存領域を従来どおり無接頭辞に設定し、既存本番データを継続利用
