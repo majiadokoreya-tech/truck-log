@@ -316,6 +316,9 @@ input[type=number]{-moz-appearance:textfield}
         その日の最初の操作時に、JSONバックアップを端末のダウンロードフォルダへ自動保存します。ファイル名は「運転日報_自動バックアップ_日付_時刻.json」です。
       </div>
       <button onclick="backupData()" class="copy-btn" style="background:rgba(46,204,113,.15);border-color:var(--green);color:var(--green);">💾 完全バックアップを作成</button>
+    <input type="file" id="recordsOnlyRestoreFile" accept=".json,application/json" style="display:none" onchange="restoreRecordsOnly(this)">
+    <button onclick="document.getElementById('recordsOnlyRestoreFile').click()" class="copy-btn" style="background:rgba(52,152,219,.10);border-color:var(--blue);color:var(--blue);">🛟 勤務記録だけ復元（設定はそのまま）</button>
+    <div style="font-size:10px;color:var(--muted);line-height:1.6;margin-top:6px;">古いバックアップから勤務記録だけを取り込みます。有給・代休・会社休日・各種設定は変更しません。同じ日付の記録が現在側にある場合は現在の記録を優先します。</div>
       <label style="width:100%;display:block;text-align:center;background:rgba(52,152,219,.15);border:1.5px solid var(--blue);border-radius:10px;padding:12px;color:var(--blue);font-size:14px;cursor:pointer;">📂 バックアップを選んで内容確認<input type="file" id="settingsRestoreFile" accept=".json,application/json" style="display:none;" onchange="previewBackupFile(this)"></label>
       <div id="backupLastStatus" style="font-size:11px;color:var(--muted);line-height:1.6;"></div>
       <hr style="border:none;border-top:1px solid var(--border);"><div class="section-title" style="margin-bottom:0;">🔧 データ管理</div><div class="rate-note" style="color:var(--red);">通常は触らなくて大丈夫です。</div><button onclick="fixAllRecords()" class="copy-btn" style="background:rgba(231,76,60,.10);border-color:var(--red);color:var(--red);">🔧 全データを修正する</button>
@@ -1281,6 +1284,70 @@ function closeBackupPreviewDirect(){document.getElementById('backupPreviewOverla
 function saveRestoreSafetySnapshot(){devSetItem('PROD_RESTORE_SAFETY',JSON.stringify({savedAt:new Date().toISOString(),storage:getDevStorageSnapshot()}));}
 function clearCurrentDevStorage(){devStorageKeys().forEach(function(k){devRemoveItem(k);});}
 function confirmRestoreBackup(){if(!pendingBackupRestore){showToast('❌ 復元データがありません',true);return;}try{var d=pendingBackupRestore.data;saveRestoreSafetySnapshot();clearCurrentDevStorage();Object.keys(d.storage||{}).forEach(function(k){var v=d.storage[k];if(v!==undefined&&v!==null)devSetItem(k,String(v));});if(!devGetItem('truckRecords'))saveRecords(d.records||[]);migrateRecordRates();closeBackupPreviewDirect();renderRecords();renderStats();renderLeavePanel();updateBackupStatus();showToast('✅ '+getRecords().length+'件を安全に復元しました');}catch(e){console.error(e);showToast('❌ 復元に失敗しました',true);}}
+
+function normalizeRestoreRecordsPayload(data){
+  if(Array.isArray(data))return data;
+  if(data&&Array.isArray(data.records))return data.records;
+  return null;
+}
+function mergeRecordsPreserveCurrent(imported,current){
+  imported=Array.isArray(imported)?imported:[];
+  current=Array.isArray(current)?current:[];
+  var byDate={};
+
+  imported.forEach(function(r){
+    if(!r||!r.date)return;
+    byDate[String(r.date)]=r;
+  });
+
+  current.forEach(function(r){
+    if(!r||!r.date)return;
+    byDate[String(r.date)]=r;
+  });
+
+  return Object.keys(byDate).sort().map(function(k){return byDate[k];});
+}
+function restoreRecordsOnly(input){
+  var f=input&&input.files&&input.files[0];
+  if(!f)return;
+
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var data=JSON.parse(e.target.result);
+      var imported=normalizeRestoreRecordsPayload(data);
+      if(!imported)throw new Error('RECORDS_NOT_FOUND');
+
+      var current=getRecords();
+      var merged=mergeRecordsPreserveCurrent(imported,current);
+
+      var currentDates={};
+      current.forEach(function(r){
+        if(r&&r.date)currentDates[String(r.date)]=1;
+      });
+
+      var added=0;
+      imported.forEach(function(r){
+        if(r&&r.date&&!currentDates[String(r.date)])added++;
+      });
+
+      saveRecords(merged);
+
+      if(typeof renderRecords==='function')renderRecords();
+      if(typeof renderStats==='function')renderStats();
+      if(typeof renderCalendar==='function')renderCalendar();
+      if(typeof renderLeavePanel==='function')renderLeavePanel();
+
+      showToast('🛟 勤務記録を'+added+'日分復元しました（設定は変更していません）');
+    }catch(err){
+      console.error(err);
+      showToast('❌ 勤務記録を復元できませんでした。バックアップJSONを確認してください',true);
+    }
+    input.value='';
+  };
+  reader.readAsText(f);
+}
+
 function restoreData(input){previewBackupFile(input);}
 function updateBackupStatus(){
   var e=document.getElementById('backupLastStatus');
@@ -1671,6 +1738,10 @@ var todayRecord=getRecords().find(function(r){return r.date===getLocalDateStr()}
 
 <!--
 変更履歴
+- 2026/09/07 PROD：勤務記録だけを復元する安全復元機能を追加
+- 完全バックアップJSONから records のみ取り込み、有給・代休・会社休日・各種設定は現在のまま維持
+- 同じ日付の記録が現在側にある場合は現在の記録を優先し、古いバックアップで上書きしない
+- 既存の完全バックアップ／完全復元機能は維持
 - 2026/09/07 PROD：バックアップファイル名を分かりやすく変更
 - 自動バックアップ：運転日報_自動バックアップ_YYYY-MM-DD_HH-MM.json
 - 手動バックアップ：運転日報_手動バックアップ_YYYY-MM-DD_HH-MM.json
