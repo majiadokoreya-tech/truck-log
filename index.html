@@ -309,6 +309,19 @@ input[type=number]{-moz-appearance:textfield}
       <div id="companyHolidayList" class="company-holiday-list"></div>
 
       <hr style="border:none;border-top:1px solid var(--border);">
+      <div class="section-title" style="margin-bottom:0;">🛡️ 安全・便利機能</div>
+      <button onclick="backupData({monthEnd:true})" class="copy-btn" style="border-color:#6c5ce7;color:#6c5ce7;">📦 月末バックアップを作成</button>
+      <div id="backupGenerationList" style="font-size:11px;color:var(--muted);line-height:1.7;"></div>
+      <hr style="border:none;border-top:1px solid var(--border);">
+      <div class="section-title" style="margin-bottom:0;">🔒 月末締め</div>
+      <div class="rate-note">締めた月は勤務記録の新規保存・編集・削除をロックします。解除もできます。</div>
+      <input class="input-field" type="month" id="monthCloseTarget">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <button onclick="closeWorkMonth()" class="copy-btn" style="border-color:var(--red);color:var(--red);">🔒 この月を締める</button>
+        <button onclick="reopenWorkMonth()" class="copy-btn" style="border-color:var(--green);color:var(--green);">🔓 締め解除</button>
+      </div>
+      <div id="closedMonthList" style="font-size:11px;color:var(--muted);line-height:1.7;"></div>
+<hr style="border:none;border-top:1px solid var(--border);">
       <div class="section-title" style="margin-bottom:0;">💾 バックアップ</div>
       <div class="backup-info">
         日報・単価・有給・代休・入力状態など、本番版の保存データをまとめて保存します。復元前に内容を確認できます。<br>
@@ -1216,7 +1229,7 @@ function backupData(options){
         n=new Date(),
         st=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0')+'_'+String(n.getHours()).padStart(2,'0')+'-'+String(n.getMinutes()).padStart(2,'0');
     a.href=URL.createObjectURL(b);
-    a.download=(options.auto?'運転日報_自動バックアップ_':'運転日報_手動バックアップ_')+st+'.json';
+    a.download=(options.monthEnd?'運転日報_月末バックアップ_':(options.auto?'運転日報_日次バックアップ_':'運転日報_手動バックアップ_'))+st+'.json';
     document.body.appendChild(a);
     a.click();
     var objectUrl=a.href;
@@ -1738,6 +1751,21 @@ var todayRecord=getRecords().find(function(r){return r.date===getLocalDateStr()}
 
 <!--
 変更履歴
+- 2026/09/07 PROD：TEST確認版（②・④・⑨）を本番へ統合
+- ②月末締め：締めた月の勤務記録の保存・削除をロック。締め解除可能。締め時に月末バックアップ作成
+- ④入力漏れチェック：出退勤・距離・長距離メモ等を保存前に確認し、警告後も必要なら保存可能
+- ⑨バックアップ世代管理：日次／手動／月末のファイル名を区別し、アプリ内に直近60回の履歴を保存
+- ①バックアップ健康診断、⑤よく使う勤務パターンは削除済み
+- Androidのダウンロード済みファイルをWebアプリから勝手に削除する処理は行わない
+- PROD STORAGE_PREFIX='' を維持し、既存本番localStorageをそのまま使用
+- 2026/09/07 TEST：候補①・⑤を削除し、②・④・⑨だけを残した統合版
+- 削除：①バックアップ健康診断
+- 削除：⑤よく使う勤務パターン
+- ②月末締め：締めた月の勤務記録の保存・削除をロック。締め解除可能。締め時に月末バックアップ作成
+- ④入力漏れチェック：出退勤・距離・長距離メモ等を保存前に確認し、警告後も必要なら保存可能
+- ⑨バックアップ世代管理：日次／手動／月末のファイル名を区別し、アプリ内に直近60回の履歴を保存
+- Androidのダウンロード済みファイルをWebアプリから勝手に削除する処理は行わない
+- TEST専用 STORAGE_PREFIX=DEV_ で本番データと分離
 - 2026/09/07 PROD：勤務記録だけを復元する安全復元機能を追加
 - 完全バックアップJSONから records のみ取り込み、有給・代休・会社休日・各種設定は現在のまま維持
 - 同じ日付の記録が現在側にある場合は現在の記録を優先し、古いバックアップで上書きしない
@@ -1825,5 +1853,92 @@ btn.addEventListener('click',function(){overlay.classList.add('open');document.b
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installOvertimeReference);else installOvertimeReference();
 })();
 </script>
+<script>
+(function(){
+  function jget(k,d){try{var v=devGetItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+  function jset(k,v){devSetItem(k,JSON.stringify(v))}
+
+  window.isMonthClosed=function(date){
+    if(!date)return false;
+    var m=String(date).slice(0,7), a=jget('closedWorkMonths',[]);
+    return a.indexOf(m)>=0;
+  };
+  window.renderSafetyFeatures=function(){
+var hist=jget('backupHistory',[]), gl=document.getElementById('backupGenerationList');
+    if(gl)gl.innerHTML='<b>📚 アプリ内バックアップ履歴</b><br>'+(hist.length?hist.slice(0,10).map(function(x){return '・'+x.type+'　'+x.at.replace('T',' ').slice(0,16)}).join('<br>'):'まだ履歴はありません');
+    var cm=document.getElementById('closedMonthList'), closed=jget('closedWorkMonths',[]);
+    if(cm)cm.innerHTML=closed.length?'締め済み：'+closed.slice().sort().join('、'):'締め済みの月はありません';
+    var mt=document.getElementById('monthCloseTarget');
+    if(mt&&!mt.value)mt.value=new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0');
+  };
+
+  window.closeWorkMonth=function(){
+    var el=document.getElementById('monthCloseTarget'),m=el&&el.value;if(!m)return showToast('❗ 締める月を選んでください',true);
+    var a=jget('closedWorkMonths',[]);if(a.indexOf(m)<0)a.push(m);jset('closedWorkMonths',a);
+    backupData({monthEnd:true});renderSafetyFeatures();showToast('🔒 '+m+' を締めました');
+  };
+  window.reopenWorkMonth=function(){
+    var el=document.getElementById('monthCloseTarget'),m=el&&el.value;if(!m)return;
+    var a=jget('closedWorkMonths',[]).filter(function(x){return x!==m});jset('closedWorkMonths',a);
+    renderSafetyFeatures();showToast('🔓 '+m+' の締めを解除しました');
+  };
+
+
+  window.getInputWarnings=function(){
+    var w=[],date=document.getElementById('inputDate').value,start=document.getElementById('startTime').value,end=document.getElementById('endTime').value;
+    var jobs=selectedJobs||[], memo=String(document.getElementById('jobMemo').value||''), dist=parseFloat(document.getElementById('distance').value)||0;
+    var isRest=jobs.indexOf('休み')>=0;
+    if(!isRest&&!start)w.push('出勤時間が未入力');
+    if(!isRest&&!end)w.push('退勤時間が未入力');
+    if(!isRest&&dist<=0)w.push('走行距離が0km');
+    if((jobs.indexOf('長距離')>=0||(parseInt(document.getElementById('longDistancePay').value)||0)>0)&&!memo.trim())w.push('長距離ですが客先・仕事内容メモが未入力');
+    if(date&&isMonthClosed(date))w.push('この月は月末締め済み');
+    return w;
+  };
+
+  var originalSave=window.saveRecord;
+  window.saveRecord=function(){
+    var date=document.getElementById('inputDate').value;
+    if(date&&isMonthClosed(date)){showToast('🔒 '+date.slice(0,7)+' は締め済みです。設定から締め解除してください',true);return;}
+    var w=getInputWarnings();
+    if(w.length&& !confirm('⚠️ 入力確認\n\n・'+w.join('\n・')+'\n\nこのまま保存しますか？'))return;
+    return originalSave.apply(this,arguments);
+  };
+
+  var originalDelete=window.deleteRecord;
+  window.deleteRecord=function(){
+    var r=getRecords().find(function(x){return String(x.id)===String(currentModalId)});
+    if(r&&isMonthClosed(r.date)){showToast('🔒 締め済みの月は削除できません',true);return;}
+    return originalDelete.apply(this,arguments);
+  };
+
+  var originalBackup=window.backupData;
+  window.backupData=function(options){
+    options=options||{};var ok=originalBackup.call(this,options);
+    if(ok){
+      var a=jget('backupHistory',[]),type=options.monthEnd?'📦 月末':options.auto?'🔒 日次自動':'💾 手動';
+      a.unshift({at:new Date().toISOString(),type:type});jset('backupHistory',a.slice(0,60));
+      setTimeout(renderSafetyFeatures,0);
+    }
+    return ok;
+  };
+
+  var oldOpen=window.openSettings;
+  if(typeof oldOpen==='function')window.openSettings=function(){var r=oldOpen.apply(this,arguments);setTimeout(renderSafetyFeatures,0);return r};
+
+  document.addEventListener('DOMContentLoaded',function(){
+    setTimeout(renderSafetyFeatures,200);
+    var date=document.getElementById('inputDate');
+    if(date){
+      var box=document.createElement('div');box.id='inputSafetyWarning';box.style.cssText='font-size:11px;color:var(--muted);margin-top:6px;';
+      date.parentNode.appendChild(box);
+      function refresh(){var w=getInputWarnings();box.innerHTML=w.length?'⚠️ '+w.join(' ／ '):'✅ 入力チェック：大きな漏れなし';box.style.color=w.length?'var(--red)':'var(--green)';}
+      ['change','input'].forEach(function(ev){document.addEventListener(ev,function(e){if(e.target&&['inputDate','startTime','endTime','distance','jobMemo','longDistancePay'].indexOf(e.target.id)>=0)setTimeout(refresh,0)},true)});
+      setTimeout(refresh,300);
+    }
+  });
+})();
+</script>
+
 </body>
 </html>
