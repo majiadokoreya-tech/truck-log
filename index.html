@@ -581,7 +581,12 @@ function jumpToInputSection(id){
     if(toggle)toggle.classList.toggle('open',sectionId===id);
   });
   var target=document.getElementById(id+'Toggle');
-  setTimeout(function(){if(target)target.scrollIntoView({behavior:'smooth',block:'start'});},80);
+  setTimeout(function(){
+    if(!target)return;
+    var stickyOffset=(id==='inputJobAccordion')?185:145;
+    var top=target.getBoundingClientRect().top+window.pageYOffset-stickyOffset;
+    window.scrollTo({top:Math.max(0,top),behavior:'smooth'});
+  },80);
 }
 
 function openOnlyNextRequiredAccordion(){
@@ -1751,6 +1756,9 @@ var todayRecord=getRecords().find(function(r){return r.date===getLocalDateStr()}
 
 <!--
 変更履歴
+- 2026/09/09 PROD：入力進捗の「仕事」タップ時のスクロール位置を上方向へ調整
+- 「仕事の種類」へ移動した直後に、地場・長距離など先頭の仕事ボタンが画面内に入りやすい位置で停止するよう修正
+- 時間・距離・手当へのジャンプは従来動作を維持しつつ、固定ヘッダーとの重なりを軽減
 - 2026/09/07 PROD：TEST確認版（②・④・⑨）を本番へ統合
 - ②月末締め：締めた月の勤務記録の保存・削除をロック。締め解除可能。締め時に月末バックアップ作成
 - ④入力漏れチェック：出退勤・距離・長距離メモ等を保存前に確認し、警告後も必要なら保存可能
