@@ -108,7 +108,7 @@ input[type=number]{-moz-appearance:textfield}
 <body>
 <div class="header">
   <div style="display:flex;justify-content:space-between;align-items:center;">
-    <h1>🚛 運転日報</h1>
+    <h1>🧪 運転日報 <span style="font-size:11px;color:#6c5ce7;border:1px solid #6c5ce7;border-radius:999px;padding:3px 8px;vertical-align:middle;">TEST</span></h1>
     <button onclick="openSettings()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:4px;">⚙️</button>
   </div>
   <div class="header-date" id="headerDate"></div>
@@ -324,11 +324,39 @@ input[type=number]{-moz-appearance:textfield}
 <hr style="border:none;border-top:1px solid var(--border);">
       <div class="section-title" style="margin-bottom:0;">💾 バックアップ</div>
       <div class="backup-info">
-        日報・単価・有給・代休・入力状態など、本番版の保存データをまとめて保存します。復元前に内容を確認できます。<br>
+        日報・単価・有給・代休・入力状態など、テスト版の保存データをまとめて保存します。復元前に内容を確認できます。<br>
         <b>🔒 毎日1回 自動バックアップ：ON</b><br>
-        その日の最初の操作時に、JSONバックアップを端末のダウンロードフォルダへ自動保存します。ファイル名は「運転日報_自動バックアップ_日付_時刻.json」です。
+        その日の最初の操作時に、JSONバックアップを端末のダウンロードフォルダへ自動保存します。ファイル名は「運転日報_日次バックアップ_日付_時刻.json」です。
       </div>
       <button onclick="backupData()" class="copy-btn" style="background:rgba(46,204,113,.15);border-color:var(--green);color:var(--green);">💾 完全バックアップを作成</button>
+      <hr style="border:none;border-top:1px solid var(--border);">
+      <div class="section-title" style="margin-bottom:0;">☁️ Google Drive 自動バックアップ【PROD / Apps Script】</div>
+      <div class="backup-info" style="line-height:1.7;">
+        Google Apps Scriptを中継して、Google Driveへ日次バックアップを保存します。<br>
+        <b>Google Driveの再ログイン操作なし</b>で使える方式です。<br>
+        設定した保持数を超えると、古いDriveバックアップから自動削除します。<br>
+        <b>端末Downloads内のJSONは削除しません。</b>
+      </div>
+      <label class="input-label" for="gasWebAppUrl">Apps Script ウェブアプリURL</label>
+      <input class="input-field" type="url" id="gasWebAppUrl" placeholder="https://script.google.com/macros/s/...../exec" autocomplete="off" oninput="saveGasBackupSettings(false)" onblur="saveGasBackupSettings(true)">
+      <label class="input-label" for="gasBackupKey">バックアップ用合言葉</label>
+      <input class="input-field" type="password" id="gasBackupKey" placeholder="自分で決めた合言葉" autocomplete="off" oninput="saveGasBackupSettings(false)" onblur="saveGasBackupSettings(true)">
+      <label class="input-label" for="gasRetentionCount">Driveに残すバックアップ数（5〜10）</label>
+      <select class="input-field" id="gasRetentionCount" onchange="saveGasBackupSettings(true)">
+        <option value="5">5個</option>
+        <option value="6">6個</option>
+        <option value="7" selected>7個</option>
+        <option value="8">8個</option>
+        <option value="9">9個</option>
+        <option value="10">10個</option>
+      </select>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <button onclick="testGasConnection()" class="copy-btn" style="border-color:#4285f4;color:#4285f4;">🔗 接続テスト</button>
+        <button type="button" id="gasBackupToggleBtn" onclick="toggleGasBackup();return false;" class="copy-btn" style="border-color:var(--muted);color:var(--muted);">自動保存OFF</button>
+      </div>
+      <button onclick="manualGasDriveBackup()" class="copy-btn" style="background:rgba(66,133,244,.10);border-color:#4285f4;color:#4285f4;">☁️ 今すぐDriveへバックアップ</button>
+      <div id="gasBackupStatus" style="font-size:11px;color:var(--muted);line-height:1.7;"></div>
+      <iframe id="gasBackupFrame" name="gasBackupFrame" style="display:none;width:0;height:0;border:0;"></iframe>
     <input type="file" id="recordsOnlyRestoreFile" accept=".json,application/json" style="display:none" onchange="restoreRecordsOnly(this)">
     <button onclick="document.getElementById('recordsOnlyRestoreFile').click()" class="copy-btn" style="background:rgba(52,152,219,.10);border-color:var(--blue);color:var(--blue);">🛟 勤務記録だけ復元（設定はそのまま）</button>
     <div style="font-size:10px;color:var(--muted);line-height:1.6;margin-top:6px;">古いバックアップから勤務記録だけを取り込みます。有給・代休・会社休日・各種設定は変更しません。同じ日付の記録が現在側にある場合は現在の記録を優先します。</div>
@@ -1218,7 +1246,7 @@ function fixAllRecords(){var r=getRecords().map(function(r){var oldRate=getRateF
 var pendingBackupRestore=null;
 function getDevStorageSnapshot(){var s={};devStorageKeys().forEach(function(k){var v=devGetItem(k);if(v!==null)s[k]=v;});return s;}
 function getBackupMonthSummary(){var l=calcLeaveMonth();return {month:getLeaveMonthKey(),currentYukyu:l.currentYukyu,currentDaikyu:l.currentDaikyu,halfLeaveUsedYear:calcHalfLeaveYear().used};}
-function makeCompleteBackupPayload(){return {app:'truck-log',environment:'PROD',version:5,exportedAt:new Date().toISOString(),records:getRecords(),settings:{otRate:getCurrentOTRate(),holidayRate:getCurrentHolidayRate()},leaveSummary:getBackupMonthSummary(),storage:getDevStorageSnapshot()};}
+function makeCompleteBackupPayload(){return {app:'truck-log',environment:'PROD',version:6,exportedAt:new Date().toISOString(),records:getRecords(),settings:{otRate:getCurrentOTRate(),holidayRate:getCurrentHolidayRate()},leaveSummary:getBackupMonthSummary(),storage:getDevStorageSnapshot()};}
 function formatBackupDate(iso){if(!iso)return '不明';var d=new Date(iso);if(isNaN(d.getTime()))return String(iso);return d.getFullYear()+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
 function getLocalDateKey(){
   var n=new Date();
@@ -1756,6 +1784,70 @@ var todayRecord=getRecords().find(function(r){return r.date===getLocalDateStr()}
 
 <!--
 変更履歴
+- 2026/09/12 PROD：TESTで実日付またぎ確認済みのGoogle Drive日次自動バックアップを本番へ完全統合
+- Google Apps Script中継方式、日次初回操作トリガー、手動Driveバックアップ、自動保存ON/OFF、保持数5〜10個（初期7個）を本番へ移植
+- 2026/09/12 0:53の実日付またぎテストで、翌日分が自動で1件作成されることを確認したTEST仕様を採用
+- TEST専用の「今日のDrive自動バックアップ済みリセット」機能とTEST表示は本番から削除
+- PROD STORAGE_PREFIX=''、バックアップ environment='PROD' を維持し、既存本番localStorageをそのまま使用
+- 本番テーマは従来どおりオレンジ。勤務記録・月末締め・入力漏れチェック・世代管理・安全復元・勤務計算等の既存機能を維持
+- 2026/09/11 TEST：今日のまま翌日相当テストができる「Drive自動バックアップ済みリセット」ボタンを追加
+- リセット対象は lastGasDailyBackupDate のみ。勤務記録・各種設定・Apps Script URL・保持数には触れない
+- リセット後は次のユーザー操作で日次Drive自動バックアップを再実行できるよう再アーム
+- TEST専用の確認メッセージと状態表示を追加
+- 既存の日報機能・端末バックアップ・手動Driveバックアップ・自動保存ON/OFF・7世代保持を維持
+- 2026/09/11 TEST：自動保存をONにした直後、その場で今日のDriveバックアップを実行するよう修正
+- ONボタンを押した後に「次の操作」を待つ必要をなくした
+- 日次自動バックアップ成功時のみ lastGasDailyBackupDate を記録する既存仕様は維持
+- 手動Driveバックアップ・保持数7個・既存の日報機能・端末バックアップ機能を維持
+- 2026/09/11 TEST：Drive日次自動バックアップが翌日に実行されない問題を修正
+- 端末Downloadsの日次バックアップ完了日とは別に lastGasDailyBackupDate を管理
+- Drive自動バックアップを端末バックアップ処理への後付けフックから独立した初回操作トリガーへ変更
+- 自動保存ONかつApps Script設定済みの場合、その日の最初の操作でDriveへ1回送信
+- Drive保存成功後だけ当日のDrive自動バックアップ完了日を記録
+- 設定画面に「今日のDrive自動バックアップ：完了／次の操作時に実行」を表示
+- 既存の日報・端末バックアップ・手動Driveバックアップ・7個保持・ON/OFF切替を維持
+- 2026/09/10 TEST：自動保存ON/OFF切替を再修正
+- ON/OFF切替をApps Script接続判定から完全分離し、localStorageへ直接保存する方式に変更
+- ボタンにtype=buttonとreturn falseを追加し、フォーム送信等の副作用を防止
+- 保存結果を即時再読込して確認し、失敗時は画面にエラー表示
+- 既存の日次自動Driveバックアップ・手動バックアップ・7個保持・既存日報機能を維持
+- 2026/09/10 TEST：Google Drive自動バックアップのON/OFF切替不具合を修正
+- 自動保存ボタンを一方向OFF処理からON/OFFトグルへ変更
+- ON時は緑表示、OFF時はグレー表示にして現在状態をボタンへ即時反映
+- 手動Driveバックアップ実行時に自動保存設定を勝手にONへ変更しないよう修正
+- 接続テスト成功時も自動保存設定を勝手にONへ変更しないよう修正
+- 2026/09/10 TEST：Google DriveバックアップをOAuth方式からGoogle Apps Script中継方式へ変更
+- Google再認証を毎日求めない構成へ変更
+- Apps Script側でGoogle Drive保存・保持数5〜10個・古いバックアップ自動削除を実行
+- Apps Script URLとバックアップ用合言葉をTEST設定画面から保存可能
+- 接続テスト／今すぐDriveバックアップ／自動保存OFFを追加
+- Apps ScriptからpostMessageで成功・削除件数・保持件数をアプリへ返して確認表示
+- 既存の日次端末バックアップ後、その日の最初の操作でDriveへも自動送信
+- 端末Downloads内のJSONは削除しない
+- 既存日報機能・月末締め・入力漏れチェック・バックアップ履歴・仕事ジャンプ位置修正を維持
+- TEST STORAGE_PREFIX=DEV_ を維持し、本番データと分離
+- 2026/09/10 TEST：モバイルChromeでGoogle認証後に別タブ/画面遷移するとsessionStorageが保持されないケースへ対応
+- DriveアクセストークンをTEST専用localStorageへ短時間保存し、アプリ復帰時・手動バックアップ時・接続時に復元
+- 保存トークンはGoogleの有効期限付きで、期限切れまたは401時に自動削除
+- 接続済みトークンがある場合は「Google Drive接続」を押しても再認証を開始しない
+- アプリ復帰時・visibility復帰時に接続状態を再判定
+- 5〜10件保持・古いDriveバックアップ自動削除・既存日報機能・TEST分離を維持
+- 2026/09/10 TEST：Google認証後に再び認証画面へ戻るループ対策
+- Google OAuthアクセストークンをsessionStorageへ一時保存し、Google認証からアプリへ戻った際・ページ再表示時に復元
+- 同意済み以降は requestAccessToken の prompt を空にし、毎回「このアプリは確認されていません」画面を出しにくく修正
+- 401（認証期限切れ）時はセッショントークンを破棄して再認証待ちに切替
+- Drive接続状態に認証残り時間の目安を表示
+- アクセストークンはlocalStorageには保存せず、同一ブラウザタブのsessionStorageのみで保持
+- Google Drive保持5〜10件・古いDriveバックアップ自動削除・既存日報機能・TESTデータ分離を維持
+- 2026/09/10 TEST：Google Drive日次バックアップ＋自動世代削除を追加
+- Google DriveにTEST専用フォルダ「運転日報バックアップ_TEST」を自動作成
+- Drive保持数を5〜10日分から選択可能（初期値7日）
+- Driveへの新規バックアップ成功後、保持数を超えた古いDriveバックアップを古い順に自動削除
+- Driveの削除対象はこのアプリが作成したTEST自動バックアップのみ。端末Downloads内のJSONは削除しない
+- Google Drive OAuthは drive.file スコープを使用
+- Google認証トークンが有効な間は日次バックアップ時にDriveへも自動保存。認証切れ時は再接続案内
+- 手動の「今すぐDriveへバックアップ」ボタンも追加
+- TEST STORAGE_PREFIX=DEV_、バックアップ environment=DEV を維持し、本番データと分離
 - 2026/09/09 PROD：入力進捗の「仕事」タップ時のスクロール位置を上方向へ調整
 - 「仕事の種類」へ移動した直後に、地場・長距離など先頭の仕事ボタンが画面内に入りやすい位置で停止するよう修正
 - 時間・距離・手当へのジャンプは従来動作を維持しつつ、固定ヘッダーとの重なりを軽減
@@ -1944,6 +2036,281 @@ var hist=jget('backupHistory',[]), gl=document.getElementById('backupGenerationL
       ['change','input'].forEach(function(ev){document.addEventListener(ev,function(e){if(e.target&&['inputDate','startTime','endTime','distance','jobMemo','longDistancePay'].indexOf(e.target.id)>=0)setTimeout(refresh,0)},true)});
       setTimeout(refresh,300);
     }
+  });
+})();
+</script>
+
+
+
+
+
+<script>
+(function(){
+  var GAS_MSG_TYPE='TRUCKLOG_GAS_BACKUP_RESULT';
+  var gasPendingTimer=null;
+  var gasLastRequestedMode='';
+
+  function gasGetRetention(){
+    var n=parseInt(devGetItem('gasRetentionCount')||'7',10);
+    if(!isFinite(n))n=7;
+    return Math.max(5,Math.min(10,n));
+  }
+  function gasSetStatus(msg,isError){
+    var el=document.getElementById('gasBackupStatus');
+    if(!el)return;
+    el.innerHTML=msg;
+    el.style.color=isError?'var(--red)':'var(--muted)';
+  }
+  function gasValidUrl(url){
+    return /^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec(?:[?#].*)?$/i.test(String(url||'').trim());
+  }
+  function gasSettingsReady(){
+    var url=String(devGetItem('gasWebAppUrl')||'').trim();
+    var key=String(devGetItem('gasBackupKey')||'').trim();
+    return gasValidUrl(url)&&!!key;
+  }
+  function gasUpdateStatus(){
+    var enabled=devGetItem('gasBackupEnabled')==='1';
+    var last=devGetItem('lastGasBackupAt');
+    var lastResult=devGetItem('lastGasBackupResult')||'';
+    var retention=gasGetRetention();
+    var line='<b>'+(enabled?'🟢 自動保存ON':'⚪ 自動保存OFF')+'</b> ／ 保持：'+retention+'個';
+    var gasTodayDone=devGetItem('lastGasDailyBackupDate')===getLocalDateKey();
+    line+='<br>今日のDrive自動バックアップ：'+(gasTodayDone?'✅ 完了':'⏳ 次の操作時に実行');
+    if(last)line+='<br>前回Driveバックアップ：'+escapeHtml(formatBackupDate(last));
+    if(lastResult)line+='<br>'+escapeHtml(lastResult);
+    gasSetStatus(line,false);
+
+    var btn=document.getElementById('gasBackupToggleBtn');
+    if(btn){
+      btn.textContent=enabled?'自動保存ON':'自動保存OFF';
+      btn.setAttribute('aria-pressed',enabled?'true':'false');
+      btn.style.borderColor=enabled?'var(--green)':'var(--muted)';
+      btn.style.color=enabled?'var(--green)':'var(--muted)';
+      btn.style.background=enabled?'rgba(46,204,113,.10)':'var(--surface2)';
+    }
+  }
+
+  window.saveGasBackupSettings=function(showSaved){
+    var u=document.getElementById('gasWebAppUrl');
+    var k=document.getElementById('gasBackupKey');
+    var r=document.getElementById('gasRetentionCount');
+    if(u)devSetItem('gasWebAppUrl',String(u.value||'').trim());
+    if(k)devSetItem('gasBackupKey',String(k.value||'').trim());
+    if(r){
+      var n=parseInt(r.value,10);
+      n=Math.max(5,Math.min(10,isFinite(n)?n:7));
+      devSetItem('gasRetentionCount',String(n));
+    }
+    gasUpdateStatus();
+    if(showSaved)showToast('☁️ Apps Scriptバックアップ設定を保存しました');
+  };
+
+  window.loadGasBackupSettings=function(){
+    var u=document.getElementById('gasWebAppUrl');
+    var k=document.getElementById('gasBackupKey');
+    var r=document.getElementById('gasRetentionCount');
+    if(u)u.value=devGetItem('gasWebAppUrl')||'';
+    if(k)k.value=devGetItem('gasBackupKey')||'';
+    if(r)r.value=String(gasGetRetention());
+    gasUpdateStatus();
+    setTimeout(armGasDailyBackup,100);
+  };
+
+  function gasBuildPayload(mode){
+    var payload=makeCompleteBackupPayload();
+    payload.environment='PROD';
+    payload.appsScriptBackup=true;
+    payload.backupMode=mode||'manual';
+    payload.requestedAt=new Date().toISOString();
+    return payload;
+  }
+
+  function gasPost(action,mode){
+    saveGasBackupSettings(false);
+    var url=String(devGetItem('gasWebAppUrl')||'').trim();
+    var key=String(devGetItem('gasBackupKey')||'').trim();
+
+    if(!gasValidUrl(url)){
+      showToast('❗ Apps ScriptのウェブアプリURLを確認してください',true);
+      return false;
+    }
+    if(!key){
+      showToast('❗ バックアップ用合言葉を入力してください',true);
+      return false;
+    }
+
+    var old=document.getElementById('gasBackupPostForm');
+    if(old)old.remove();
+
+    var form=document.createElement('form');
+    form.id='gasBackupPostForm';
+    form.method='POST';
+    form.action=url;
+    form.target='gasBackupFrame';
+    form.style.display='none';
+
+    function add(name,value){
+      var input=document.createElement('input');
+      input.type='hidden';
+      input.name=name;
+      input.value=value;
+      form.appendChild(input);
+    }
+
+    add('action',action);
+    add('key',key);
+    add('retention',String(gasGetRetention()));
+    add('source','truck-log-test');
+    if(action==='backup'){
+      add('payload',JSON.stringify(gasBuildPayload(mode)));
+      add('mode',mode||'manual');
+    }
+
+    document.body.appendChild(form);
+    gasLastRequestedMode=mode||action;
+    gasSetStatus((mode==='daily-auto'?'☁️ 今日のDrive自動バックアップ送信中…':'☁️ Google Driveへ送信中…'),false);
+
+    if(gasPendingTimer)clearTimeout(gasPendingTimer);
+    gasPendingTimer=setTimeout(function(){
+      gasSetStatus('⚠️ 応答確認に時間がかかっています。Google Drive側も確認してください。',false);
+    },12000);
+
+    form.submit();
+    setTimeout(function(){if(form&&form.parentNode)form.remove();},1500);
+    return true;
+  }
+
+  window.testGasConnection=function(){ gasPost('ping','test'); };
+
+  window.manualGasDriveBackup=function(){
+    saveGasBackupSettings(false);
+    gasUpdateStatus();
+    gasPost('backup','manual');
+  };
+
+  window.toggleGasBackup=function(){
+    // 設定欄の値は保存するが、ON/OFF切替自体は通信状態に依存させない。
+    saveGasBackupSettings(false);
+
+    var enabled=devGetItem('gasBackupEnabled')==='1';
+    var nextEnabled=!enabled;
+    devSetItem('gasBackupEnabled',nextEnabled?'1':'0');
+
+    // localStorage反映確認。万一失敗した場合でも状態を画面に明示する。
+    var stored=devGetItem('gasBackupEnabled')==='1';
+    gasUpdateStatus();
+
+    if(stored===nextEnabled){
+      if(nextEnabled){
+        showToast('☁️ 自動保存ON・今日のDriveバックアップを実行します');
+        setTimeout(function(){
+          if(needsGasDailyBackup()&&gasSettingsReady()){
+            gasPost('backup','daily-auto');
+          }else{
+            gasUpdateStatus();
+          }
+        },250);
+      }else{
+        showToast('☁️ Google Drive自動バックアップをOFFにしました');
+      }
+    }else{
+      gasSetStatus('❌ 自動保存設定を保存できませんでした。ブラウザのサイトデータ設定を確認してください。',true);
+      showToast('❌ 自動保存設定の保存に失敗しました',true);
+    }
+  };
+
+  // 旧版との互換性を維持
+  window.disableGasBackup=function(){
+    devSetItem('gasBackupEnabled','0');
+    gasUpdateStatus();
+    showToast('☁️ Google Drive自動バックアップをOFFにしました');
+  };
+
+  window.addEventListener('message',function(ev){
+    var d=ev&&ev.data;
+    if(!d||d.type!==GAS_MSG_TYPE)return;
+
+    if(gasPendingTimer){
+      clearTimeout(gasPendingTimer);
+      gasPendingTimer=null;
+    }
+
+    if(d.ok){
+      if(d.action==='ping'){
+        devSetItem('lastGasBackupResult','✅ Apps Script接続OK');
+        gasUpdateStatus();
+        showToast('✅ Apps Script接続OK');
+      }else if(d.action==='backup'){
+        var now=new Date().toISOString();
+        devSetItem('lastGasBackupAt',now);
+        if(gasLastRequestedMode==='daily-auto'){
+          devSetItem('lastGasDailyBackupDate',getLocalDateKey());
+        }
+        var msg='✅ Drive保存完了';
+        if(parseInt(d.deleted||0,10)>0)msg+='・古いバックアップを'+parseInt(d.deleted,10)+'件削除';
+        if(parseInt(d.kept||0,10)>0)msg+='・現在'+parseInt(d.kept,10)+'件保持';
+        devSetItem('lastGasBackupResult',msg);
+        gasUpdateStatus();
+        showToast('☁️ '+msg.replace('✅ ',''));
+      }
+    }else{
+      var err=String(d.error||'Apps Script側でエラーが発生しました');
+      devSetItem('lastGasBackupResult','❌ '+err);
+      gasSetStatus('❌ '+escapeHtml(err),true);
+      showToast('❌ Driveバックアップ失敗',true);
+    }
+  },false);
+
+  // Drive日次自動バックアップは端末バックアップとは別の完了日で管理する。
+  var gasDailyArmed=false;
+
+  function needsGasDailyBackup(){
+    return devGetItem('lastGasDailyBackupDate')!==getLocalDateKey();
+  }
+
+  function runGasDailyBackupOnFirstAction(){
+    if(!needsGasDailyBackup()){
+      gasDailyArmed=false;
+      return;
+    }
+    if(devGetItem('gasBackupEnabled')!=='1'||!gasSettingsReady()){
+      gasDailyArmed=false;
+      return;
+    }
+    gasDailyArmed=false;
+    gasPost('backup','daily-auto');
+  }
+
+  function armGasDailyBackup(){
+    if(gasDailyArmed||!needsGasDailyBackup())return;
+    if(devGetItem('gasBackupEnabled')!=='1'||!gasSettingsReady())return;
+    gasDailyArmed=true;
+
+    function onceGas(){
+      document.removeEventListener('pointerdown',onceGas,true);
+      document.removeEventListener('keydown',onceGas,true);
+      setTimeout(runGasDailyBackupOnFirstAction,50);
+    }
+
+    document.addEventListener('pointerdown',onceGas,true);
+    document.addEventListener('keydown',onceGas,true);
+  }
+
+  var originalOpenSettingsGas=window.openSettings;
+  if(typeof originalOpenSettingsGas==='function'){
+    window.openSettings=function(){
+      var r=originalOpenSettingsGas.apply(this,arguments);
+      setTimeout(loadGasBackupSettings,0);
+      return r;
+    };
+  }
+
+  document.addEventListener('DOMContentLoaded',function(){
+    setTimeout(function(){
+      loadGasBackupSettings();
+      armGasDailyBackup();
+    },300);
   });
 })();
 </script>
