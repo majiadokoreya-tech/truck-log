@@ -108,7 +108,7 @@ input[type=number]{-moz-appearance:textfield}
 <body>
 <div class="header">
   <div style="display:flex;justify-content:space-between;align-items:center;">
-    <h1>🧪 運転日報 <span style="font-size:11px;color:#6c5ce7;border:1px solid #6c5ce7;border-radius:999px;padding:3px 8px;vertical-align:middle;">TEST</span></h1>
+    <h1>🚛 運転日報</h1>
     <button onclick="openSettings()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:4px;">⚙️</button>
   </div>
   <div class="header-date" id="headerDate"></div>
@@ -1784,6 +1784,8 @@ var todayRecord=getRecords().find(function(r){return r.date===getLocalDateStr()}
 
 <!--
 変更履歴
+- 2026/09/12 PROD：ヘッダーに残っていたTESTバッジを削除
+- Google Drive PROD自動バックアップ、既存勤務記録、計算、復元、月末締め等の既存機能は変更なし
 - 2026/09/12 PROD：TESTで実日付またぎ確認済みのGoogle Drive日次自動バックアップを本番へ完全統合
 - Google Apps Script中継方式、日次初回操作トリガー、手動Driveバックアップ、自動保存ON/OFF、保持数5〜10個（初期7個）を本番へ移植
 - 2026/09/12 0:53の実日付またぎテストで、翌日分が自動で1件作成されることを確認したTEST仕様を採用
