@@ -149,6 +149,7 @@ input[type=number]{-moz-appearance:textfield}
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center;">
           <div class="memo-btn" id="memoBtnGas" onclick="toggleSimpleMemoButton('ガス','memoBtnGas')">⛽ ガス</div>
           <div class="memo-btn" id="memoBtnEster" onclick="toggleEsterMemo()">🧪 エステル搭載</div>
+          <div class="memo-btn" id="memoBtnSulfuric" onclick="toggleSulfuricMemo()">🧫 硫酸搭載</div>
           <div class="memo-btn" id="memoBtnChlorine" onclick="toggleChlorineOnlyTask()">⚗️ 塩素搭載</div>
           <div class="memo-btn" id="memoBtnChlorineDelivery" onclick="toggleChlorineDeliveryTask()">🚛 塩素搭載＋配送</div>
           <div class="memo-btn" id="memoBtnEnvironment" onclick="toggleEnvironmentTask()">🧹 環境整備</div>
@@ -937,13 +938,14 @@ function setToxicCountDirect(n){
   document.querySelectorAll('.job-btn').forEach(function(b){if(b.dataset.job==='毒手当')b.classList.toggle('selected',n===1);if(b.dataset.job==='毒×2')b.classList.toggle('selected',n===2);});
 }
 function syncKanekaPmToxic(){
-  var hasKaneka=hasMemoPart('㈱カネカ 大阪'),hasPm=hasMemoPart('PM搭載');
-  setToxicCountDirect((hasKaneka?1:0)+(hasPm?1:0));
-  setMemoButtonState('memoBtnKaneka',hasKaneka);setMemoButtonState('memoBtnPm',hasPm);updateInputProgress();
+  var hasKaneka=hasMemoPart('㈱カネカ 大阪'),hasPm=hasMemoPart('PM搭載'),hasSulfuric=hasMemoPart('硫酸搭載');
+  setToxicCountDirect((hasKaneka?1:0)+(hasPm?1:0)+(hasSulfuric?1:0));
+  setMemoButtonState('memoBtnKaneka',hasKaneka);setMemoButtonState('memoBtnPm',hasPm);setMemoButtonState('memoBtnSulfuric',hasSulfuric);updateInputProgress();
 }
 function refreshMemoButtonStates(){
   setMemoButtonState('memoBtnGas',hasMemoPart('ガス'));
   setMemoButtonState('memoBtnEster',hasMemoPart('エステル')&&hasMemoPart('搭載'));
+  setMemoButtonState('memoBtnSulfuric',hasMemoPart('硫酸搭載'));
   setMemoButtonState('memoBtnChlorine',selectedJobs.includes('塩素搭載のみ'));
   setMemoButtonState('memoBtnChlorineDelivery',selectedJobs.includes('塩素搭載＋配送'));
   setMemoButtonState('memoBtnEnvironment',selectedJobs.includes('環境整備'));
@@ -959,6 +961,25 @@ function addMemo(text){
   if(text==='㈱カネカ 大阪'||text==='PM搭載')syncKanekaPmToxic();refreshMemoButtonStates();
 }
 function toggleSimpleMemoButton(text,btnId){if(hasMemoPart(text))removeMemo(text);else addMemo(text);setMemoButtonState(btnId,hasMemoPart(text));if(text==='㈱カネカ 大阪'||text==='PM搭載')syncKanekaPmToxic();updateInputProgress();}
+function setTrailerDirect(on){
+  trailerOn=!!on;
+  var btn=document.getElementById('trailerBtn'),status=document.getElementById('trailerStatus');
+  if(btn)btn.classList.toggle('selected',trailerOn);
+  if(status){status.textContent=trailerOn?'✅ 3,000円':'タップでON';status.style.color=trailerOn?'var(--accent)':'var(--muted)';}
+  document.querySelectorAll('.job-btn').forEach(function(b){if(b.dataset.job==='トレーラー')b.classList.toggle('selected',trailerOn);});
+  selectedJobs=selectedJobs.filter(function(j){return j!=='トレーラー';});if(trailerOn)selectedJobs.push('トレーラー');
+}
+function toggleSulfuricMemo(){
+  var on=hasMemoPart('硫酸搭載');
+  if(on){
+    removeMemo('硫酸搭載');setTrailerDirect(false);syncKanekaPmToxic();
+    showToast('🧫 硫酸搭載を解除：硫酸分の毒・トレーラー手当を解除しました');
+  }else{
+    addMemo('硫酸搭載');setTrailerDirect(true);syncKanekaPmToxic();
+    showToast('🧫 硫酸搭載：毒×1＋トレーラー手当を設定しました');
+  }
+  refreshMemoButtonStates();updateInputProgress();
+}
 function toggleEsterMemo(){var on=hasMemoPart('エステル')&&hasMemoPart('搭載');if(on)removeMemoParts(['エステル','搭載']);else{addMemo('エステル');addMemo('搭載');}setMemoButtonState('memoBtnEster',!on);updateInputProgress();}
 function setSpecialTask(job,memoParts,zeroDistance){
   selectedJobs=selectedJobs.filter(function(j){return !['塩素搭載のみ','塩素搭載＋配送','環境整備'].includes(j);});selectedJobs.push(job);
@@ -1784,8 +1805,6 @@ var todayRecord=getRecords().find(function(r){return r.date===getLocalDateStr()}
 
 <!--
 変更履歴
-- 2026/09/12 PROD：ヘッダーに残っていたTESTバッジを削除
-- Google Drive PROD自動バックアップ、既存勤務記録、計算、復元、月末締め等の既存機能は変更なし
 - 2026/09/12 PROD：TESTで実日付またぎ確認済みのGoogle Drive日次自動バックアップを本番へ完全統合
 - Google Apps Script中継方式、日次初回操作トリガー、手動Driveバックアップ、自動保存ON/OFF、保持数5〜10個（初期7個）を本番へ移植
 - 2026/09/12 0:53の実日付またぎテストで、翌日分が自動で1件作成されることを確認したTEST仕様を採用
@@ -2163,7 +2182,7 @@ var hist=jget('backupHistory',[]), gl=document.getElementById('backupGenerationL
     add('action',action);
     add('key',key);
     add('retention',String(gasGetRetention()));
-    add('source','truck-log-test');
+    add('source','truck-log-prod');
     if(action==='backup'){
       add('payload',JSON.stringify(gasBuildPayload(mode)));
       add('mode',mode||'manual');
@@ -2316,6 +2335,17 @@ var hist=jget('backupHistory',[]), gl=document.getElementById('backupGenerationL
   });
 })();
 </script>
+
+<!--
+変更履歴 2026/09/17 PROD
+- TEST合格版の「硫酸搭載」機能を本番へ統合
+- 硫酸搭載ONで毒×1（2,500円）＋トレーラー手当（3,000円）を自動設定
+- 硫酸搭載を再タップでメモ選択・硫酸分の毒手当・トレーラー手当を解除
+- カネカ・PMとの併用時も毒手当を再計算して整合を維持
+- PROD STORAGE_PREFIX=''、Driveバックアップenvironment=PROD、source=truck-log-prod
+- TEST表示を削除し本番タイトルへ変更
+- 既存機能を維持
+-->
 
 </body>
 </html>
