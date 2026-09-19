@@ -2148,7 +2148,8 @@ var hist=jget('backupHistory',[]), gl=document.getElementById('backupGenerationL
   }
 
   function gasPost(action,mode){
-    saveGasBackupSettings(false);
+    // daily-auto は設定画面の未読込inputを保存せず、保存済み設定を使用する。
+    if(mode!=='daily-auto')saveGasBackupSettings(false);
     var url=String(devGetItem('gasWebAppUrl')||'').trim();
     var key=String(devGetItem('gasBackupKey')||'').trim();
 
@@ -2191,6 +2192,9 @@ var hist=jget('backupHistory',[]), gl=document.getElementById('backupGenerationL
     document.body.appendChild(form);
     gasLastRequestedMode=mode||action;
     gasSetStatus((mode==='daily-auto'?'☁️ 今日のDrive自動バックアップ送信中…':'☁️ Google Driveへ送信中…'),false);
+    if(mode==='daily-auto'){
+      showToast('☁️ Google Driveに自動バックアップ中…');
+    }
 
     if(gasPendingTimer)clearTimeout(gasPendingTimer);
     gasPendingTimer=setTimeout(function(){
@@ -2256,6 +2260,7 @@ var hist=jget('backupHistory',[]), gl=document.getElementById('backupGenerationL
       clearTimeout(gasPendingTimer);
       gasPendingTimer=null;
     }
+    if(gasLastRequestedMode==='daily-auto')gasDailyBackupInFlight=false;
 
     if(d.ok){
       if(d.action==='ping'){
@@ -2273,9 +2278,17 @@ var hist=jget('backupHistory',[]), gl=document.getElementById('backupGenerationL
         if(parseInt(d.kept||0,10)>0)msg+='・現在'+parseInt(d.kept,10)+'件保持';
         devSetItem('lastGasBackupResult',msg);
         gasUpdateStatus();
-        showToast('☁️ '+msg.replace('✅ ',''));
+        if(gasLastRequestedMode==='daily-auto'){
+          showToast('☁️ Google Driveに自動バックアップしました');
+        }else{
+          showToast('☁️ '+msg.replace('✅ ',''));
+        }
       }
     }else{
+      if(gasLastRequestedMode==='daily-auto'){
+        devRemoveItem('lastGasDailyBackupDate');
+        gasDailyBackupInFlight=false;
+      }
       var err=String(d.error||'Apps Script側でエラーが発生しました');
       devSetItem('lastGasBackupResult','❌ '+err);
       gasSetStatus('❌ '+escapeHtml(err),true);
@@ -2284,38 +2297,33 @@ var hist=jget('backupHistory',[]), gl=document.getElementById('backupGenerationL
   },false);
 
   // Drive日次自動バックアップは端末バックアップとは別の完了日で管理する。
-  var gasDailyArmed=false;
+  // アプリ起動時に1日1回だけ実行する。
+  var gasDailyBackupInFlight=false;
 
   function needsGasDailyBackup(){
     return devGetItem('lastGasDailyBackupDate')!==getLocalDateKey();
   }
 
-  function runGasDailyBackupOnFirstAction(){
-    if(!needsGasDailyBackup()){
-      gasDailyArmed=false;
-      return;
-    }
-    if(devGetItem('gasBackupEnabled')!=='1'||!gasSettingsReady()){
-      gasDailyArmed=false;
-      return;
-    }
-    gasDailyArmed=false;
-    gasPost('backup','daily-auto');
-  }
+  function runGasDailyBackupOnAppOpen(){
+    if(gasDailyBackupInFlight)return false;
+    if(!needsGasDailyBackup())return false;
+    if(devGetItem('gasBackupEnabled')!=='1'||!gasSettingsReady())return false;
+    gasDailyBackupInFlight=true;
 
-  function armGasDailyBackup(){
-    if(gasDailyArmed||!needsGasDailyBackup())return;
-    if(devGetItem('gasBackupEnabled')!=='1'||!gasSettingsReady())return;
-    gasDailyArmed=true;
+    // postMessageを端末が受信できない場合でも同日の重複送信を防ぐ。
+    var todayKey=getLocalDateKey();
+    devSetItem('lastGasDailyBackupDate',todayKey);
+    gasUpdateStatus();
 
-    function onceGas(){
-      document.removeEventListener('pointerdown',onceGas,true);
-      document.removeEventListener('keydown',onceGas,true);
-      setTimeout(runGasDailyBackupOnFirstAction,50);
+    var started=gasPost('backup','daily-auto');
+    if(!started){
+      gasDailyBackupInFlight=false;
+      if(devGetItem('lastGasDailyBackupDate')===todayKey){
+        devRemoveItem('lastGasDailyBackupDate');
+        gasUpdateStatus();
+      }
     }
-
-    document.addEventListener('pointerdown',onceGas,true);
-    document.addEventListener('keydown',onceGas,true);
+    return !!started;
   }
 
   var originalOpenSettingsGas=window.openSettings;
@@ -2329,9 +2337,9 @@ var hist=jget('backupHistory',[]), gl=document.getElementById('backupGenerationL
 
   document.addEventListener('DOMContentLoaded',function(){
     setTimeout(function(){
-      loadGasBackupSettings();
-      armGasDailyBackup();
-    },300);
+      gasUpdateStatus();
+      runGasDailyBackupOnAppOpen();
+    },500);
   });
 })();
 </script>
@@ -2345,6 +2353,19 @@ var hist=jget('backupHistory',[]), gl=document.getElementById('backupGenerationL
 - PROD STORAGE_PREFIX=''、Driveバックアップenvironment=PROD、source=truck-log-prod
 - TEST表示を削除し本番タイトルへ変更
 - 既存機能を維持
+-->
+
+
+<!--
+変更履歴 2026/09/20 PROD
+- TEST修正版6で実機合格したDrive日次自動バックアップを本番へ統合
+- 設定画面を開かずアプリ起動時にDrive自動バックアップを開始
+- 送信開始時に「☁️ Google Driveに自動バックアップ中…」を表示
+- 成功応答受信時は「☁️ Google Driveに自動バックアップしました」を表示
+- 当日実行日を送信開始時に保存し、同日再起動での重複バックアップを防止
+- 送信開始失敗・明示的なApps Script失敗応答時は当日実行日を解除
+- TEST専用リセットボタンは本番へ導入しない
+- PROD設定、UTF-8、日本語・絵文字、硫酸搭載を含む既存機能を維持
 -->
 
 </body>
