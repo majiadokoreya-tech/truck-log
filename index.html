@@ -2075,278 +2075,263 @@ var hist=jget('backupHistory',[]), gl=document.getElementById('backupGenerationL
 
 <script>
 (function(){
-  var GAS_MSG_TYPE='TRUCKLOG_GAS_BACKUP_RESULT';
-  var gasPendingTimer=null;
-  var gasLastRequestedMode='';
+  'use strict';
+  var messageType='TRUCKLOG_GAS_BACKUP_RESULT';
+  var historyKey='gasBackupHistoryV2';
+  var requestTimeout=12000;
+  var verificationDelay=5*60*1000;
+  var retentionPeriod=7*24*60*60*1000;
+  var requests=new Map();
+  var dueTimers=new Map();
+  var checking=new Set();
+  var warningClosed=false;
+  var settingsLoaded=false;
+  var history=[];
+  var historyError='';
+  var verificationEndpoint='';
 
-  function gasGetRetention(){
-    var n=parseInt(devGetItem('gasRetentionCount')||'7',10);
-    if(!isFinite(n))n=7;
-    return Math.max(5,Math.min(10,n));
+  try{
+    var stored=JSON.parse(devGetItem(historyKey)||'[]');
+    if(!Array.isArray(stored))throw new Error('履歴形式が正しくありません');
+    history=stored.filter(function(entry){return entry&&typeof entry.id==='string'&&Number.isFinite(entry.createdAt)&&entry.createdAt>=Date.now()-retentionPeriod;});
+  }catch(error){historyError='バックアップ確認履歴を読み込めません。手動バックアップを実行してください。';}
+
+  function saveHistory(){
+    history=history.filter(function(entry){return entry.createdAt>=Date.now()-retentionPeriod;});
+    try{devSetItem(historyKey,JSON.stringify(history));return true;}
+    catch(error){historyError='確認履歴を保存できません。ブラウザの保存容量を確認し、手動バックアップを作成してください。';render();return false;}
   }
-  function gasSetStatus(msg,isError){
-    var el=document.getElementById('gasBackupStatus');
-    if(!el)return;
-    el.innerHTML=msg;
-    el.style.color=isError?'var(--red)':'var(--muted)';
+  function unresolved(entry){return entry.status!=='saved';}
+  function visibleWarning(entry){return unresolved(entry)&&entry.status!=='sending'&&!entry.suppressedBy;}
+  function uniqueId(){
+    if(window.crypto&&typeof window.crypto.randomUUID==='function')return window.crypto.randomUUID();
+    if(!window.crypto||typeof window.crypto.getRandomValues!=='function')throw new Error('安全な送信IDを作成できません');
+    return Date.now().toString(36)+'-'+Array.from(window.crypto.getRandomValues(new Uint32Array(4))).map(function(value){return value.toString(16).padStart(8,'0');}).join('');
   }
-  function gasValidUrl(url){
-    return /^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec(?:[?#].*)?$/i.test(String(url||'').trim());
+  function retention(){
+    var value=parseInt(devGetItem('gasRetentionCount')||'7',10);
+    return Math.max(5,Math.min(10,Number.isFinite(value)?value:7));
   }
-  function gasSettingsReady(){
-    var url=String(devGetItem('gasWebAppUrl')||'').trim();
-    var key=String(devGetItem('gasBackupKey')||'').trim();
-    return gasValidUrl(url)&&!!key;
+  function validUrl(url){return /^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec(?:[?#].*)?$/i.test(url);}
+  function ready(){return validUrl(String(devGetItem('gasWebAppUrl')||'').trim())&&!!String(devGetItem('gasBackupKey')||'').trim();}
+  function settingsStatus(message){var element=document.getElementById('gasBackupStatus');if(element)element.textContent=message;}
+  function historyRows(){
+    if(!history.length)return '<div>直近7日間のバックアップ確認履歴はありません。</div>';
+    return history.slice().sort(function(first,second){return second.createdAt-first.createdAt;}).map(function(entry){
+      var label=entry.status==='saved'?'✅ 保存確認済み':entry.status==='failed'?'🔴 保存失敗':entry.status==='sending'?'⏳ 保存応答待ち':'🟡 保存未確認';
+      return '<div style="padding:10px 0;border-bottom:1px solid var(--border);overflow-wrap:anywhere;">'+
+        '<b>'+label+'</b> '+escapeHtml(formatBackupDate(new Date(entry.createdAt).toISOString()))+
+        ' ／ '+(entry.mode==='daily-auto'?'自動':'手動')+'<br>'+escapeHtml(entry.detail||'')+
+        '<br><small>送信ID：'+escapeHtml(entry.id)+'</small>'+
+        (entry.suppressedBy?'<br><small>後の手動バックアップ成功により警告解除（この履歴は保持）</small>':'')+'</div>';
+    }).join('');
   }
-  function gasUpdateStatus(){
+  function installUi(){
+    if(!document.getElementById('gasBackupWarning')){
+      var container=document.createElement('div');
+      container.id='gasBackupWarning';
+      container.hidden=true;
+      container.style.cssText='padding:10px 16px;border-bottom:2px solid #9a6700;background:#fff4ce;color:#664d03;font-size:13px;';
+      container.innerHTML='<div style="display:flex;align-items:center;gap:8px;"><button type="button" id="gasWarningExpand" aria-expanded="false" aria-controls="gasWarningDetails" style="flex:1;text-align:left;background:none;border:0;color:inherit;font:inherit;padding:6px;">⚠️ バックアップの確認が必要です ▼</button><button type="button" id="gasWarningClose" aria-label="今回の起動中は警告を閉じる" style="border:0;background:none;font-size:22px;color:inherit;padding:6px;">×</button></div><div id="gasWarningDetails" hidden><p>保存が確認できない場合は「今すぐDriveへバックアップ」、または端末への完全バックアップを手動で実行してください。自動で再送信はしません。</p><button type="button" class="copy-btn" id="gasWarningRecheck">未確認分を一括再確認</button><button type="button" class="copy-btn" id="gasWarningSettings">設定・手動バックアップを開く</button><div id="gasWarningHistory"></div></div>';
+      var header=document.querySelector('.header');
+      if(header)header.parentNode.insertBefore(container,header);else document.body.insertBefore(container,document.body.firstChild);
+      document.getElementById('gasWarningExpand').onclick=function(){var details=document.getElementById('gasWarningDetails');details.hidden=!details.hidden;this.setAttribute('aria-expanded',String(!details.hidden));};
+      document.getElementById('gasWarningClose').onclick=function(){warningClosed=true;render();};
+      document.getElementById('gasWarningRecheck').onclick=function(){window.recheckGasBackups();};
+      document.getElementById('gasWarningSettings').onclick=function(){window.openSettings();};
+    }
+    var status=document.getElementById('gasBackupStatus');
+    if(status&&!document.getElementById('gasBackupHistoryPanel')){
+      var panel=document.createElement('section');
+      panel.id='gasBackupHistoryPanel';
+      panel.className='backup-info';
+      panel.innerHTML='<b>☁️ Driveバックアップ確認履歴（直近7日間）</b><div id="gasVerificationStatus" role="status"></div><button type="button" class="copy-btn" id="gasHistoryRecheck">未確認分を一括再確認</button><div id="gasBackupHistory"></div>';
+      status.parentNode.insertBefore(panel,status.nextSibling);
+      document.getElementById('gasHistoryRecheck').onclick=function(){window.recheckGasBackups();};
+    }
+
+  }
+  function render(){
+    if(!document.body)return;
+    installUi();
     var enabled=devGetItem('gasBackupEnabled')==='1';
-    var last=devGetItem('lastGasBackupAt');
-    var lastResult=devGetItem('lastGasBackupResult')||'';
-    var retention=gasGetRetention();
-    var line='<b>'+(enabled?'🟢 自動保存ON':'⚪ 自動保存OFF')+'</b> ／ 保持：'+retention+'個';
-    var gasTodayDone=devGetItem('lastGasDailyBackupDate')===getLocalDateKey();
-    line+='<br>今日のDrive自動バックアップ：'+(gasTodayDone?'✅ 完了':'⏳ 次の操作時に実行');
-    if(last)line+='<br>前回Driveバックアップ：'+escapeHtml(formatBackupDate(last));
-    if(lastResult)line+='<br>'+escapeHtml(lastResult);
-    gasSetStatus(line,false);
-
-    var btn=document.getElementById('gasBackupToggleBtn');
-    if(btn){
-      btn.textContent=enabled?'自動保存ON':'自動保存OFF';
-      btn.setAttribute('aria-pressed',enabled?'true':'false');
-      btn.style.borderColor=enabled?'var(--green)':'var(--muted)';
-      btn.style.color=enabled?'var(--green)':'var(--muted)';
-      btn.style.background=enabled?'rgba(46,204,113,.10)':'var(--surface2)';
+    var today=getLocalDateKey();
+    var done=devGetItem('lastGasDailyBackupDate')===today;
+    var attempted=devGetItem('lastGasDailyAttemptDate')===today;
+    settingsStatus((enabled?'🟢 自動保存ON':'⚪ 自動保存OFF')+' ／ 保持：'+retention()+'個\n今日のDrive自動バックアップ：'+(done?'✅ 保存確認済み':attempted?'🟡 実行済み・保存未確認（自動再送信なし）':'⏳ 未実行')+(devGetItem('lastGasBackupAt')?'\n前回の保存確認：'+formatBackupDate(devGetItem('lastGasBackupAt')):''));
+    var status=document.getElementById('gasBackupStatus');if(status)status.style.whiteSpace='pre-line';
+    var toggle=document.getElementById('gasBackupToggleBtn');
+    if(toggle){toggle.textContent=enabled?'自動保存ON':'自動保存OFF';toggle.setAttribute('aria-pressed',String(enabled));toggle.style.borderColor=enabled?'var(--green)':'var(--muted)';toggle.style.color=enabled?'var(--green)':'var(--muted)';toggle.style.background=enabled?'rgba(46,204,113,.10)':'var(--surface2)';}
+    var rows=historyRows();
+    ['gasBackupHistory','gasWarningHistory'].forEach(function(id){var element=document.getElementById(id);if(element)element.innerHTML=rows;});
+    var warnings=history.filter(visibleWarning);
+    var bar=document.getElementById('gasBackupWarning');
+    if(bar){
+      bar.hidden=warningClosed||(!warnings.length&&!historyError);
+      var failed=warnings.some(function(entry){return entry.status==='failed';});
+      bar.style.background=failed?'#fde8e8':'#fff4ce';bar.style.color=failed?'#9b1c1c':'#664d03';bar.style.borderColor=failed?'#9b1c1c':'#9a6700';
+      document.getElementById('gasWarningExpand').textContent=historyError||((failed?'🔴 バックアップ保存失敗':'🟡 バックアップ保存未確認')+'（'+warnings.length+'件） 詳細 ▼');
     }
+    ['gasHistoryRecheck','gasWarningRecheck'].forEach(function(id){var button=document.getElementById(id);if(button)button.disabled=checking.size>0;});
   }
-
-  window.saveGasBackupSettings=function(showSaved){
-    var u=document.getElementById('gasWebAppUrl');
-    var k=document.getElementById('gasBackupKey');
-    var r=document.getElementById('gasRetentionCount');
-    if(u)devSetItem('gasWebAppUrl',String(u.value||'').trim());
-    if(k)devSetItem('gasBackupKey',String(k.value||'').trim());
-    if(r){
-      var n=parseInt(r.value,10);
-      n=Math.max(5,Math.min(10,isFinite(n)?n:7));
-      devSetItem('gasRetentionCount',String(n));
-    }
-    gasUpdateStatus();
-    if(showSaved)showToast('☁️ Apps Scriptバックアップ設定を保存しました');
-  };
-
-  window.loadGasBackupSettings=function(){
-    var u=document.getElementById('gasWebAppUrl');
-    var k=document.getElementById('gasBackupKey');
-    var r=document.getElementById('gasRetentionCount');
-    if(u)u.value=devGetItem('gasWebAppUrl')||'';
-    if(k)k.value=devGetItem('gasBackupKey')||'';
-    if(r)r.value=String(gasGetRetention());
-    gasUpdateStatus();
-    setTimeout(armGasDailyBackup,100);
-  };
-
-  function gasBuildPayload(mode){
-    var payload=makeCompleteBackupPayload();
-    payload.environment='PROD';
-    payload.appsScriptBackup=true;
-    payload.backupMode=mode||'manual';
-    payload.requestedAt=new Date().toISOString();
-    return payload;
+  function verificationStatus(message){var element=document.getElementById('gasVerificationStatus');if(element)element.textContent=message;}
+  function markUnknown(entry,message){if(entry.status!=='saved'&&entry.status!=='failed'){entry.status='unknown';entry.detail=message;}}
+  function scheduleVerification(entry){
+    if(entry.autoChecked||!unresolved(entry)||entry.legacy||dueTimers.has(entry.id))return;
+    dueTimers.set(entry.id,setTimeout(function(){
+      dueTimers.delete(entry.id);
+      if(entry.autoChecked||!unresolved(entry))return;
+      entry.autoChecked=true;saveHistory();verifyEntries([entry],false);
+    },Math.max(0,entry.createdAt+verificationDelay-Date.now())));
   }
-
-  function gasPost(action,mode){
-    // daily-auto は設定画面の未読込inputを保存せず、保存済み設定を使用する。
-    if(mode!=='daily-auto')saveGasBackupSettings(false);
+  function release(request){
+    clearTimeout(request.timer);requests.delete(request.id);
+    request.entries.forEach(function(entry){checking.delete(entry.id);});
+    setTimeout(function(){request.form.remove();request.frame.remove();},0);
+  }
+  function requestUnknown(request,message){
+    request.entries.forEach(function(entry){markUnknown(entry,message);});
+    release(request);saveHistory();render();verificationStatus(message+' 手動バックアップをご利用ください。');
+  }
+  function submit(action,entries,mode){
     var url=String(devGetItem('gasWebAppUrl')||'').trim();
-    var key=String(devGetItem('gasBackupKey')||'').trim();
-
-    if(!gasValidUrl(url)){
-      showToast('❗ Apps ScriptのウェブアプリURLを確認してください',true);
-      return false;
-    }
-    if(!key){
-      showToast('❗ バックアップ用合言葉を入力してください',true);
-      return false;
-    }
-
-    var old=document.getElementById('gasBackupPostForm');
-    if(old)old.remove();
-
-    var form=document.createElement('form');
-    form.id='gasBackupPostForm';
-    form.method='POST';
-    form.action=url;
-    form.target='gasBackupFrame';
-    form.style.display='none';
-
-    function add(name,value){
-      var input=document.createElement('input');
-      input.type='hidden';
-      input.name=name;
-      input.value=value;
-      form.appendChild(input);
-    }
-
-    add('action',action);
-    add('key',key);
-    add('retention',String(gasGetRetention()));
-    add('source','truck-log-prod');
+    if(!ready()){showToast('Apps ScriptのURL・合言葉を設定してください',true);return false;}
+    var requestId;
+    try{requestId=uniqueId();}catch(error){showToast(error.message,true);return false;}
+    var frame=document.createElement('iframe');frame.name='gasBackupFrame_'+requestId;frame.hidden=true;
+    var form=document.createElement('form');form.method='POST';form.action=url;form.target=frame.name;form.hidden=true;
+    function add(name,value){var input=document.createElement('input');input.type='hidden';input.name=name;input.value=value;form.appendChild(input);}
+    add('action',action);add('key',String(devGetItem('gasBackupKey')||'').trim());add('retention',String(retention()));add('source','truck-log-prod');add('requestId',requestId);
+    var entry;
     if(action==='backup'){
-      add('payload',JSON.stringify(gasBuildPayload(mode)));
-      add('mode',mode||'manual');
+      entry={id:requestId,createdAt:Date.now(),day:getLocalDateKey(),mode:mode||'manual',status:'sending',detail:'保存成功応答と送信IDの照合を待っています。',autoChecked:false};
+      var payload=makeCompleteBackupPayload();payload.environment='PROD';payload.appsScriptBackup=true;payload.backupMode=entry.mode;payload.requestedAt=new Date(entry.createdAt).toISOString();payload.backupId=requestId;
+      add('backupId',requestId);add('payload',JSON.stringify(payload));add('mode',entry.mode);
+      entries=[entry];history.push(entry);
+      if(!saveHistory()){history.pop();return false;}
+      if(mode==='daily-auto'){
+        try{devSetItem('lastGasDailyAttemptDate',entry.day);}catch(error){markUnknown(entry,'日次実行判定を保存できないため送信を中止しました。');saveHistory();render();return false;}
+      }
+    }else if(action==='verify'||entries.length){
+      if(action==='verify')add('backupIds',JSON.stringify(entries.map(function(item){return item.id;})));
+      entries.forEach(function(item){checking.add(item.id);});
     }
-
-    document.body.appendChild(form);
-    gasLastRequestedMode=mode||action;
-    gasSetStatus((mode==='daily-auto'?'☁️ 今日のDrive自動バックアップ送信中…':'☁️ Google Driveへ送信中…'),false);
-    if(mode==='daily-auto'){
-      showToast('☁️ Google Driveに自動バックアップ中…');
-    }
-
-    if(gasPendingTimer)clearTimeout(gasPendingTimer);
-    gasPendingTimer=setTimeout(function(){
-      gasSetStatus('⚠️ 応答確認に時間がかかっています。Google Drive側も確認してください。',false);
-    },12000);
-
-    form.submit();
-    setTimeout(function(){if(form&&form.parentNode)form.remove();},1500);
+    document.body.appendChild(frame);document.body.appendChild(form);
+    var request={id:requestId,action:action,entries:entries,frame:frame,form:form,timer:null};requests.set(requestId,request);
+    request.timer=setTimeout(function(){requestUnknown(request,'保存応答を確認できません。再確認に失敗した場合は次回起動時に再確認します。');},requestTimeout);
+    try{form.submit();}catch(error){requestUnknown(request,'通信エラーで保存を確認できません。');}
+    if(entry)scheduleVerification(entry);
+    render();
+    if(action==='backup')showToast(mode==='daily-auto'?'☁️ Google Driveに自動バックアップ中…':'☁️ Google Driveへ送信中…');
     return true;
   }
-
-  window.testGasConnection=function(){ gasPost('ping','test'); };
-
-  window.manualGasDriveBackup=function(){
-    saveGasBackupSettings(false);
-    gasUpdateStatus();
-    gasPost('backup','manual');
-  };
-
-  window.toggleGasBackup=function(){
-    // 設定欄の値は保存するが、ON/OFF切替自体は通信状態に依存させない。
-    saveGasBackupSettings(false);
-
-    var enabled=devGetItem('gasBackupEnabled')==='1';
-    var nextEnabled=!enabled;
-    devSetItem('gasBackupEnabled',nextEnabled?'1':'0');
-
-    // localStorage反映確認。万一失敗した場合でも状態を画面に明示する。
-    var stored=devGetItem('gasBackupEnabled')==='1';
-    gasUpdateStatus();
-
-    if(stored===nextEnabled){
-      if(nextEnabled){
-        showToast('☁️ 自動保存ON・今日のDriveバックアップを実行します');
-        setTimeout(function(){
-          if(needsGasDailyBackup()&&gasSettingsReady()){
-            gasPost('backup','daily-auto');
-          }else{
-            gasUpdateStatus();
-          }
-        },250);
-      }else{
-        showToast('☁️ Google Drive自動バックアップをOFFにしました');
-      }
-    }else{
-      gasSetStatus('❌ 自動保存設定を保存できませんでした。ブラウザのサイトデータ設定を確認してください。',true);
-      showToast('❌ 自動保存設定の保存に失敗しました',true);
+  function verifyEntries(entries,manual){
+    entries=entries.filter(function(entry){return unresolved(entry)&&!entry.legacy&&!checking.has(entry.id);});
+    if(!entries.length){render();if(manual)verificationStatus(history.some(unresolved)?'送信IDのない旧履歴は確認できません。手動バックアップを実行してください。':'未確認のバックアップはありません。');return false;}
+    entries.forEach(function(entry){entry.lastCheckedAt=Date.now();entry.autoChecked=true;var timer=dueTimers.get(entry.id);if(timer)clearTimeout(timer);dueTimers.delete(entry.id);});
+    saveHistory();verificationStatus('未確認分を一括照会中…');
+    var verificationAction=verificationEndpoint===String(devGetItem('gasWebAppUrl')||'').trim()?'verify':'ping';
+    if(!submit(verificationAction,entries,'verify')){
+      entries.forEach(function(entry){markUnknown(entry,'再確認を開始できません。設定を確認し手動バックアップを実行してください。');});saveHistory();render();verificationStatus('再確認できませんでした。手動バックアップを実行してください。');return false;
     }
-  };
-
-  // 旧版との互換性を維持
-  window.disableGasBackup=function(){
-    devSetItem('gasBackupEnabled','0');
-    gasUpdateStatus();
-    showToast('☁️ Google Drive自動バックアップをOFFにしました');
-  };
-
-  window.addEventListener('message',function(ev){
-    var d=ev&&ev.data;
-    if(!d||d.type!==GAS_MSG_TYPE)return;
-
-    if(gasPendingTimer){
-      clearTimeout(gasPendingTimer);
-      gasPendingTimer=null;
-    }
-    if(gasLastRequestedMode==='daily-auto')gasDailyBackupInFlight=false;
-
-    if(d.ok){
-      if(d.action==='ping'){
-        devSetItem('lastGasBackupResult','✅ Apps Script接続OK');
-        gasUpdateStatus();
-        showToast('✅ Apps Script接続OK');
-      }else if(d.action==='backup'){
-        var now=new Date().toISOString();
-        devSetItem('lastGasBackupAt',now);
-        if(gasLastRequestedMode==='daily-auto'){
-          devSetItem('lastGasDailyBackupDate',getLocalDateKey());
-        }
-        var msg='✅ Drive保存完了';
-        if(parseInt(d.deleted||0,10)>0)msg+='・古いバックアップを'+parseInt(d.deleted,10)+'件削除';
-        if(parseInt(d.kept||0,10)>0)msg+='・現在'+parseInt(d.kept,10)+'件保持';
-        devSetItem('lastGasBackupResult',msg);
-        gasUpdateStatus();
-        if(gasLastRequestedMode==='daily-auto'){
-          showToast('☁️ Google Driveに自動バックアップしました');
-        }else{
-          showToast('☁️ '+msg.replace('✅ ',''));
-        }
-      }
-    }else{
-      if(gasLastRequestedMode==='daily-auto'){
-        devRemoveItem('lastGasDailyBackupDate');
-        gasDailyBackupInFlight=false;
-      }
-      var err=String(d.error||'Apps Script側でエラーが発生しました');
-      devSetItem('lastGasBackupResult','❌ '+err);
-      gasSetStatus('❌ '+escapeHtml(err),true);
-      showToast('❌ Driveバックアップ失敗',true);
-    }
-  },false);
-
-  // Drive日次自動バックアップは端末バックアップとは別の完了日で管理する。
-  // アプリ起動時に1日1回だけ実行する。
-  var gasDailyBackupInFlight=false;
-
-  function needsGasDailyBackup(){
-    return devGetItem('lastGasDailyBackupDate')!==getLocalDateKey();
+    return true;
   }
-
-  function runGasDailyBackupOnAppOpen(){
-    if(gasDailyBackupInFlight)return false;
-    if(!needsGasDailyBackup())return false;
-    if(devGetItem('gasBackupEnabled')!=='1'||!gasSettingsReady())return false;
-    gasDailyBackupInFlight=true;
-
-    // postMessageを端末が受信できない場合でも同日の重複送信を防ぐ。
-    var todayKey=getLocalDateKey();
-    devSetItem('lastGasDailyBackupDate',todayKey);
-    gasUpdateStatus();
-
-    var started=gasPost('backup','daily-auto');
-    if(!started){
-      gasDailyBackupInFlight=false;
-      if(devGetItem('lastGasDailyBackupDate')===todayKey){
-        devRemoveItem('lastGasDailyBackupDate');
-        gasUpdateStatus();
-      }
+  function saved(entry){
+    entry.status='saved';entry.detail='Apps Scriptから保存成功と同じ送信IDを確認しました。';entry.confirmedAt=Date.now();
+    var timer=dueTimers.get(entry.id);if(timer)clearTimeout(timer);dueTimers.delete(entry.id);
+    var lastAt=Date.parse(devGetItem('lastGasBackupAt')||'');
+    if(!Number.isFinite(lastAt)||entry.createdAt>lastAt)devSetItem('lastGasBackupAt',new Date(entry.createdAt).toISOString());
+    if(entry.mode==='daily-auto'&&entry.day>=(devGetItem('lastGasDailyBackupDate')||''))devSetItem('lastGasDailyBackupDate',entry.day);
+    if(entry.mode==='manual'){
+      history.forEach(function(previous){if(unresolved(previous)&&previous.createdAt<=entry.createdAt)previous.suppressedBy=entry.id;});
+      warningClosed=false;
     }
-    return !!started;
+    devSetItem('lastGasBackupResult','✅ Drive保存確認済み');
   }
-
-  var originalOpenSettingsGas=window.openSettings;
-  if(typeof originalOpenSettingsGas==='function'){
-    window.openSettings=function(){
-      var r=originalOpenSettingsGas.apply(this,arguments);
-      setTimeout(loadGasBackupSettings,0);
-      return r;
-    };
+  function fromFrame(source,frame){
+    try{for(var depth=0;source&&depth<8;depth++){if(source===frame.contentWindow)return true;var parent=source.parent;if(parent===source)break;source=parent;}}catch(error){return false;}
+    return false;
   }
-
+  window.addEventListener('message',function(event){
+    var data=event.data;
+    if(!data||data.type!==messageType||!/^https:\/\/(?:script\.google\.com|(?:[a-z0-9-]+\.)*googleusercontent\.com)$/i.test(event.origin))return;
+    var request=requests.get(data.requestId);
+    if(!request){
+      requests.forEach(function(candidate){if(fromFrame(event.source,candidate.frame))request=candidate;});
+      if(request)requestUnknown(request,'現在のApps Script応答では送信IDを照合できません。Apps Script側の更新が必要です。');
+      return;
+    }
+    if(!fromFrame(event.source,request.frame)||data.action!==request.action)return;
+    if(request.action==='ping'){
+      var canVerify=data.ok===true&&data.protocolVersion===2&&Array.isArray(data.capabilities)&&data.capabilities.indexOf('verify-backups')>=0;
+      if(canVerify)verificationEndpoint=request.form.action;
+      var queued=request.entries.slice();
+      release(request);
+      if(queued.length){
+        if(canVerify){verifyEntries(queued,false);return;}
+        queued.forEach(function(entry){markUnknown(entry,'現在のApps ScriptではID照会の対応を確認できません。手動バックアップを実行してください。');});saveHistory();
+      }
+      render();verificationStatus(canVerify?'✅ 接続・ID照会対応を確認しました。':data.ok===true?'接続応答を確認しました。ID照会にはApps Script側の更新が必要です。':'接続を確認できませんでした。手動バックアップを実行してください。');return;
+    }
+    if(request.action==='backup'){
+      var entry=request.entries[0];
+      if(data.backupId!==entry.id){requestUnknown(request,'保存応答の送信IDが一致しません。保存未確認です。');return;}
+      if(data.ok===true&&data.saved===true){saved(entry);showToast(entry.mode==='daily-auto'?'☁️ Google Driveに自動バックアップしました':'☁️ Driveへの保存を確認しました');}
+      else if(data.ok===false&&data.saved===false){entry.status='failed';entry.detail=String(data.error||'Apps Scriptから明確な保存失敗が返されました。');}
+      else markUnknown(entry,'保存成功を確認できない応答です。手動バックアップを実行してください。');
+    }else if(request.action==='verify'){
+      var results=Array.isArray(data.results)?data.results:[];
+      request.entries.forEach(function(entry){
+        var matches=results.filter(function(result){return result&&result.backupId===entry.id;});
+        var result=matches.length===1?matches[0]:null;
+        if(data.ok===true&&result&&result.saved===true)saved(entry);
+        else if(result&&result.saved===false&&result.status==='failed'){entry.status='failed';entry.detail=String(result.error||'Apps Scriptで保存失敗を確認しました。');}
+        else markUnknown(entry,'Drive上の保存を確認できません。手動バックアップを実行してください。');
+      });
+    }
+    release(request);saveHistory();render();
+    verificationStatus(history.some(unresolved)?'未確認履歴が残っています。確認できない場合は手動バックアップを実行してください。':'✅ 保存を確認しました。');
+  });
+  window.saveGasBackupSettings=function(showSaved){
+    if(settingsLoaded){
+      var url=document.getElementById('gasWebAppUrl');var key=document.getElementById('gasBackupKey');var count=document.getElementById('gasRetentionCount');
+      if(url)devSetItem('gasWebAppUrl',String(url.value||'').trim());if(key)devSetItem('gasBackupKey',String(key.value||'').trim());
+      if(count){var value=parseInt(count.value,10);devSetItem('gasRetentionCount',String(Math.max(5,Math.min(10,Number.isFinite(value)?value:7))));}
+    }
+    render();if(showSaved)showToast('☁️ Apps Scriptバックアップ設定を保存しました');
+  };
+  window.loadGasBackupSettings=function(){
+    var url=document.getElementById('gasWebAppUrl');var key=document.getElementById('gasBackupKey');var count=document.getElementById('gasRetentionCount');
+    if(url)url.value=devGetItem('gasWebAppUrl')||'';if(key)key.value=devGetItem('gasBackupKey')||'';if(count)count.value=String(retention());settingsLoaded=true;render();
+  };
+  window.manualGasDriveBackup=function(){window.saveGasBackupSettings(false);submit('backup',[],'manual');};
+  window.testGasConnection=function(){window.saveGasBackupSettings(false);submit('ping',[],'test');};
+  window.recheckGasBackups=function(){return verifyEntries(history.filter(unresolved),true);};
+  function dailyBackup(){
+    var today=getLocalDateKey();
+    if(devGetItem('gasBackupEnabled')!=='1'||!ready()||devGetItem('lastGasDailyAttemptDate')===today||devGetItem('lastGasDailyBackupDate')===today)return false;
+    return submit('backup',[],'daily-auto');
+  }
+  window.toggleGasBackup=function(){window.saveGasBackupSettings(false);var enabled=devGetItem('gasBackupEnabled')!=='1';devSetItem('gasBackupEnabled',enabled?'1':'0');render();showToast(enabled?'☁️ 自動保存ON':'☁️ 自動保存OFF');if(enabled)dailyBackup();};
+  window.disableGasBackup=function(){devSetItem('gasBackupEnabled','0');render();showToast('☁️ Google Drive自動バックアップをOFFにしました');};
+  var originalOpenSettings=window.openSettings;
+  window.openSettings=function(){var result=originalOpenSettings.apply(this,arguments);window.loadGasBackupSettings();return result;};
   document.addEventListener('DOMContentLoaded',function(){
+    var legacyDate=devGetItem('lastGasDailyBackupDate');
+    if(!devGetItem('gasBackupConfirmationMigrated')){
+      if(legacyDate){
+        var legacyTime=new Date(legacyDate+'T00:00:00').getTime();
+        if(Number.isFinite(legacyTime)&&legacyTime>=Date.now()-retentionPeriod)history.push({id:'legacy-'+legacyDate,createdAt:legacyTime,day:legacyDate,mode:'daily-auto',status:'unknown',legacy:true,detail:'旧版の実行履歴です。送信IDがなく保存完了を確認できません。手動バックアップを実行してください。'});
+        if(!saveHistory())return;
+        devSetItem('lastGasDailyAttemptDate',legacyDate);devRemoveItem('lastGasDailyBackupDate');
+      }
+      devSetItem('gasBackupConfirmationMigrated','1');
+    }
+    history.forEach(function(entry){if(entry.status==='sending')markUnknown(entry,'前回起動時の保存結果が未確認です。');});
+    saveHistory();render();
     setTimeout(function(){
-      gasUpdateStatus();
-      runGasDailyBackupOnAppOpen();
+      verifyEntries(history.filter(unresolved),false);
+      dailyBackup();
     },500);
   });
 })();
@@ -2384,6 +2369,18 @@ var hist=jget('backupHistory',[]), gl=document.getElementById('backupGenerationL
 - 入力画面、記録詳細、月間集計に手当対象距離と計算根拠を表示
 - 毒・トレーラー・残業・休日・長距離手当およびDrive自動バックアップ等の既存機能を維持
 - PROD設定とUTF-8日本語・絵文字を維持
+-->
+
+<!--
+変更履歴 2026/10/21 PROD バックアップ成功確認強化
+- ユーザーの本番反映指示により、TESTの固有ID照合・警告バー・詳細・直近7日履歴・一括再確認を統合
+- 保存未確認5分後の一度の照会、次回起動時の再確認、前日照会と当日保存の並行実行を追加
+- 日次の実行判定と保存確認済み判定を分離。自動再送信なし
+- 最新の手動Drive保存確認後は過去の警告を解除し、未確認履歴は保持
+- 本番のSTORAGE_PREFIX=''、environment='PROD'、source='truck-log-prod'を維持
+- 本番のURL・合言葉・保持数・保存先連携、横乗り・硫酸搭載を含む既存機能を維持
+- TEST専用リセットは本番へ導入しない
+- Apps Script元コード未提供のためサーバー未変更。旧応答は黄色の保存未確認として表示
 -->
 </body>
 </html>
