@@ -2075,7 +2075,7 @@ var hist=jget('backupHistory',[]), gl=document.getElementById('backupGenerationL
 
   var originalDelete=window.deleteRecord;
   window.deleteRecord=function(){
-    var r=getRecords().find(function(x){return String(x.id)===String(currentModalId)});
+    var r=getRecords().find(function(x){return String(x.id)===String(activeModal)});
     if(r&&isMonthClosed(r.date)){showToast('🔒 締め済みの月は削除できません',true);return;}
     return originalDelete.apply(this,arguments);
   };
