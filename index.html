@@ -11,11 +11,11 @@
 <meta name="application-name" content="運転日報">
 <title>🚛 運転日報</title>
 <meta name="apple-mobile-web-app-title" content="運転日報">
-<meta name="application-version" content="2026.11.09.1">
+<meta name="application-version" content="2026.11.09.2">
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
-<!-- latest: PROD complete integrated PWA build 2026.11.09.1 -->
-<link rel="manifest" href="./manifest.webmanifest">
+<!-- latest: PROD complete integrated PWA build 2026.11.09.2 -->
+<link rel="manifest" href="./manifest.webmanifest?v=2026.11.09.2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -129,7 +129,7 @@ input[type=number]{-moz-appearance:textfield}
     <span id="appConnectionStatus">接続確認中…</span>
     <span id="appLocalSaveStatus">端末保存確認中…</span>
     <span id="appDriveSaveStatus">Drive保存確認中…</span>
-    <span id="appPwaStatus">v2026.11.09.1</span>
+    <span id="appPwaStatus">v2026.11.09.2</span>
   </div>
 </div>
 <div class="tabs">
@@ -2447,10 +2447,10 @@ var hist=jget('backupHistory',[]), gl=document.getElementById('backupGenerationL
 - バックアップ形式v7。Drive保存確認、残業・各種手当など既存機能を維持
 -->
 <script id="truckLogPwaIntegration">
-/* 運転日報 PWA 2026.11.09.1: display-only status; existing data keys stay unchanged. */
+/* 運転日報 PWA 2026.11.09.2: display-only status; existing data keys stay unchanged. */
 (function () {
   'use strict';
-  var VERSION = '2026.11.09.1';
+  var VERSION = '2026.11.09.2';
   var registration = null;
   var updateInFlight = null;
   var updateReady = false;
@@ -2585,7 +2585,7 @@ var hist=jget('backupHistory',[]), gl=document.getElementById('backupGenerationL
 
 </script>
 <!--
-変更履歴 2026/11/09 PROD PWA v2026.11.09.1
+変更履歴 2026/11/09 PROD PWA v2026.11.09.2
 - main最新版633a33c8の完全統合版を維持し、PWAマニフェスト・通常/マスカブルアイコンを追加
 - start_url/scopeは./、同じGitHub Pagesオリジンと/truck-log/を使用
 - Service Workerは同一オリジンの画面と指定静的ファイルのみネットワーク優先、通信不能時キャッシュ起動
@@ -2596,7 +2596,15 @@ var hist=jget('backupHistory',[]), gl=document.getElementById('backupGenerationL
 - 入力保護のため更新検出時の強制再読み込みなし。次の画面起動でネットワーク最新版を取得
 - ツーマン/ワンマン距離、硫酸搭載、各種手当、月末締め、削除修正など既存機能を維持
 -->
+<!--
+変更履歴 2026/11/09 PROD PWA v2026.11.09.2
+- manifest idを./から/truck-log/へ修正。idはstart_urlのorigin基準で解決されるため同一ドメイン上のせどりアプリと衝突していた
+- start_url/scopeは./のまま維持。同じオリジン・同じlocalStorage・同じ日報/Drive/Apps Script設定を使用
+- manifestリンクのバージョンとService Workerキャッシュを更新。更新時に日報や他アプリの保存データは削除しない
+- 既存日報機能・ツーマン/ワンマン・各種手当・バックアップ/復元・PWA起動処理を維持
+-->
 </body>
 </html>
+
 
 
