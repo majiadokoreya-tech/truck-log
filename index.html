@@ -6,12 +6,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0f1923">
+<meta name="theme-color" content="#f5f5f5">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="application-name" content="運転日報">
 <title>🚛 運転日報</title>
-<!-- latest: PROD complete integrated UTF-8 safe build 2026-09-01 -->
-<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-title" content="運転日報">
+<meta name="application-version" content="2026.11.09.1">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
+<!-- latest: PROD complete integrated PWA build 2026.11.09.1 -->
+<link rel="manifest" href="./manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -106,6 +110,12 @@ input[type=number]{-moz-appearance:textfield}
 
 .distance-mode-btn{flex-shrink:0;padding:10px 7px;border:1px solid var(--accent);border-radius:9px;background:rgba(230,105,25,.08);color:var(--accent);font-size:11px;font-weight:700;min-width:70px;cursor:pointer;}
 .distance-mode-btn.one-man{background:var(--accent);color:#fff;}
+
+/* PWA status row: wraps on small screens without changing existing controls. */
+.app-save-status{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:7px;font-size:10px;line-height:1.5}
+.app-save-status span{padding:2px 6px;border-radius:6px;background:#ededed;color:#555;overflow-wrap:anywhere}
+.app-save-status span[data-kind="warning"]{background:#fff1d6;color:#795000}
+.app-save-status span[data-kind="error"]{background:#ffe4e4;color:#a51e1e}
 </style>
 </head>
 <body>
@@ -115,6 +125,12 @@ input[type=number]{-moz-appearance:textfield}
     <button onclick="openSettings()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:4px;">⚙️</button>
   </div>
   <div class="header-date" id="headerDate"></div>
+  <div class="app-save-status" role="status" aria-live="polite" aria-atomic="true">
+    <span id="appConnectionStatus">接続確認中…</span>
+    <span id="appLocalSaveStatus">端末保存確認中…</span>
+    <span id="appDriveSaveStatus">Drive保存確認中…</span>
+    <span id="appPwaStatus">v2026.11.09.1</span>
+  </div>
 </div>
 <div class="tabs">
   <div class="tab active" onclick="showTab('input')">📝 入力</div>
@@ -2430,6 +2446,157 @@ var hist=jget('backupHistory',[]), gl=document.getElementById('backupGenerationL
 - 旧記録は従来どおり計算。入力画面・詳細・月間集計・表計算出力へ計算結果を反映
 - バックアップ形式v7。Drive保存確認、残業・各種手当など既存機能を維持
 -->
+<script id="truckLogPwaIntegration">
+/* 運転日報 PWA 2026.11.09.1: display-only status; existing data keys stay unchanged. */
+(function () {
+  'use strict';
+  var VERSION = '2026.11.09.1';
+  var registration = null;
+  var updateInFlight = null;
+  var updateReady = false;
+  var pwaError = '';
+  var storageWriteError = false;
+  var renderTimer = null;
+
+  function putStatus(id, text, kind, title) {
+    var element = document.getElementById(id);
+    if (!element) return;
+    element.textContent = text;
+    element.dataset.kind = kind || 'normal';
+    element.title = title || text;
+  }
+  function renderStatus() {
+    renderTimer = null;
+    putStatus('appConnectionStatus', navigator.onLine === false ? 'オフライン' : 'オンライン',
+      navigator.onLine === false ? 'warning' : 'normal');
+    try {
+      var raw = devGetItem('truckRecords');
+      var records = JSON.parse(raw || '[]');
+      if (!Array.isArray(records)) throw new Error('invalid records');
+      putStatus('appLocalSaveStatus',
+        storageWriteError ? '端末保存エラー' : records.length ? '端末保存済み（' + records.length + '件）' : '端末保存：記録なし',
+        storageWriteError ? 'error' : 'normal',
+        storageWriteError ? '端末への書き込みに失敗しました。保存容量などを確認してください。' : '端末に保存された日報の件数です。入力中の変更は保存ボタンで確定してください。');
+      var history = JSON.parse(devGetItem('gasBackupHistoryV2') || '[]');
+      if (!Array.isArray(history)) throw new Error('invalid history');
+      var pending = history.filter(function (entry) {
+        return entry && entry.status !== 'saved' && !entry.suppressedBy;
+      }).sort(function (a, b) { return b.createdAt - a.createdAt; });
+      var lastConfirmed = devGetItem('lastGasBackupAt');
+      var dateText = lastConfirmed && !isNaN(Date.parse(lastConfirmed)) ? formatBackupDate(lastConfirmed) : '';
+      var title = dateText ? '最後にDrive保存を確認した日時：' + dateText + '。共有同期ではなくバックアップです。' : '共有同期ではなく、既存のDriveバックアップの確認状態です。';
+      if (pending.some(function (entry) { return entry.status === 'sending'; })) {
+        putStatus('appDriveSaveStatus', 'Drive保存確認中…', 'warning', title);
+      } else if (pending.some(function (entry) { return entry.status === 'failed'; })) {
+        putStatus('appDriveSaveStatus', 'Driveバックアップエラー', 'error', title);
+      } else if (pending.length) {
+        putStatus('appDriveSaveStatus', 'Drive保存未確認', 'warning', title);
+      } else if (dateText) {
+        putStatus('appDriveSaveStatus', 'Driveバックアップ済み ' + dateText, 'normal', title);
+      } else {
+        putStatus('appDriveSaveStatus', 'Driveバックアップ未確認', 'warning', title);
+      }
+    } catch (error) {
+      putStatus('appLocalSaveStatus', '保存状態を確認できません', 'error', '端末のデータは変更していません。設定画面でバックアップを確認してください。');
+      putStatus('appDriveSaveStatus', 'Drive保存状態不明', 'warning');
+    }
+    putStatus('appPwaStatus', pwaError || (updateReady ? '更新準備済み・次回起動で反映' : 'v' + VERSION),
+      pwaError ? 'warning' : 'normal', 'PWA版 v' + VERSION + '。入力を守るため更新時に画面を自動再読み込みしません。');
+  }
+  function scheduleStatus() {
+    if (renderTimer !== null) return;
+    renderTimer = setTimeout(renderStatus, 0);
+  }
+  // Observe the existing storage helper without changing its prefix, key, values,
+  // return value or exception behavior. No new storage location is created.
+  var originalSetItem = window.devSetItem;
+  window.devSetItem = function (key, value) {
+    try {
+      var result = originalSetItem.apply(this, arguments);
+      if (key === 'truckRecords') storageWriteError = false;
+      scheduleStatus();
+      return result;
+    } catch (error) {
+      if (key === 'truckRecords') storageWriteError = true;
+      scheduleStatus();
+      throw error;
+    }
+  };
+  var originalRemoveItem = window.devRemoveItem;
+  window.devRemoveItem = function () {
+    try { return originalRemoveItem.apply(this, arguments); }
+    finally { scheduleStatus(); }
+  };
+  function checkForUpdate() {
+    if (!registration || navigator.onLine === false) return Promise.resolve();
+    if (updateInFlight) return updateInFlight;
+    updateInFlight = registration.update().then(function () {
+      pwaError = '';
+    }).catch(function () {
+      pwaError = 'アプリ更新確認を再試行します';
+    }).finally(function () {
+      updateInFlight = null;
+      scheduleStatus();
+    });
+    return updateInFlight;
+  }
+  function watchWorker(worker) {
+    if (!worker) return;
+    worker.addEventListener('statechange', function () {
+      if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+        updateReady = true;
+        scheduleStatus();
+      }
+    });
+  }
+  function start() {
+    renderStatus();
+    if (!('serviceWorker' in navigator) || location.protocol !== 'https:') return;
+    var alreadyControlled = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (alreadyControlled) updateReady = true;
+      alreadyControlled = true;
+      scheduleStatus();
+    });
+    // Relative URLs keep /truck-log/ and the original Pages storage origin.
+    navigator.serviceWorker.register('./sw.js', {scope: './', updateViaCache: 'none'})
+      .then(function (reg) {
+        registration = reg;
+        if (reg.waiting) updateReady = true;
+        watchWorker(reg.installing);
+        reg.addEventListener('updatefound', function () { watchWorker(reg.installing); });
+        checkForUpdate();
+        scheduleStatus();
+      }).catch(function () {
+        pwaError = 'オフライン起動の準備を再確認してください';
+        scheduleStatus();
+      });
+  }
+  window.addEventListener('storage', scheduleStatus);
+  window.addEventListener('online', function () { scheduleStatus(); checkForUpdate(); });
+  window.addEventListener('offline', scheduleStatus);
+  window.addEventListener('pageshow', function () { scheduleStatus(); checkForUpdate(); });
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) { scheduleStatus(); checkForUpdate(); }
+  });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, {once: true});
+  else start();
+})();
+
+</script>
+<!--
+変更履歴 2026/11/09 PROD PWA v2026.11.09.1
+- main最新版633a33c8の完全統合版を維持し、PWAマニフェスト・通常/マスカブルアイコンを追加
+- start_url/scopeは./、同じGitHub Pagesオリジンと/truck-log/を使用
+- Service Workerは同一オリジンの画面と指定静的ファイルのみネットワーク優先、通信不能時キャッシュ起動
+- no-store、updateViaCache:none、起動/画面復帰時の更新確認、skipWaiting/clients.claimを追加
+- このアプリ専用の旧キャッシュだけ削除。localStorageキー・保存処理・バックアップ形式を維持
+- POST・Apps Script・Drive通信はキャッシュ対象外。Apps Scriptの変更なし
+- ヘッダーに端末保存件数・Drive保存確認日時/未確認/エラー・接続状態を表示
+- 入力保護のため更新検出時の強制再読み込みなし。次の画面起動でネットワーク最新版を取得
+- ツーマン/ワンマン距離、硫酸搭載、各種手当、月末締め、削除修正など既存機能を維持
+-->
 </body>
 </html>
+
 
