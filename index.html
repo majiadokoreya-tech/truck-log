@@ -11,10 +11,10 @@
 <meta name="application-name" content="運転日報">
 <title>🚛 運転日報</title>
 <meta name="apple-mobile-web-app-title" content="運転日報">
-<meta name="application-version" content="2026.11.09.2">
+<meta name="application-version" content="2026.11.10.1">
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
-<!-- latest: PROD complete integrated PWA build 2026.11.09.2 -->
+<!-- latest: PROD complete integrated PWA build 2026.11.10.1 -->
 <link rel="manifest" href="./manifest.webmanifest?v=2026.11.09.2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
@@ -129,7 +129,7 @@ input[type=number]{-moz-appearance:textfield}
     <span id="appConnectionStatus">接続確認中…</span>
     <span id="appLocalSaveStatus">端末保存確認中…</span>
     <span id="appDriveSaveStatus">Drive保存確認中…</span>
-    <span id="appPwaStatus">v2026.11.09.2</span>
+    <span id="appPwaStatus">v2026.11.10.1</span>
   </div>
 </div>
 <div class="tabs">
@@ -1249,7 +1249,21 @@ function onDateChange(){
   }
 }
 function loadRecordToForm(r){editingId=r.id;selectedJobs=(r.jobs||[]).map(function(j){return j==='ツーマン'?'横乗り':j;});document.querySelectorAll('.job-btn').forEach(function(b){b.classList.toggle('selected',selectedJobs.includes(b.dataset.job))});setTimePicker('start',r.startTime||'');setTimePicker('end',r.endTime||'');setOvertimePicker(r.overtime||0);var segments=getDistanceSegments(r);distanceOneManOverrides=segments.map(function(s){return s.oneMan;});[1,2,3].forEach(function(n){document.getElementById('distance'+n).value=segments[n-1].distance||'';});document.getElementById('distance').value=r.distance||'';document.getElementById('distanceTotal').innerHTML=(r.distance||0).toLocaleString()+' <span style="font-size:12px;color:var(--muted);">km</span>';document.getElementById('longDistancePay').value=r.longDistancePay||'';toxicCount=r.toxicCount||0;document.getElementById('toxicBtn1').classList.toggle('selected',toxicCount===1);document.getElementById('toxicBtn2').classList.toggle('selected',toxicCount===2);document.getElementById('toxicDisplay').textContent=toxicCount>0?'☠️×'+toxicCount+' = '+(toxicCount*2500).toLocaleString()+'円':'未選択';trailerOn=r.trailerOn||false;document.getElementById('trailerBtn').classList.toggle('selected',trailerOn);document.getElementById('trailerStatus').textContent=trailerOn?'✅ 3,000円':'タップでON';document.getElementById('trailerStatus').style.color=trailerOn?'var(--accent)':'var(--muted)';document.getElementById('jobMemo').value=normalizeJobMemoText(r.jobMemo||'');updateTwoManDistanceInfo();showToast('📋 入力済みデータを読み込みました');updateInputProgress();openOnlyNextRequiredAccordion();}
-function renderRecords(){var monthStr=currentYear+'-'+String(currentMonth+1).padStart(2,'0');document.getElementById('recordsMonthLabel').textContent=currentYear+'年'+(currentMonth+1)+'月';renderLeavePanel();var sw=document.getElementById('searchBox')?document.getElementById('searchBox').value.trim().toLowerCase():'';var list=document.getElementById('recordsList');if(sw){var res=getRecords().filter(function(r){return(r.jobMemo||'').toLowerCase().includes(sw)||(r.jobs||[]).join('').toLowerCase().includes(sw)}).sort(function(a,b){return b.date.localeCompare(a.date)});if(!res.length){list.innerHTML='<div class="empty"><div class="empty-icon">🔍</div>「'+sw+'」の記録はありません</div>';return}list.innerHTML=res.map(recordCardHtml).join('');return}var all=getRecords().filter(function(r){return r.date&&r.date.startsWith(monthStr)}),rm={};renderMonthOvertimeSummary(all);all.forEach(function(r){rm[r.date]=r});var firstDay=new Date(currentYear,currentMonth,1).getDay(),dim=new Date(currentYear,currentMonth+1,0).getDate(),html='<div class="cal-grid">';['日','月','火','水','木','金','土'].forEach(function(d,i){var c=i===0?'color:#e74c3c':i===6?'color:#3498db':'color:var(--muted)';html+='<div class="cal-head" style="'+c+'">'+d+'</div>'});for(var i=0;i<firstDay;i++)html+='<div class="cal-cell empty"></div>';for(var day=1;day<=dim;day++){var ds=currentYear+'-'+String(currentMonth+1).padStart(2,'0')+'-'+String(day).padStart(2,'0'),dow=new Date(currentYear,currentMonth,day).getDay(),r=rm[ds],hd=!!r,jobs=r?(r.jobs||[]):[],je=r?jobs.map(function(j){return JOB_EMOJI[j]||''}).join(''):'';var dc=getDateColor(ds,dow),ih=HOLIDAYS.has(ds),companyHolidayName=getCompanyHolidayName(ds),dayCls='cal-cell '+(hd?'has-data ':'')+(companyHolidayName?'company-holiday-cell ':'')+(jobs.includes('休み')?'rest-day ':jobs.includes('半日有給')?'half-paid-day ':'');var isToday=ds===getLocalDateStr();html+='<div '+(isToday?'id="cal-today"':'')+' class="'+dayCls+'" onclick="'+(hd?'showModal('+r.id+')':"goToInput('"+ds+"')")+'" style="'+(isToday?'outline:2px solid #3498db;outline-offset:-2px;':'')+'"><div class="cal-day" style="'+dc+'">'+day+(ih?'🎌':'')+'</div>'+(companyHolidayName?'<div class="company-holiday-label">🏢 '+escapeHtml(companyHolidayName)+'</div>':'')+(hd?('<div class="cal-emoji">'+(je||'—')+'</div>'+(r.startTime?'<div class="cal-time">出 '+r.startTime+'</div>':'')+(r.endTime?'<div class="cal-time">退 '+r.endTime+'</div>':'')+(calcEffectiveOvertimeHours(r)>0?'<div class="cal-time">残 '+formatHour(calcEffectiveOvertimeHours(r))+'h</div>':'')+(r.jobMemo?'<div class="cal-memo">'+escapeHtml(formatJobMemoText(r.jobMemo))+'</div>':'')):'')+'</div>'}list.innerHTML=html+'</div>';}
+function getCalendarJobEmoji(r){
+  if(!r)return '';
+  var jobs=r.jobs||[],count;
+  if(r.toxicCount!==undefined&&r.toxicCount!==null&&r.toxicCount!==''){
+    count=parseInt(r.toxicCount,10)||0;
+  }else if((parseFloat(r.toxicPay)||0)>0){
+    count=(parseFloat(r.toxicPay)||0)>=5000?2:1;
+  }else{
+    count=jobs.includes('毒×2')?2:(jobs.includes('毒手当')?1:0);
+  }
+  count=Math.max(0,Math.min(2,count));
+  return jobs.filter(function(j){return j!=='毒手当'&&j!=='毒×2';})
+    .map(function(j){return JOB_EMOJI[j]||'';}).join('')+'☠️'.repeat(count);
+}
+function renderRecords(){var monthStr=currentYear+'-'+String(currentMonth+1).padStart(2,'0');document.getElementById('recordsMonthLabel').textContent=currentYear+'年'+(currentMonth+1)+'月';renderLeavePanel();var sw=document.getElementById('searchBox')?document.getElementById('searchBox').value.trim().toLowerCase():'';var list=document.getElementById('recordsList');if(sw){var res=getRecords().filter(function(r){return(r.jobMemo||'').toLowerCase().includes(sw)||(r.jobs||[]).join('').toLowerCase().includes(sw)}).sort(function(a,b){return b.date.localeCompare(a.date)});if(!res.length){list.innerHTML='<div class="empty"><div class="empty-icon">🔍</div>「'+sw+'」の記録はありません</div>';return}list.innerHTML=res.map(recordCardHtml).join('');return}var all=getRecords().filter(function(r){return r.date&&r.date.startsWith(monthStr)}),rm={};renderMonthOvertimeSummary(all);all.forEach(function(r){rm[r.date]=r});var firstDay=new Date(currentYear,currentMonth,1).getDay(),dim=new Date(currentYear,currentMonth+1,0).getDate(),html='<div class="cal-grid">';['日','月','火','水','木','金','土'].forEach(function(d,i){var c=i===0?'color:#e74c3c':i===6?'color:#3498db':'color:var(--muted)';html+='<div class="cal-head" style="'+c+'">'+d+'</div>'});for(var i=0;i<firstDay;i++)html+='<div class="cal-cell empty"></div>';for(var day=1;day<=dim;day++){var ds=currentYear+'-'+String(currentMonth+1).padStart(2,'0')+'-'+String(day).padStart(2,'0'),dow=new Date(currentYear,currentMonth,day).getDay(),r=rm[ds],hd=!!r,jobs=r?(r.jobs||[]):[],je=getCalendarJobEmoji(r);var dc=getDateColor(ds,dow),ih=HOLIDAYS.has(ds),companyHolidayName=getCompanyHolidayName(ds),dayCls='cal-cell '+(hd?'has-data ':'')+(companyHolidayName?'company-holiday-cell ':'')+(jobs.includes('休み')?'rest-day ':jobs.includes('半日有給')?'half-paid-day ':'');var isToday=ds===getLocalDateStr();html+='<div '+(isToday?'id="cal-today"':'')+' class="'+dayCls+'" onclick="'+(hd?'showModal('+r.id+')':"goToInput('"+ds+"')")+'" style="'+(isToday?'outline:2px solid #3498db;outline-offset:-2px;':'')+'"><div class="cal-day" style="'+dc+'">'+day+(ih?'🎌':'')+'</div>'+(companyHolidayName?'<div class="company-holiday-label">🏢 '+escapeHtml(companyHolidayName)+'</div>':'')+(hd?('<div class="cal-emoji">'+(je||'—')+'</div>'+(r.startTime?'<div class="cal-time">出 '+r.startTime+'</div>':'')+(r.endTime?'<div class="cal-time">退 '+r.endTime+'</div>':'')+(calcEffectiveOvertimeHours(r)>0?'<div class="cal-time">残 '+formatHour(calcEffectiveOvertimeHours(r))+'h</div>':'')+(r.jobMemo?'<div class="cal-memo">'+escapeHtml(formatJobMemoText(r.jobMemo))+'</div>':'')):'')+'</div>'}list.innerHTML=html+'</div>';}
 
 function renderMonthOvertimeSummary(monthRecords){
   var el=document.getElementById('monthOvertimeSummaryText');
@@ -2447,10 +2461,10 @@ var hist=jget('backupHistory',[]), gl=document.getElementById('backupGenerationL
 - バックアップ形式v7。Drive保存確認、残業・各種手当など既存機能を維持
 -->
 <script id="truckLogPwaIntegration">
-/* 運転日報 PWA 2026.11.09.2: display-only status; existing data keys stay unchanged. */
+/* 運転日報 PWA 2026.11.10.1: display-only status; existing data keys stay unchanged. */
 (function () {
   'use strict';
-  var VERSION = '2026.11.09.2';
+  var VERSION = '2026.11.10.1';
   var registration = null;
   var updateInFlight = null;
   var updateReady = false;
@@ -2603,8 +2617,17 @@ var hist=jget('backupHistory',[]), gl=document.getElementById('backupGenerationL
 - manifestリンクのバージョンとService Workerキャッシュを更新。更新時に日報や他アプリの保存データは削除しない
 - 既存日報機能・ツーマン/ワンマン・各種手当・バックアップ/復元・PWA起動処理を維持
 -->
+<!--
+変更履歴 2026/11/10 PROD v2026.11.10.1
+- 記録カレンダーの毒手当アイコンを保存済みtoxicCountに合わせ、×2は☠️☠️、×1は☠️、なしは非表示に修正
+- 仕事ボタン選択に加え、カネカ/PM/硫酸搭載などで毒手当が設定された既存記録にも表示を適用
+- 回数のない旧記録は毒手当金額または仕事区分から表示を補完。既存のドクロは重複表示しない
+- 記録データ・手当計算・保存・Drive/Apps Script・PWA固有IDとscopeは変更せず、画面表示のみ修正
+- PWA版番号・専用キャッシュ番号を更新。既存機能を維持した完全統合版
+-->
 </body>
 </html>
+
 
 
 
