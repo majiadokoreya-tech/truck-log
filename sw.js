@@ -1,6 +1,6 @@
-/* 運転日報 PWA 2026.11.10.1 — same-origin static shell only. */
+/* 運転日報 PWA 2026.11.11.1 — same-origin static shell only. */
 'use strict';
-const VERSION = '2026.11.10.1';
+const VERSION = '2026.11.11.1';
 const CACHE_PREFIX = 'truck-log-pwa-shell-';
 const CACHE_NAME = CACHE_PREFIX + VERSION;
 const BASE_URL = new URL('./', self.location.href);
@@ -72,5 +72,6 @@ self.addEventListener('fetch', event => {
   if (!isPage && (url.search || !STATIC_URLS.has(staticUrl))) return;
   event.respondWith(networkFirst(request, isPage ? INDEX_URL : staticUrl, isPage));
 });
+
 
 

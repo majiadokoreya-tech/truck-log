@@ -11,10 +11,10 @@
 <meta name="application-name" content="運転日報">
 <title>🚛 運転日報</title>
 <meta name="apple-mobile-web-app-title" content="運転日報">
-<meta name="application-version" content="2026.11.10.1">
+<meta name="application-version" content="2026.11.11.1">
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
-<!-- latest: PROD complete integrated PWA build 2026.11.10.1 -->
+<!-- latest: PROD complete integrated PWA build 2026.11.11.1 -->
 <link rel="manifest" href="./manifest.webmanifest?v=2026.11.09.2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
@@ -129,7 +129,7 @@ input[type=number]{-moz-appearance:textfield}
     <span id="appConnectionStatus">接続確認中…</span>
     <span id="appLocalSaveStatus">端末保存確認中…</span>
     <span id="appDriveSaveStatus">Drive保存確認中…</span>
-    <span id="appPwaStatus">v2026.11.10.1</span>
+    <span id="appPwaStatus">v2026.11.11.1</span>
   </div>
 </div>
 <div class="tabs">
@@ -305,6 +305,17 @@ input[type=number]{-moz-appearance:textfield}
   </div>
 </div>
 
+<div class="modal-overlay" id="chlorineToxicOverlay" style="z-index:1300;" onclick="if(event.target===this)closeChlorineToxicChoice()">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="chlorineToxicTitle" aria-describedby="chlorineToxicDescription">
+    <div class="modal-title" id="chlorineToxicTitle">⚗️ 塩素搭載の毒手当</div>
+    <p id="chlorineToxicDescription" style="font-size:13px;line-height:1.8;margin-bottom:14px;">積み終わる時間に合わせて選んでください。</p>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button type="button" id="chlorineToxicOne" class="copy-btn" onclick="confirmChlorineToxicChoice(1)" style="margin:0;text-align:left;padding:16px;">☠️ ×1：午前中に積み終わる（2,500円）</button>
+      <button type="button" id="chlorineToxicTwo" class="copy-btn" onclick="confirmChlorineToxicChoice(2)" style="margin:0;text-align:left;padding:16px;">☠️☠️ ×2：午後にまたぐ（5,000円）</button>
+      <button type="button" id="chlorineToxicCancel" class="modal-close" onclick="closeChlorineToxicChoice()" style="padding:12px;">キャンセル</button>
+    </div>
+  </div>
+</div>
 <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)"><div class="modal"><div class="modal-title" id="modalTitle"></div><div id="modalContent"></div><div class="modal-btns"><button class="modal-close" onclick="closeModalDirect()">閉じる</button><button class="modal-edit" onclick="editFromModal()">✏️ 編集</button><button class="modal-delete" onclick="deleteRecord()">🗑️ 削除</button></div></div></div>
 <div class="modal-overlay" id="fareOverlay" onclick="closeFareTable(event)"><div class="modal" style="max-height:90vh;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><div class="modal-title" style="margin-bottom:0;">📋 運行料金表</div><button onclick="closeFareTableDirect()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;">✕</button></div><input class="input-field" type="text" id="fareSearch" placeholder="🔍 客先名を検索..." oninput="renderFareTable()" style="font-size:14px;font-family:'Noto Sans JP',sans-serif;margin-bottom:12px;"><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;" id="fareCategoryBtns"></div><div id="fareList" style="max-height:55vh;overflow-y:auto;"></div></div></div>
 <div class="modal-overlay" id="settingsOverlay" onclick="closeSettings(event)">
@@ -1043,7 +1054,43 @@ function setSpecialTask(job,memoParts,zeroDistance){
   document.querySelectorAll('.job-btn').forEach(function(b){b.classList.toggle('selected',selectedJobs.includes(b.dataset.job));});refreshMemoButtonStates();updateInputProgress();autoCalcOvertime();
 }
 function clearSpecialTask(job,parts){selectedJobs=selectedJobs.filter(function(j){return j!==job;});removeMemoParts(parts||[]);refreshMemoButtonStates();updateInputProgress();autoCalcOvertime();}
-function toggleChlorineOnlyTask(){if(selectedJobs.includes('塩素搭載のみ')){clearSpecialTask('塩素搭載のみ',['塩素','搭載']);showToast('⚗️ 塩素搭載を解除しました');}else{setSpecialTask('塩素搭載のみ',['塩素','搭載'],true);showToast('⚗️ 塩素搭載：走行距離0kmを設定しました');}}
+var pendingChlorineChoice=null;
+function toggleChlorineOnlyTask(){
+  if(selectedJobs.includes('塩素搭載のみ')){
+    clearSpecialTask('塩素搭載のみ',['塩素','搭載']);
+    showToast('⚗️ 塩素搭載を解除しました');return;
+  }
+  pendingChlorineChoice={date:document.getElementById('inputDate').value,editingId:editingId,focus:document.activeElement};
+  document.getElementById('chlorineToxicOverlay').classList.add('open');
+  document.getElementById('chlorineToxicOne').focus();
+}
+function closeChlorineToxicChoice(){
+  var previous=pendingChlorineChoice;pendingChlorineChoice=null;
+  document.getElementById('chlorineToxicOverlay').classList.remove('open');
+  if(previous&&previous.focus&&typeof previous.focus.focus==='function')previous.focus.focus();
+}
+function confirmChlorineToxicChoice(count){
+  var pending=pendingChlorineChoice;
+  if(!pending||(count!==1&&count!==2))return;
+  if(pending.date!==document.getElementById('inputDate').value||pending.editingId!==editingId){
+    closeChlorineToxicChoice();showToast('日付が変わりました。もう一度塩素搭載を選んでください',true);return;
+  }
+  closeChlorineToxicChoice();
+  setSpecialTask('塩素搭載のみ',['塩素','搭載'],true);
+  setToxicCountDirect(count);
+  updateTwoManDistanceInfo();updateInputProgress();
+  showToast('⚗️ 塩素搭載：毒手当×'+count+'（'+(count*2500).toLocaleString()+'円）・走行距離0kmを設定しました');
+}
+document.addEventListener('keydown',function(event){
+  if(!pendingChlorineChoice)return;
+  if(event.key==='Escape'){event.preventDefault();event.stopPropagation();closeChlorineToxicChoice();return;}
+  if(event.key==='Tab'){
+    var ids=['chlorineToxicOne','chlorineToxicTwo','chlorineToxicCancel'];
+    var index=ids.indexOf(document.activeElement&&document.activeElement.id);
+    var next=event.shiftKey?(index<=0?2:index-1):(index<0||index===2?0:index+1);
+    event.preventDefault();document.getElementById(ids[next]).focus();
+  }
+},true);
 function toggleChlorineDeliveryTask(){if(selectedJobs.includes('塩素搭載＋配送')){clearSpecialTask('塩素搭載＋配送',['塩素','搭載','配送']);showToast('🚛 塩素搭載＋配送を解除しました');}else{setSpecialTask('塩素搭載＋配送',['塩素','搭載','配送'],false);showToast('🚛 配送距離を入力してください');}}
 function toggleEnvironmentTask(){if(selectedJobs.includes('環境整備')){clearSpecialTask('環境整備',['環境整備（雑用）','環境整備']);showToast('🧹 環境整備を解除しました');}else{setSpecialTask('環境整備',['環境整備（雑用）'],true);showToast('🧹 環境整備：走行距離0kmを設定しました');}}
 function toggleKanekaMemo(){if(hasMemoPart('㈱カネカ 大阪')){removeMemo('㈱カネカ 大阪');syncKanekaPmToxic();showToast('🏭 カネカを解除しました');}else{addMemo('㈱カネカ 大阪');syncKanekaPmToxic();}refreshMemoButtonStates();}
@@ -2461,10 +2508,10 @@ var hist=jget('backupHistory',[]), gl=document.getElementById('backupGenerationL
 - バックアップ形式v7。Drive保存確認、残業・各種手当など既存機能を維持
 -->
 <script id="truckLogPwaIntegration">
-/* 運転日報 PWA 2026.11.10.1: display-only status; existing data keys stay unchanged. */
+/* 運転日報 PWA 2026.11.11.1: display-only status; existing data keys stay unchanged. */
 (function () {
   'use strict';
-  var VERSION = '2026.11.10.1';
+  var VERSION = '2026.11.11.1';
   var registration = null;
   var updateInFlight = null;
   var updateReady = false;
@@ -2625,8 +2672,17 @@ var hist=jget('backupHistory',[]), gl=document.getElementById('backupGenerationL
 - 記録データ・手当計算・保存・Drive/Apps Script・PWA固有IDとscopeは変更せず、画面表示のみ修正
 - PWA版番号・専用キャッシュ番号を更新。既存機能を維持した完全統合版
 -->
+<!--
+変更履歴 2026/11/11 PROD v2026.11.11.1
+- 塩素搭載の選択時に毒手当の選択画面を表示。午前中完了は×1（2,500円）、午後にまたぐ場合は×2（5,000円）を本人が選択
+- 選択確定までは既存入力を変更せず、キャンセル・背景タップ・Escapeで入力を維持
+- 確定時は既存の塩素搭載メモ・走行距離0km・毒手当回数/仕事ボタンを設定。通常の保存操作で記録
+- 塩素搭載解除、塩素搭載＋配送、他の仕事内容・各種手当・日報保存・Drive/Apps Script・PWA固有IDを維持
+- PWA版番号・専用キャッシュ番号を更新。既存機能を維持した完全統合版
+-->
 </body>
 </html>
+
 
 
 
